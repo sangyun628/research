@@ -1,26 +1,26 @@
-# OpenMemory (CaviraOSS) Analysis Report
+# OpenMemory (CaviraOSS) 분석 보고서
 
-> Repository: https://github.com/CaviraOSS/OpenMemory
-> Analysis Date: 2026-01-21
-
----
-
-## 1. Overview
-
-OpenMemory is an open-source memory layer for AI agents and applications. It provides a sophisticated multi-sector memory system with temporal knowledge graphs, decay mechanisms, and associative memory links (waypoints).
-
-### Key Features
-
-- **Multi-Sector Memory**: 5 distinct cognitive sectors (Episodic, Semantic, Procedural, Emotional, Reflective)
-- **Temporal Knowledge Graph**: Facts with validity periods and confidence decay
-- **Hierarchical Semantic Graph (HSG)**: Core memory structure with waypoint-based associations
-- **Decay Engine**: 3-tier decay system with vector compression
-- **Reflection System**: Automatic memory consolidation and pattern detection
-- **MCP Server**: Native integration with Claude, Cursor, Windsurf
+> 저장소: https://github.com/CaviraOSS/OpenMemory
+> 분석일: 2026-01-21
 
 ---
 
-## 2. Architecture
+## 1. 개요
+
+OpenMemory는 AI 에이전트 및 애플리케이션을 위한 오픈소스 메모리 레이어입니다. 시간 기반 지식 그래프, 감쇠 메커니즘, 연상 메모리 링크(Waypoints)를 갖춘 정교한 멀티 섹터 메모리 시스템을 제공합니다.
+
+### 핵심 기능
+
+- **멀티 섹터 메모리**: 5개의 구분된 인지 섹터 (일화, 의미, 절차, 감정, 성찰)
+- **시간 지식 그래프**: 유효 기간과 신뢰도 감쇠가 있는 사실들
+- **계층적 의미 그래프 (HSG)**: Waypoint 기반 연상을 가진 핵심 메모리 구조
+- **Decay 엔진**: 벡터 압축이 있는 3계층 감쇠 시스템
+- **Reflection 시스템**: 자동 메모리 통합 및 패턴 감지
+- **MCP 서버**: Claude, Cursor, Windsurf와의 네이티브 통합
+
+---
+
+## 2. 아키텍처
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -29,13 +29,13 @@ OpenMemory is an open-source memory layer for AI agents and applications. It pro
 │                                                                 │
 │  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐           │
 │  │   MCP       │   │   REST      │   │  LangChain  │           │
-│  │   Server    │   │   API       │   │  Connector  │           │
+│  │   서버      │   │   API       │   │   커넥터    │           │
 │  └──────┬──────┘   └──────┬──────┘   └──────┬──────┘           │
 │         │                 │                  │                  │
 │         └─────────────────┼──────────────────┘                  │
 │                           ▼                                     │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │                    Memory Class                          │   │
+│  │                    Memory 클래스                         │   │
 │  │    add() / search() / get() / delete() / history()      │   │
 │  └────────────────────────────┬────────────────────────────┘   │
 │                               │                                 │
@@ -43,12 +43,12 @@ OpenMemory is an open-source memory layer for AI agents and applications. It pro
 │         ▼                     ▼                     ▼          │
 │  ┌────────────┐       ┌────────────┐       ┌────────────┐      │
 │  │    HSG     │       │  Temporal  │       │   Decay    │      │
-│  │  (Memory)  │◄─────►│   Graph    │◄─────►│   Engine   │      │
+│  │  (메모리)  │◄─────►│   Graph    │◄─────►│   엔진    │      │
 │  └─────┬──────┘       └─────┬──────┘       └─────┬──────┘      │
 │        │                    │                    │              │
 │        ▼                    ▼                    ▼              │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │                    Vector Store                          │   │
+│  │                    벡터 저장소                            │   │
 │  │         (PostgreSQL/pgvector, Valkey, SQLite)           │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
@@ -57,11 +57,11 @@ OpenMemory is an open-source memory layer for AI agents and applications. It pro
 
 ---
 
-## 3. Memory Sectors (5 Types)
+## 3. 메모리 섹터 (5가지 타입)
 
-OpenMemory implements Tulving's cognitive memory theory with 5 distinct sectors, each with specialized characteristics.
+OpenMemory는 Tulving의 인지 메모리 이론을 5개의 구분된 섹터로 구현합니다.
 
-### 3.1 Sector Configuration
+### 3.1 섹터 설정
 
 ```python
 # /core/constants.py
@@ -69,13 +69,13 @@ OpenMemory implements Tulving's cognitive memory theory with 5 distinct sectors,
 SECTOR_CONFIGS: Dict[str, SectorCfg] = {
     "episodic": {
         "model": "episodic-optimized",
-        "decay_lambda": 0.015,      # Fast decay
+        "decay_lambda": 0.015,      # 빠른 감쇠
         "weight": 1.2,
         "patterns": [...]
     },
     "semantic": {
         "model": "semantic-optimized",
-        "decay_lambda": 0.005,      # Slow decay
+        "decay_lambda": 0.005,      # 느린 감쇠
         "weight": 1.0,
         "patterns": [...]
     },
@@ -87,59 +87,59 @@ SECTOR_CONFIGS: Dict[str, SectorCfg] = {
     },
     "emotional": {
         "model": "emotional-optimized",
-        "decay_lambda": 0.02,       # Fastest decay
-        "weight": 1.3,              # Highest weight
+        "decay_lambda": 0.02,       # 가장 빠른 감쇠
+        "weight": 1.3,              # 가장 높은 가중치
         "patterns": [...]
     },
     "reflective": {
         "model": "reflective-optimized",
-        "decay_lambda": 0.001,      # Slowest decay
+        "decay_lambda": 0.001,      # 가장 느린 감쇠
         "weight": 0.8,
         "patterns": [...]
     },
 }
 ```
 
-### 3.2 Sector Characteristics
+### 3.2 섹터 특성
 
-| Sector | Decay Lambda | Weight | Description |
-|--------|-------------|--------|-------------|
-| **Episodic** | 0.015 | 1.2 | Personal events, experiences with temporal context |
-| **Semantic** | 0.005 | 1.0 | Facts, concepts, general knowledge |
-| **Procedural** | 0.008 | 1.1 | How-to knowledge, skills, processes |
-| **Emotional** | 0.02 | 1.3 | Feelings, moods, affective states |
-| **Reflective** | 0.001 | 0.8 | Insights, patterns, meta-cognition |
+| 섹터 | Decay Lambda | 가중치 | 설명 |
+|------|-------------|--------|------|
+| **Episodic (일화)** | 0.015 | 1.2 | 개인 이벤트, 시간적 맥락이 있는 경험 |
+| **Semantic (의미)** | 0.005 | 1.0 | 사실, 개념, 일반 지식 |
+| **Procedural (절차)** | 0.008 | 1.1 | 방법론, 기술, 프로세스 |
+| **Emotional (감정)** | 0.02 | 1.3 | 감정, 기분, 정서 상태 |
+| **Reflective (성찰)** | 0.001 | 0.8 | 통찰, 패턴, 메타인지 |
 
-### 3.3 Sector Detection Patterns
+### 3.3 섹터 감지 패턴
 
 ```python
-# Episodic patterns
+# 일화 패턴
 re.compile(r"\b(today|yesterday|tomorrow|last\s+(week|month|year))\b", re.I)
 re.compile(r"\b(remember\s+when|recall|that\s+time|when\s+I)\b", re.I)
 re.compile(r"\b(went|saw|met|felt|heard|visited|attended)\b", re.I)
 
-# Semantic patterns
+# 의미 패턴
 re.compile(r"\b(is\s+a|represents|means|defined\s+as)\b", re.I)
 re.compile(r"\b(concept|theory|principle|law|hypothesis)\b", re.I)
 re.compile(r"\b(fact|statistic|data|evidence|proof)\b", re.I)
 
-# Procedural patterns
+# 절차 패턴
 re.compile(r"\b(how\s+to|step\s+by\s+step|guide|tutorial)\b", re.I)
 re.compile(r"\b(first|second|then|next|finally)\b", re.I)
 re.compile(r"\b(install|run|execute|compile|build|deploy)\b", re.I)
 
-# Emotional patterns
+# 감정 패턴
 re.compile(r"\b(feel|feeling|felt|emotions?|mood)\b", re.I)
 re.compile(r"\b(happy|sad|angry|excited|scared|anxious)\b", re.I)
-re.compile(r"[!]{2,}", re.I)  # Multiple exclamation marks
+re.compile(r"[!]{2,}", re.I)  # 여러 느낌표
 
-# Reflective patterns
+# 성찰 패턴
 re.compile(r"\b(realize|realized|realization|insight|epiphany)\b", re.I)
 re.compile(r"\b(pattern|trend|connection|link|relationship)\b", re.I)
 re.compile(r"\b(lesson|moral|takeaway|conclusion)\b", re.I)
 ```
 
-### 3.4 Cross-Sector Relationships
+### 3.4 섹터 간 관계
 
 ```python
 # /memory/hsg.py
@@ -155,123 +155,87 @@ SECTOR_RELATIONSHIPS = {
 
 ---
 
-## 4. Hierarchical Semantic Graph (HSG)
+## 4. 계층적 의미 그래프 (HSG)
 
-The HSG is the core memory structure that handles storage, retrieval, and association of memories.
+HSG는 메모리의 저장, 검색, 연상을 처리하는 핵심 메모리 구조입니다.
 
-### 4.1 Memory Storage Schema
+### 4.1 메모리 저장 스키마
 
 ```python
-# /core/db.py - memories table
+# /core/db.py - memories 테이블
 
 CREATE TABLE memories (
     id TEXT PRIMARY KEY,
     user_id TEXT,
-    segment INTEGER,              # Segment-based storage
-    content TEXT,                 # Stored content (essence extracted)
-    simhash TEXT,                 # For deduplication
-    primary_sector TEXT,          # Main sector classification
-    tags TEXT,                    # JSON array of tags
-    meta TEXT,                    # JSON metadata
+    segment INTEGER,              # 세그먼트 기반 저장
+    content TEXT,                 # 저장된 콘텐츠 (추출된 핵심)
+    simhash TEXT,                 # 중복 제거용
+    primary_sector TEXT,          # 주요 섹터 분류
+    tags TEXT,                    # JSON 태그 배열
+    meta TEXT,                    # JSON 메타데이터
     created_at INTEGER,
     updated_at INTEGER,
-    last_seen_at INTEGER,         # For recency scoring
-    salience REAL,                # Importance score (0-1)
-    decay_lambda REAL,            # Sector-specific decay rate
+    last_seen_at INTEGER,         # 최근성 스코어링용
+    salience REAL,                # 중요도 점수 (0-1)
+    decay_lambda REAL,            # 섹터별 감쇠율
     version INTEGER,
-    mean_dim INTEGER,             # Mean vector dimension
-    mean_vec BLOB,                # Mean embedding across sectors
-    compressed_vec BLOB,          # Compressed vector for cold memories
-    feedback_score INTEGER        # Coactivation count
+    mean_dim INTEGER,             # 평균 벡터 차원
+    mean_vec BLOB,                # 섹터 전체 평균 임베딩
+    compressed_vec BLOB,          # 콜드 메모리용 압축 벡터
+    feedback_score INTEGER        # 공활성화 횟수
 )
 ```
 
-### 4.2 Memory Addition Flow
+### 4.2 메모리 추가 흐름
 
 ```python
 # /memory/hsg.py
 
 async def add_hsg_memory(content, tags=None, metadata=None, user_id=None):
-    # 1. Compute SimHash for deduplication
+    # 1. 중복 제거를 위한 SimHash 계산
     simhash = compute_simhash(content)
     existing = db.fetchone("SELECT * FROM memories WHERE simhash=?", (simhash,))
 
     if existing and hamming_dist(simhash, existing["simhash"]) <= 3:
-        # Duplicate found - boost salience instead of creating new
+        # 중복 발견 - 새로 생성하지 않고 salience 부스트
         boost = min(1.0, existing["salience"] + 0.15)
         db.execute("UPDATE memories SET salience=? WHERE id=?", (boost, existing["id"]))
         return {"id": existing["id"], "deduplicated": True}
 
-    # 2. Classify content into sectors
+    # 2. 콘텐츠를 섹터로 분류
     cls = classify_content(content, metadata)
     all_secs = [cls["primary"]] + cls["additional"]
 
-    # 3. Extract essence (summarize if needed)
+    # 3. 핵심 추출 (필요시 요약)
     stored = extract_essence(content, cls["primary"], max_length)
 
-    # 4. Calculate initial salience
+    # 4. 초기 salience 계산
     init_sal = max(0.0, min(1.0, 0.4 + 0.1 * len(cls["additional"])))
 
-    # 5. Insert memory record
+    # 5. 메모리 레코드 삽입
     q.ins_mem(id=mid, content=stored, primary_sector=cls["primary"], ...)
 
-    # 6. Generate multi-sector embeddings
+    # 6. 멀티 섹터 임베딩 생성
     emb_res = await embed_multi_sector(mid, content, all_secs)
     for r in emb_res:
         await store.storeVector(mid, r["sector"], r["vector"], r["dim"], user_id)
 
-    # 7. Calculate mean vector
+    # 7. 평균 벡터 계산
     mean_vec = calc_mean_vec(emb_res, all_secs)
 
-    # 8. Create waypoint (associative link)
+    # 8. Waypoint (연상 링크) 생성
     await create_single_waypoint(mid, mean_vec, now, user_id)
 
     return {"id": mid, "primary_sector": cls["primary"], "sectors": all_secs}
 ```
 
-### 4.3 Content Classification
-
-```python
-def classify_content(content, metadata=None):
-    # Check if sector is explicitly specified in metadata
-    if metadata and metadata.get("sector"):
-        return {"primary": metadata["sector"], "additional": [], "confidence": 1.0}
-
-    # Score each sector based on pattern matches
-    scores = {k: 0.0 for k in SECTOR_CONFIGS}
-    for sec, cfg in SECTOR_CONFIGS.items():
-        score = 0
-        for pat in cfg["patterns"]:
-            matches = pat.findall(content)
-            if matches:
-                score += len(matches) * cfg["weight"]
-        scores[sec] = score
-
-    sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-    primary, p_score = sorted_scores[0]
-
-    # Secondary sectors above threshold
-    thresh = max(1.0, p_score * 0.3)
-    additional = [s for s, sc in sorted_scores[1:] if sc >= thresh]
-
-    # Confidence based on score gap
-    second_score = sorted_scores[1][1] if len(sorted_scores) > 1 else 0
-    confidence = p_score / (p_score + second_score + 1) if p_score > 0 else 0.2
-
-    return {
-        "primary": primary if p_score > 0 else "semantic",
-        "additional": additional,
-        "confidence": confidence
-    }
-```
-
-### 4.4 SimHash Deduplication
+### 4.3 SimHash 중복 제거
 
 ```python
 def compute_simhash(text: str) -> str:
     tokens = canonical_token_set(text)
 
-    # Hash each token
+    # 각 토큰 해시
     hashes = []
     for t in tokens:
         h = 0
@@ -280,7 +244,7 @@ def compute_simhash(text: str) -> str:
             h = h & 0xffffffff
         hashes.append(h)
 
-    # Build 64-bit fingerprint
+    # 64비트 핑거프린트 구축
     vec = [0] * 64
     for h in hashes:
         for i in range(64):
@@ -290,7 +254,7 @@ def compute_simhash(text: str) -> str:
             else:
                 vec[i] -= 1
 
-    # Convert to hex string
+    # 16진수 문자열로 변환
     res_hash = ""
     for i in range(0, 64, 4):
         nibble = sum(8 >> j if vec[i+j] > 0 else 0 for j in range(4))
@@ -308,28 +272,28 @@ def hamming_dist(h1: str, h2: str) -> int:
 
 ---
 
-## 5. Waypoint Graph (Associative Memory)
+## 5. Waypoint 그래프 (연상 메모리)
 
-Waypoints create associative links between memories, enabling graph-based retrieval expansion.
+Waypoint는 메모리 간 연상 링크를 생성하여 그래프 기반 검색 확장을 가능하게 합니다.
 
-### 5.1 Waypoint Schema
+### 5.1 Waypoint 스키마
 
 ```sql
 CREATE TABLE waypoints (
     src_id TEXT,
     dst_id TEXT,
     user_id TEXT,
-    weight REAL,          # Link strength (0-1)
+    weight REAL,          # 링크 강도 (0-1)
     created_at INTEGER,
     updated_at INTEGER,
     PRIMARY KEY (src_id, dst_id)
 )
 ```
 
-### 5.2 Waypoint Creation
+### 5.2 Waypoint 생성
 
 ```python
-# Single waypoint - link to most similar existing memory
+# 단일 Waypoint - 가장 유사한 기존 메모리에 링크
 async def create_single_waypoint(new_id, new_mean, ts, user_id):
     mems = q.all_mem_by_user(user_id, 1000, 0)
     best = None
@@ -349,26 +313,9 @@ async def create_single_waypoint(new_id, new_mean, ts, user_id):
     if best:
         db.execute("INSERT OR REPLACE INTO waypoints VALUES (?,?,?,?,?,?)",
                    (new_id, best, user_id, float(best_sim), ts, ts))
-
-# Inter-memory waypoints - link memories above similarity threshold
-async def create_inter_mem_waypoints(new_id, prim_sec, new_vec, ts, user_id):
-    thresh = 0.75  # Similarity threshold
-    vecs = await store.getVectorsBySector(prim_sec)
-
-    nm = np.array(new_vec, dtype=np.float32)
-
-    for vr in vecs:
-        if vr["id"] == new_id:
-            continue
-        ex_vec = np.array(vr["vector"], dtype=np.float32)
-        sim = cos_sim(nm, ex_vec)
-
-        if sim >= thresh:
-            # Bidirectional link
-            db.execute("INSERT OR REPLACE INTO waypoints VALUES (...)")
 ```
 
-### 5.3 Waypoint Expansion During Retrieval
+### 5.3 검색 시 Waypoint 확장
 
 ```python
 async def expand_via_waypoints(ids: List[str], max_exp: int = 10):
@@ -390,9 +337,9 @@ async def expand_via_waypoints(ids: List[str], max_exp: int = 10):
                 continue
 
             wt = float(n["weight"])
-            exp_wt = cur["weight"] * wt * 0.8  # Decay factor
+            exp_wt = cur["weight"] * wt * 0.8  # 감쇠 계수
 
-            if exp_wt < 0.1:  # Pruning threshold
+            if exp_wt < 0.1:  # 프루닝 임계값
                 continue
 
             item = {"id": dst, "weight": exp_wt, "path": cur["path"] + [dst]}
@@ -404,7 +351,7 @@ async def expand_via_waypoints(ids: List[str], max_exp: int = 10):
     return exp
 ```
 
-### 5.4 Waypoint Reinforcement
+### 5.4 Waypoint 강화
 
 ```python
 REINFORCEMENT = {
@@ -416,7 +363,7 @@ REINFORCEMENT = {
 }
 
 async def reinforce_waypoints(trav_path: List[str]):
-    """Reinforce waypoints along a traversal path"""
+    """탐색 경로를 따라 Waypoint 강화"""
     now = int(time.time() * 1000)
 
     for i in range(len(trav_path) - 1):
@@ -436,39 +383,39 @@ async def reinforce_waypoints(trav_path: List[str]):
 
 ---
 
-## 6. Scoring System
+## 6. 스코어링 시스템
 
-### 6.1 Hybrid Scoring Weights
+### 6.1 하이브리드 스코어링 가중치
 
 ```python
 # /memory/hsg.py
 
 SCORING_WEIGHTS = {
-    "similarity": 0.35,     # Vector similarity
-    "overlap": 0.20,        # Token overlap
-    "waypoint": 0.15,       # Waypoint weight
-    "recency": 0.10,        # Time-based recency
-    "tag_match": 0.20,      # Tag matching
+    "similarity": 0.35,     # 벡터 유사도
+    "overlap": 0.20,        # 토큰 중복
+    "waypoint": 0.15,       # Waypoint 가중치
+    "recency": 0.10,        # 시간 기반 최근성
+    "tag_match": 0.20,      # 태그 매칭
 }
 
 HYBRID_PARAMS = {
-    "tau": 3.0,             # Similarity boost factor
+    "tau": 3.0,             # 유사도 부스트 계수
     "beta": 2.0,
     "eta": 0.1,
-    "gamma": 0.2,           # Context boost coefficient
+    "gamma": 0.2,           # 컨텍스트 부스트 계수
     "alpha_reinforce": 0.08,
-    "t_days": 7.0,          # Recency half-life
-    "t_max_days": 60.0,     # Max recency window
+    "t_days": 7.0,          # 최근성 반감기
+    "t_max_days": 60.0,     # 최대 최근성 윈도우
     "tau_hours": 1.0,
     "epsilon": 1e-8,
 }
 ```
 
-### 6.2 Hybrid Score Calculation
+### 6.2 하이브리드 스코어 계산
 
 ```python
 def compute_hybrid_score(sim, tok_ov, wp_wt, rec_sc, kw_score=0, tag_match=0):
-    # Boost similarity with sigmoid-like transform
+    # 시그모이드 유사 변환으로 유사도 부스트
     s_p = boosted_sim(sim)  # 1 - exp(-tau * sim)
 
     raw = (SCORING_WEIGHTS["similarity"] * s_p +
@@ -485,65 +432,27 @@ def boosted_sim(s: float) -> float:
 
 def calc_recency_score(last_seen: int) -> float:
     days = (time.time() * 1000 - last_seen) / 86400000.0
-    t = HYBRID_PARAMS["t_days"]       # 7 days
-    tmax = HYBRID_PARAMS["t_max_days"]  # 60 days
+    t = HYBRID_PARAMS["t_days"]       # 7일
+    tmax = HYBRID_PARAMS["t_max_days"]  # 60일
     return math.exp(-days / t) * (1 - days / tmax)
 ```
 
-### 6.3 Multi-Vector Fusion Score
-
-```python
-async def calc_multi_vec_fusion_score(mid, qe, w):
-    """Calculate score across multiple sector vectors"""
-    vecs = await store.getVectorsById(mid)
-    s = 0.0
-    tot = 0.0
-
-    # Weight mapping from query classification
-    wm = {
-        "semantic": w.get("semantic_dimension_weight", 0),
-        "emotional": w.get("emotional_dimension_weight", 0),
-        "procedural": w.get("procedural_dimension_weight", 0),
-        "episodic": w.get("temporal_dimension_weight", 0),
-        "reflective": w.get("reflective_dimension_weight", 0),
-    }
-
-    for v in vecs:
-        qv = qe.get(v.sector)
-        if not qv:
-            continue
-        sim = cos_sim(v.vector, qv)
-        wgt = wm.get(v.sector, 0.5)
-        s += sim * wgt
-        tot += wgt
-
-    return s / tot if tot > 0 else 0.0
-```
-
-### 6.4 Cross-Sector Resonance
+### 6.3 섹터 간 공명
 
 ```python
 # /ops/dynamics.py
 
 SECTORAL_INTERDEPENDENCE_MATRIX = [
     #   epi   sem   pro   emo   ref
-    [1.0, 0.7, 0.3, 0.6, 0.6],  # episodic
-    [0.7, 1.0, 0.4, 0.7, 0.8],  # semantic
-    [0.3, 0.4, 1.0, 0.5, 0.2],  # procedural
-    [0.6, 0.7, 0.5, 1.0, 0.8],  # emotional
-    [0.6, 0.8, 0.2, 0.8, 1.0],  # reflective
+    [1.0, 0.7, 0.3, 0.6, 0.6],  # 일화
+    [0.7, 1.0, 0.4, 0.7, 0.8],  # 의미
+    [0.3, 0.4, 1.0, 0.5, 0.2],  # 절차
+    [0.6, 0.7, 0.5, 1.0, 0.8],  # 감정
+    [0.6, 0.8, 0.2, 0.8, 1.0],  # 성찰
 ]
 
-SECTOR_INDEX = {
-    "episodic": 0,
-    "semantic": 1,
-    "procedural": 2,
-    "emotional": 3,
-    "reflective": 4,
-}
-
 async def calculateCrossSectorResonanceScore(ms, qs, bs):
-    """Apply cross-sector penalty/boost based on sector relationship"""
+    """섹터 관계에 기반한 섹터 간 페널티/부스트 적용"""
     si = SECTOR_INDEX.get(ms, 1)
     ti = SECTOR_INDEX.get(qs, 1)
     return bs * SECTORAL_INTERDEPENDENCE_MATRIX[si][ti]
@@ -551,9 +460,9 @@ async def calculateCrossSectorResonanceScore(ms, qs, bs):
 
 ---
 
-## 7. Decay Engine
+## 7. Decay 엔진
 
-### 7.1 Decay Configuration
+### 7.1 Decay 설정
 
 ```python
 # /memory/decay.py
@@ -567,206 +476,83 @@ class DecayCfg:
         self.max_vec_dim = 1536
         self.min_vec_dim = 64
         self.summary_layers = 3
-        self.lambda_hot = 0.005       # Slow decay for hot memories
-        self.lambda_warm = 0.02       # Medium decay
-        self.lambda_cold = 0.05       # Fast decay for cold memories
-        self.time_unit_ms = 86_400_000  # 1 day
+        self.lambda_hot = 0.005       # Hot 메모리 느린 감쇠
+        self.lambda_warm = 0.02       # 중간 감쇠
+        self.lambda_cold = 0.05       # Cold 메모리 빠른 감쇠
+        self.time_unit_ms = 86_400_000  # 1일
 ```
 
-### 7.2 Three-Tier System
+### 7.2 3계층 시스템
 
 ```python
 def pick_tier(m: Dict, now_ts: int) -> str:
-    """Classify memory into hot/warm/cold tier"""
+    """메모리를 hot/warm/cold 계층으로 분류"""
     dt = max(0, now_ts - (m["last_seen_at"] or m["updated_at"] or now_ts))
-    recent = dt < 6 * 86_400_000  # Within 6 days
+    recent = dt < 6 * 86_400_000  # 6일 이내
 
     high = (m.get("coactivations") or 0) > 5 or (m["salience"] or 0) > 0.7
 
     if recent and high:
-        return "hot"    # Recently accessed + high importance
+        return "hot"    # 최근 접근 + 높은 중요도
     if recent or (m["salience"] or 0) > 0.4:
-        return "warm"   # Either recent or moderately important
-    return "cold"       # Old and low importance
+        return "warm"   # 최근이거나 중간 중요도
+    return "cold"       # 오래되고 낮은 중요도
 ```
 
-### 7.3 Decay Application
-
-```python
-async def apply_decay():
-    """Main decay loop - runs periodically"""
-    now_ts = int(time.time() * 1000)
-    segments = db.fetchall("SELECT DISTINCT segment FROM memories")
-
-    for seg in segments:
-        rows = db.fetchall("SELECT * FROM memories WHERE segment=?", (seg,))
-
-        # Sample batch for efficiency
-        decay_ratio = 0.03
-        batch_sz = max(1, int(len(rows) * decay_ratio))
-        batch = random.sample(rows, batch_sz)
-
-        for m in batch:
-            tier = pick_tier(m, now_ts)
-
-            # Select decay rate based on tier
-            lam = {
-                "hot": cfg.lambda_hot,    # 0.005
-                "warm": cfg.lambda_warm,  # 0.02
-                "cold": cfg.lambda_cold   # 0.05
-            }[tier]
-
-            # Time since last access
-            dt = (now_ts - m["last_seen_at"]) / cfg.time_unit_ms
-
-            # Activity boost
-            act = max(0, m.get("coactivations") or 0)
-            sal = max(0.0, min(1.0, m["salience"] * (1 + math.log1p(act))))
-
-            # Exponential decay with activity adjustment
-            f = math.exp(-lam * (dt / (sal + 0.1)))
-            new_sal = max(0.0, min(1.0, sal * f))
-
-            # Vector compression for highly decayed memories
-            if f < 0.7:
-                vec = await store.getVector(m["id"], m["primary_sector"])
-                new_vec = compress_vector(vec, f, min_dim=64, max_dim=1536)
-                await store.storeVector(m["id"], m["primary_sector"], new_vec)
-
-            # Fingerprinting for very cold memories
-            if f < cfg.cold_threshold:  # < 0.25
-                fp = fingerprint_mem(m)
-                await store.storeVector(m["id"], sector, fp["vector"])
-                db.execute("UPDATE memories SET summary=? WHERE id=?",
-                          (fp["summary"], m["id"]))
-
-            db.execute("UPDATE memories SET salience=? WHERE id=?",
-                      (new_sal, m["id"]))
-```
-
-### 7.4 Vector Compression
+### 7.3 벡터 압축
 
 ```python
 def compress_vector(vec: List[float], f: float, min_dim=64, max_dim=1536):
-    """Compress vector based on decay factor"""
+    """감쇠 계수에 따라 벡터 압축"""
     src = vec if vec else [1.0]
 
-    # Target dimension based on decay factor
+    # 감쇠 계수 기반 목표 차원
     tgt_dim = max(min_dim, min(max_dim, math.floor(len(src) * f)))
     dim = max(min_dim, min(len(src), tgt_dim))
 
     if dim >= len(src):
         return list(src)
 
-    # Average pooling compression
+    # 평균 풀링 압축
     pooled = []
     bucket = math.ceil(len(src) / dim)
     for i in range(0, len(src), bucket):
         sub = src[i:i + bucket]
         pooled.append(sum(sub) / len(sub))
 
-    # Normalize
+    # 정규화
     normalize(pooled)
     return pooled
 ```
 
-### 7.5 Reinforcement on Query
-
-```python
-async def on_query_hit(mem_id: str, sector: str, reembed_fn=None):
-    """Called when a memory is retrieved"""
-    m = q.get_mem(mem_id)
-    if not m:
-        return
-
-    # Regenerate compressed vectors if needed
-    if cfg.regeneration_enabled and reembed_fn:
-        vec_row = await store.getVector(mem_id, sector)
-        if vec_row and len(vec_row.vector) <= 64:  # Very compressed
-            base = m["summary"] or m["content"] or ""
-            new_vec = await reembed_fn(base)
-            await store.storeVector(mem_id, sector, new_vec)
-
-    # Reinforce salience
-    if cfg.reinforce_on_query:
-        new_sal = min(1.0, (m["salience"] or 0.5) + 0.5)
-        db.execute("UPDATE memories SET salience=?, last_seen_at=? WHERE id=?",
-                  (new_sal, now, mem_id))
-```
-
 ---
 
-## 8. Temporal Knowledge Graph
+## 8. 시간 지식 그래프
 
-### 8.1 Temporal Facts Schema
+### 8.1 시간 사실 스키마
 
 ```sql
 CREATE TABLE temporal_facts (
     id TEXT PRIMARY KEY,
-    subject TEXT,           # Entity subject
-    predicate TEXT,         # Relationship type
-    object TEXT,            # Entity object
-    valid_from INTEGER,     # Start timestamp (ms)
-    valid_to INTEGER,       # End timestamp (ms), NULL if current
-    confidence REAL,        # 0-1 confidence score
+    subject TEXT,           # 엔티티 주어
+    predicate TEXT,         # 관계 타입
+    object TEXT,            # 엔티티 목적어
+    valid_from INTEGER,     # 시작 타임스탬프 (ms)
+    valid_to INTEGER,       # 종료 타임스탬프 (ms), 현재면 NULL
+    confidence REAL,        # 0-1 신뢰도 점수
     last_updated INTEGER,
     metadata TEXT           # JSON
 )
-
-CREATE TABLE temporal_edges (
-    id TEXT PRIMARY KEY,
-    source_id TEXT,         # Source fact ID
-    target_id TEXT,         # Target fact ID
-    relation_type TEXT,     # Edge type
-    valid_from INTEGER,
-    valid_to INTEGER,
-    weight REAL,
-    metadata TEXT
-)
 ```
 
-### 8.2 Fact Insertion with Temporal Logic
-
-```python
-# /temporal_graph/store.py
-
-async def insert_fact(subject, predicate, subject_object, valid_from=None,
-                      confidence=1.0, metadata=None, user_id=None):
-    fact_id = str(uuid.uuid4())
-    now = int(time.time() * 1000)
-    valid_from_ts = valid_from if valid_from else now
-
-    # Close existing facts with same subject-predicate
-    existing = db.fetchall(
-        "SELECT id, valid_from FROM temporal_facts "
-        "WHERE subject=? AND predicate=? AND valid_to IS NULL",
-        (subject, predicate)
-    )
-
-    for old in existing:
-        if old["valid_from"] < valid_from_ts:
-            # Close old fact just before new one starts
-            db.execute("UPDATE temporal_facts SET valid_to=? WHERE id=?",
-                       (valid_from_ts - 1, old["id"]))
-
-    # Insert new fact
-    db.execute(
-        "INSERT INTO temporal_facts VALUES (?,?,?,?,?,NULL,?,?,?)",
-        (fact_id, subject, predicate, subject_object, valid_from_ts,
-         confidence, now, json.dumps(metadata))
-    )
-
-    return fact_id
-```
-
-### 8.3 Point-in-Time Queries
+### 8.2 시점 쿼리
 
 ```python
 # /temporal_graph/query.py
 
 async def query_facts_at_time(subject=None, predicate=None, subject_object=None,
                                at=None, min_confidence=0.1):
-    """Query facts valid at a specific point in time"""
+    """특정 시점에 유효한 사실 쿼리"""
     ts = at if at else int(time.time() * 1000)
 
     conds = ["(valid_from <= ? AND (valid_to IS NULL OR valid_to >= ?))"]
@@ -778,9 +564,6 @@ async def query_facts_at_time(subject=None, predicate=None, subject_object=None,
     if predicate:
         conds.append("predicate = ?")
         params.append(predicate)
-    if min_confidence > 0:
-        conds.append("confidence >= ?")
-        params.append(min_confidence)
 
     sql = f"""
         SELECT * FROM temporal_facts
@@ -789,67 +572,20 @@ async def query_facts_at_time(subject=None, predicate=None, subject_object=None,
     """
 
     return db.fetchall(sql, tuple(params))
-
-async def get_current_fact(subject: str, predicate: str):
-    """Get the currently valid fact"""
-    sql = """
-        SELECT * FROM temporal_facts
-        WHERE subject = ? AND predicate = ? AND valid_to IS NULL
-        ORDER BY valid_from DESC LIMIT 1
-    """
-    return db.fetchone(sql, (subject, predicate))
-```
-
-### 8.4 Temporal Range Queries
-
-```python
-async def query_facts_in_range(subject=None, predicate=None,
-                                start=None, end=None, min_confidence=0.1):
-    """Query facts overlapping with a time range"""
-    conds = []
-    params = []
-
-    if start and end:
-        # Facts that overlap with [start, end]
-        conds.append(
-            "((valid_from <= ? AND (valid_to IS NULL OR valid_to >= ?)) "
-            "OR (valid_from >= ? AND valid_from <= ?))"
-        )
-        params.extend([end, start, start, end])
-
-    # ... additional filters
-
-    return db.fetchall(sql, tuple(params))
-```
-
-### 8.5 Confidence Decay for Facts
-
-```python
-async def apply_confidence_decay(decay_rate: float = 0.01):
-    """Apply time-based confidence decay to facts"""
-    now = int(time.time() * 1000)
-    one_day = 86400000
-
-    sql = """
-        UPDATE temporal_facts
-        SET confidence = MAX(0.1, confidence * (1 - ? * ((? - valid_from) / ?)))
-        WHERE valid_to IS NULL AND confidence > 0.1
-    """
-    db.execute(sql, (decay_rate, now, one_day))
 ```
 
 ---
 
-## 9. Reflection System
+## 9. Reflection 시스템
 
-### 9.1 Reflection Process
+### 9.1 Reflection 프로세스
 
 ```python
 # /memory/reflect.py
 
 async def run_reflection():
-    """Automatic reflection job - consolidates similar memories"""
-    print("[REFLECT] Starting reflection job...")
+    """자동 Reflection 작업 - 유사한 메모리를 통합"""
+    print("[REFLECT] Reflection 작업 시작...")
 
     min_mems = env.reflect_min or 20
     mems = q.all_mem(100, 0)
@@ -857,12 +593,12 @@ async def run_reflection():
     if len(mems) < min_mems:
         return {"created": 0, "reason": "low"}
 
-    # Cluster similar memories
+    # 유사한 메모리 클러스터링
     cls = cluster(mems)
 
     n = 0
     for c in cls:
-        # Generate summary for cluster
+        # 클러스터에 대한 요약 생성
         txt = summ(c)
         s = calc_sal(c)
         src = [m["id"] for m in c["mem"]]
@@ -874,224 +610,24 @@ async def run_reflection():
             "at": time.strftime("%Y-%m-%dT%H:%M:%S")
         }
 
-        # Create reflective memory
+        # 성찰 메모리 생성
         await add_hsg_memory(txt, json.dumps(["reflect:auto"]), meta)
 
-        # Mark source memories as consolidated
+        # 소스 메모리를 통합됨으로 표시
         await mark_consolidated(src)
 
-        # Boost salience of source memories
+        # 소스 메모리의 salience 부스트
         await boost(src)
         n += 1
 
     return {"created": n, "clusters": len(cls)}
 ```
 
-### 9.2 Memory Clustering
-
-```python
-def cluster(mems: List[Dict]) -> List[Dict]:
-    """Cluster similar memories using Jaccard similarity"""
-    cls = []
-    used = set()
-
-    for m in mems:
-        if m["id"] in used:
-            continue
-        if m["primary_sector"] == "reflective":  # Skip existing reflections
-            continue
-        if m.get("meta") and "consolidated" in str(m["meta"]):
-            continue
-
-        c = {"mem": [m], "n": 1}
-        used.add(m["id"])
-
-        for o in mems:
-            if o["id"] in used:
-                continue
-            if m["primary_sector"] != o["primary_sector"]:
-                continue
-
-            # Jaccard similarity on tokens
-            if sim_txt(m["content"], o["content"]) > 0.8:
-                c["mem"].append(o)
-                c["n"] += 1
-                used.add(o["id"])
-
-        if c["n"] >= 2:  # Minimum cluster size
-            cls.append(c)
-
-    return cls
-
-def sim_txt(t1: str, t2: str) -> float:
-    """Jaccard similarity between texts"""
-    s1 = set(t1.lower().split())
-    s2 = set(t2.lower().split())
-    if not s1 or not s2:
-        return 0.0
-    inter = len(s1.intersection(s2))
-    union = len(s1.union(s2))
-    return inter / union if union > 0 else 0.0
-```
-
-### 9.3 Reflection Scheduling
-
-```python
-_timer_task = None
-
-async def reflection_loop():
-    interval = (env.reflect_interval or 10) * 60  # Default: 10 minutes
-    while True:
-        try:
-            await run_reflection()
-        except Exception as e:
-            print(f"[REFLECT] Error: {e}")
-        await asyncio.sleep(interval)
-
-def start_reflection():
-    global _timer_task
-    if not env.get("auto_reflect", True) or _timer_task:
-        return
-    _timer_task = asyncio.create_task(reflection_loop())
-    print(f"[REFLECT] Started: every {env.reflect_interval or 10}m")
-```
-
 ---
 
-## 10. Query System
+## 10. MCP 서버 통합
 
-### 10.1 HSG Query Flow
-
-```python
-# /memory/hsg.py
-
-async def hsg_query(qt: str, k: int = 10, f: Dict = None):
-    """Main query endpoint"""
-    inc_q()  # Track active queries for decay coordination
-
-    try:
-        # 1. Check cache
-        cache_key = f"{qt}:{k}:{json.dumps(f)}"
-        if cache_key in cache:
-            entry = cache[cache_key]
-            if time.time() * 1000 - entry["t"] < TTL:
-                return entry["r"]
-
-        # 2. Classify query
-        qc = classify_content(qt)
-        qtk = canonical_token_set(qt)
-
-        # 3. Embed query for all sectors
-        ss = f.get("sectors") or list(SECTOR_CONFIGS.keys())
-        qe = await embed_query_for_all_sectors(qt, ss)
-
-        # 4. Dynamic weight based on query classification
-        w = {
-            "semantic_dimension_weight": 1.2 if qc["primary"] == "semantic" else 0.8,
-            "emotional_dimension_weight": 1.5 if qc["primary"] == "emotional" else 0.6,
-            "procedural_dimension_weight": 1.3 if qc["primary"] == "procedural" else 0.7,
-            "temporal_dimension_weight": 1.4 if qc["primary"] == "episodic" else 0.7,
-            "reflective_dimension_weight": 1.1 if qc["primary"] == "reflective" else 0.5,
-        }
-
-        # 5. Vector search in each sector
-        sr = {}
-        for s in ss:
-            qv = qe[s]
-            res = await store.search(qv, s, k * 3, {"user_id": f.get("user_id")})
-            sr[s] = res
-
-        # 6. Adaptive waypoint expansion
-        all_sims = [r["similarity"] for res in sr.values() for r in res]
-        avg_top = sum(all_sims) / len(all_sims) if all_sims else 0
-        high_conf = avg_top >= 0.55
-
-        ids = set(r["id"] for res in sr.values() for r in res)
-
-        # Expand via waypoints if low confidence
-        exp = []
-        if not high_conf:
-            exp = await expand_via_waypoints(list(ids), k * 2)
-            for e in exp:
-                ids.add(e["id"])
-
-        # 7. Score and rank
-        res_list = []
-        for mid in ids:
-            m = q.get_mem(mid)
-            if not m:
-                continue
-
-            # Multi-vector fusion
-            mvf = await calc_multi_vec_fusion_score(mid, qe, w)
-
-            # Cross-sector resonance
-            csr = await calculateCrossSectorResonanceScore(
-                m["primary_sector"], qc["primary"], mvf
-            )
-
-            # Sector penalty
-            penalty = SECTOR_RELATIONSHIPS.get(qc["primary"], {}).get(
-                m["primary_sector"], 0.3
-            )
-            adj = best_sim * penalty
-
-            # Compute hybrid score
-            fs = compute_hybrid_score(adj, tok_ov, ww, rec_sc, kw_score, tag_match)
-
-            res_list.append({
-                "id": mid,
-                "content": m["content"],
-                "score": fs,
-                "primary_sector": m["primary_sector"],
-                "path": em["path"] if em else [mid],
-                "salience": sal,
-                "tags": json.loads(m["tags"] or "[]"),
-                "metadata": json.loads(m["meta"] or "{}")
-            })
-
-        # 8. Sort and reinforce top results
-        res_list.sort(key=lambda x: x["score"], reverse=True)
-        top = res_list[:k]
-
-        for r in top:
-            # Apply retrieval trace reinforcement
-            rsal = await applyRetrievalTraceReinforcementToMemory(r["id"], r["salience"])
-            db.execute("UPDATE memories SET salience=?, last_seen_at=? WHERE id=?",
-                      (rsal, now, r["id"]))
-
-            # Propagate to linked nodes
-            if len(r["path"]) > 1:
-                wps = db.fetchall("SELECT dst_id, weight FROM waypoints WHERE src_id=?",
-                                 (r["id"],))
-                pru = await propagateAssociativeReinforcementToLinkedNodes(
-                    r["id"], rsal, wps
-                )
-                for u in pru:
-                    # Context boost for linked memories
-                    linked_mem = q.get_mem(u["node_id"])
-                    if linked_mem:
-                        ctx_boost = HYBRID_PARAMS["gamma"] * (rsal - linked_mem["salience"])
-                        new_sal = min(1.0, linked_mem["salience"] + ctx_boost)
-                        db.execute("UPDATE memories SET salience=? WHERE id=?",
-                                  (new_sal, u["node_id"]))
-
-            # Trigger regeneration if needed
-            await on_query_hit(r["id"], r["primary_sector"], ...)
-
-        # 9. Cache and return
-        cache[cache_key] = {"r": top, "t": time.time() * 1000}
-        return top
-
-    finally:
-        dec_q()
-```
-
----
-
-## 11. MCP Server Integration
-
-### 11.1 Available Tools
+### 10.1 사용 가능한 도구
 
 ```python
 # /ai/mcp.py
@@ -1099,7 +635,7 @@ async def hsg_query(qt: str, k: int = 10, f: Dict = None):
 TOOLS = [
     Tool(
         name="openmemory_query",
-        description="Run a semantic retrieval against OpenMemory",
+        description="OpenMemory에 대해 시맨틱 검색 실행",
         inputSchema={
             "properties": {
                 "query": {"type": "string"},
@@ -1112,328 +648,108 @@ TOOLS = [
     ),
     Tool(
         name="openmemory_store",
-        description="Persist new content into OpenMemory",
-        inputSchema={
-            "properties": {
-                "content": {"type": "string"},
-                "user_id": {"type": "string"},
-                "tags": {"type": "array"},
-                "metadata": {"type": "object"}
-            },
-            "required": ["content"]
-        }
+        description="OpenMemory에 새 콘텐츠 저장",
+        inputSchema={...}
     ),
     Tool(
         name="openmemory_get",
-        description="Fetch a single memory by ID"
+        description="ID로 단일 메모리 가져오기"
     ),
     Tool(
         name="openmemory_delete",
-        description="Delete a memory by ID"
+        description="ID로 메모리 삭제"
     ),
     Tool(
         name="openmemory_list",
-        description="List recent memories"
+        description="최근 메모리 목록"
     )
 ]
 ```
 
-### 11.2 MCP Server Setup
+---
 
-```python
-async def run_mcp_server():
-    server = Server("openmemory-mcp")
+## 11. 다른 메모리 시스템과의 비교
 
-    @server.list_tools()
-    async def handle_list_tools():
-        return TOOLS
-
-    @server.call_tool()
-    async def handle_call_tool(name: str, arguments: dict):
-        if name == "openmemory_query":
-            results = await mem.search(
-                arguments["query"],
-                user_id=arguments.get("user_id"),
-                limit=arguments.get("k", 10)
-            )
-            return [TextContent(type="text", text=json.dumps(results))]
-
-        elif name == "openmemory_store":
-            res = await mem.add(
-                arguments["content"],
-                user_id=arguments.get("user_id"),
-                meta=arguments.get("metadata", {})
-            )
-            return [TextContent(type="text", text=f"Stored: {res['id']}")]
-
-        # ... other tools
-
-    async with stdio_server() as (read, write):
-        await server.run(read, write, NotificationOptions())
-```
+| 기능 | OpenMemory | Mem0 | MemU | Memori |
+|------|------------|------|------|--------|
+| **메모리 섹터** | 5개 (Tulving 기반) | 3개 (User/Agent/Procedural) | 5타입 + 10카테고리 | 시맨틱 트리플 |
+| **시간 모델링** | 전체 Temporal KG | 기본 타임스탬프 | 이벤트 메모리 | valid_from/valid_to |
+| **Decay 시스템** | 3계층 + 압축 | 없음 | 없음 | 없음 |
+| **연상 링크** | Waypoint 그래프 | Graph Memory (Neo4j) | 없음 | 지식 그래프 |
+| **중복 제거** | SimHash | 예 (기본) | 없음 | 컨텍스트 인식 |
+| **Reflection** | 자동 클러스터링 | 없음 | 카테고리 요약 | 없음 |
+| **벡터 저장소** | SQLite/PostgreSQL/Valkey | 20+ 옵션 | 파일 기반 | 인메모리 |
+| **MCP 통합** | 네이티브 | 예 | 없음 | 없음 |
 
 ---
 
-## 12. Multi-Modal Content Extraction
+## 12. 강점과 약점
 
-### 12.1 Supported Formats
+### 강점
 
-```python
-# /ops/extract.py
+1. **포괄적 인지 모델**: 5섹터로 Tulving 메모리 이론 완전 구현
+2. **정교한 Decay**: 3계층 시스템 + 벡터 압축으로 무한 성장 방지
+3. **시간 지식 그래프**: 시간 쿼리와 사실 유효성에 대한 일급 지원
+4. **Waypoint 기반 연상**: 그래프 기반 메모리 확장으로 창의적 검색 가능
+5. **SimHash 중복 제거**: 효율적인 근접 중복 감지
+6. **자동 Reflection**: 인간 개입 없는 자가 통합
+7. **멀티모달 지원**: 네이티브 오디오/비디오/문서 수집
+8. **MCP 네이티브**: 현대 AI 도구와의 깊은 통합
 
-async def extract_text(content_type: str, data):
-    ctype = content_type.lower()
+### 약점
 
-    # Audio (Whisper transcription)
-    if any(x in ctype for x in ["audio", "mp3", "wav", "m4a"]):
-        return await extract_audio(data, ctype)
-
-    # Video (FFmpeg + Whisper)
-    if any(x in ctype for x in ["video", "mp4", "avi", "mov"]):
-        return await extract_video(data)
-
-    # PDF (pypdf)
-    if "pdf" in ctype:
-        return await extract_pdf(data)
-
-    # DOCX (mammoth)
-    if "docx" in ctype or "msword" in ctype:
-        return await extract_docx(data)
-
-    # HTML (markdownify)
-    if "html" in ctype:
-        return await extract_html(data)
-
-    # Text/Markdown (passthrough)
-    if any(x in ctype for x in ["markdown", "txt", "text"]):
-        return {"text": data, "metadata": {...}}
-```
-
-### 12.2 Audio Transcription
-
-```python
-async def extract_audio(data: bytes, mime_type: str):
-    if len(data) > 25 * 1024 * 1024:  # 25MB limit
-        raise ValueError("Audio file too large")
-
-    client = AsyncOpenAI(api_key=env.openai_api_key)
-
-    with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
-        tmp.write(data)
-        tmp_path = tmp.name
-
-    with open(tmp_path, "rb") as f:
-        transcription = await client.audio.transcriptions.create(
-            file=f,
-            model="whisper-1",
-            response_format="verbose_json"
-        )
-
-    return {
-        "text": transcription.text,
-        "metadata": {
-            "content_type": "audio",
-            "extraction_method": "whisper",
-            "duration_seconds": transcription.duration,
-            "language": transcription.language
-        }
-    }
-```
+1. **SQLite 기본**: 프로덕션 워크로드에 확장성 제한
+2. **클라우드 서비스 없음**: 자체 호스팅만 가능
+3. **복잡한 설정**: 튜닝할 파라미터가 많음
+4. **제한된 그래프 연산**: 명시적 그래프 알고리즘 (PageRank 등) 없음
+5. **LLM 기반 추출 없음**: 섹터 분류에 패턴 매칭만 사용
 
 ---
 
-## 13. Connectors
-
-OpenMemory supports multiple data source connectors:
-
-### 13.1 Available Connectors
-
-| Connector | Description |
-|-----------|-------------|
-| `github` | GitHub repositories, issues, PRs |
-| `google_drive` | Google Drive documents |
-| `google_sheets` | Google Sheets data |
-| `google_slides` | Google Slides content |
-| `notion` | Notion pages and databases |
-| `onedrive` | Microsoft OneDrive files |
-| `web_crawler` | Web page crawling |
-| `langchain` | LangChain integration |
-| `agents` | Multi-agent coordination |
-
----
-
-## 14. Comparison with Other Memory Systems
-
-| Feature | OpenMemory | Mem0 | MemU | Memori |
-|---------|------------|------|------|--------|
-| **Memory Sectors** | 5 (Tulving-based) | 3 (User/Agent/Procedural) | 5 types + 10 categories | Semantic Triples |
-| **Temporal Modeling** | Full Temporal KG | Basic timestamps | Event memory | valid_from/valid_to |
-| **Decay System** | 3-tier with compression | No | No | No |
-| **Associative Links** | Waypoint graph | Graph Memory (Neo4j) | No | Knowledge Graph |
-| **Deduplication** | SimHash | Yes (basic) | No | Context-aware |
-| **Reflection** | Auto-clustering | No | Category summaries | No |
-| **Vector Store** | SQLite/PostgreSQL/Valkey | 20+ options | File-based | In-memory |
-| **MCP Integration** | Native | Yes | No | No |
-
----
-
-## 15. Key Algorithms Summary
-
-### 15.1 Memory Lifecycle
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Memory Lifecycle                             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│   Input ──► SimHash ──► Classify ──► Extract ──► Embed ──►    │
-│                  │          │            │          │          │
-│              Dedup?     Sectors      Essence    Multi-Vec      │
-│                  │          │            │          │          │
-│                  ▼          ▼            ▼          ▼          │
-│            ┌─────────────────────────────────────────┐         │
-│            │              Memory Store               │         │
-│            └────────────────────┬────────────────────┘         │
-│                                 │                              │
-│         ┌───────────────────────┼───────────────────────┐      │
-│         ▼                       ▼                       ▼      │
-│   ┌───────────┐           ┌───────────┐           ┌──────────┐ │
-│   │ Waypoints │           │   Decay   │           │ Reflect  │ │
-│   │  (Links)  │           │  Engine   │           │  System  │ │
-│   └───────────┘           └───────────┘           └──────────┘ │
-│         │                       │                       │      │
-│         ▼                       ▼                       ▼      │
-│   Association           Tier Classification       Clustering   │
-│   Creation              Vector Compression        Consolidation│
-│   Reinforcement         Fingerprinting            Boosting     │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 15.2 Query Lifecycle
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Query Lifecycle                             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│   Query ──► Classify ──► Multi-Embed ──► Vector Search ──►     │
-│                 │              │               │                │
-│              Primary       Per-Sector      Per-Sector          │
-│              Sector        Embedding        Search             │
-│                 │              │               │                │
-│                 ▼              ▼               ▼                │
-│            ┌─────────────────────────────────────────┐         │
-│            │            Initial Results              │         │
-│            └────────────────────┬────────────────────┘         │
-│                                 │                              │
-│                    ┌────────────┴────────────┐                 │
-│                    │   Confidence Check      │                 │
-│                    │   (avg_sim >= 0.55?)    │                 │
-│                    └────────────┬────────────┘                 │
-│                          │             │                       │
-│                        High          Low                       │
-│                          │             │                       │
-│                          │      ┌──────┴──────┐                │
-│                          │      │  Waypoint   │                │
-│                          │      │  Expansion  │                │
-│                          │      └──────┬──────┘                │
-│                          │             │                       │
-│                          └──────┬──────┘                       │
-│                                 │                              │
-│                    ┌────────────┴────────────┐                 │
-│                    │    Hybrid Scoring       │                 │
-│                    │  (sim + overlap + wp    │                 │
-│                    │   + recency + tags)     │                 │
-│                    └────────────┬────────────┘                 │
-│                                 │                              │
-│                    ┌────────────┴────────────┐                 │
-│                    │    Reinforcement        │                 │
-│                    │  (salience + waypoint   │                 │
-│                    │   + linked nodes)       │                 │
-│                    └────────────┬────────────┘                 │
-│                                 │                              │
-│                                 ▼                              │
-│                           Top K Results                        │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 16. Strengths and Weaknesses
-
-### Strengths
-
-1. **Comprehensive Cognitive Model**: Full implementation of Tulving's memory theory with 5 sectors
-2. **Sophisticated Decay**: 3-tier system with vector compression prevents unbounded growth
-3. **Temporal Knowledge Graph**: First-class support for temporal queries and fact validity
-4. **Waypoint-based Association**: Graph-based memory expansion enables creative retrieval
-5. **SimHash Deduplication**: Efficient near-duplicate detection
-6. **Automatic Reflection**: Self-consolidation without human intervention
-7. **Multi-modal Support**: Native audio/video/document ingestion
-8. **MCP Native**: Deep integration with modern AI tools
-
-### Weaknesses
-
-1. **SQLite Default**: May not scale for production workloads
-2. **No Cloud Service**: Self-hosted only
-3. **Complex Configuration**: Many parameters to tune
-4. **Limited Graph Operations**: No explicit graph algorithms (PageRank, etc.)
-5. **No LLM-based Extraction**: Pattern-matching only for sector classification
-
----
-
-## 17. Usage Example
+## 13. 사용 예시
 
 ```python
 from openmemory import Memory
 
-# Initialize
+# 초기화
 mem = Memory()
 
-# Store memory
+# 메모리 저장
 result = await mem.add(
-    "Yesterday I learned Python decorators while building a web scraper",
+    "어제 웹 스크래퍼를 만들면서 Python 데코레이터를 배웠어",
     user_id="user123",
     tags=["python", "learning"],
     metadata={"source": "study_notes"}
 )
-# Output: primary_sector="procedural", sectors=["procedural", "episodic"]
+# 출력: primary_sector="procedural", sectors=["procedural", "episodic"]
 
-# Query
+# 쿼리
 results = await mem.search(
-    "What did I learn about Python?",
+    "Python에 대해 뭘 배웠지?",
     user_id="user123",
     limit=5
 )
-# Returns memories sorted by hybrid score
+# 하이브리드 스코어로 정렬된 메모리 반환
 
-# Get memory
+# 메모리 가져오기
 mem_obj = mem.get(result["id"])
 
-# Delete
+# 삭제
 await mem.delete(result["id"])
 ```
 
 ---
 
-## 18. Conclusion
+## 14. 결론
 
-OpenMemory represents one of the most comprehensive open-source implementations of cognitive memory theory for AI agents. Its multi-sector architecture, temporal knowledge graph, and sophisticated decay/reinforcement mechanisms provide a strong foundation for building agents with human-like memory capabilities.
+OpenMemory는 AI 에이전트를 위한 인지 메모리 이론의 가장 포괄적인 오픈소스 구현 중 하나입니다. 멀티 섹터 아키텍처, 시간 지식 그래프, 정교한 감쇠/강화 메커니즘은 인간과 같은 메모리 능력을 가진 에이전트를 구축하기 위한 강력한 기반을 제공합니다.
 
-The system excels at:
-- Long-term memory management with automatic consolidation
-- Temporal reasoning ("What did I know in March?")
-- Associative retrieval through waypoint graphs
-- Efficient deduplication and compression
-
-It's particularly well-suited for:
-- Personal AI assistants with long-term memory
-- Research agents that need to remember and reason over time
-- Multi-session chatbots requiring context persistence
-- Knowledge management systems with temporal requirements
+**적합한 사용 사례:**
+- 장기 메모리가 필요한 개인 AI 어시스턴트
+- 시간에 따른 기억과 추론이 필요한 연구 에이전트
+- 컨텍스트 지속성이 필요한 멀티 세션 챗봇
+- 시간 요구사항이 있는 지식 관리 시스템
 
 ---
 
-*Analysis completed on 2026-01-21*
+*분석 완료일: 2026-01-21*
