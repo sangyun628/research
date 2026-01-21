@@ -401,52 +401,556 @@ DEFAULT_CATEGORIES = [
 
 ---
 
-## 5. 프롬프트 시스템
+## 5. 메모리 그룹화 및 계층화 상세
 
-### 5.1 메모리 추출 프롬프트 (profile 예시)
+### 5.1 메모리 그룹화 단위
 
-```xml
-<!-- 출력 형식 -->
+MemU는 메모리를 **3가지 차원**으로 그룹화합니다:
+
+#### 5.1.1 메모리 타입 (Memory Type) - 의미적 분류
+
+| 타입 | 설명 | 추출 대상 | 제외 대상 |
+|------|------|----------|----------|
+| **profile** | 사용자 프로필 정보 | 직업, 나이, 취미, 성격 등 장기 안정적 특성 | 이벤트, 임시 상태, 일회성 행동 |
+| **event** | 특정 시점의 사건/경험 | 시간/장소가 특정된 활동, 계획, 경험 | 습관, 선호도, 일반 지식 |
+| **knowledge** | 학습된 지식/사실 | 개념, 정의, 객관적 사실 | 개인 의견, 경험, 선호도 |
+| **behavior** | 행동 패턴/루틴 | 반복되는 행동, 문제 해결 방식 | 일회성 행동, 프로필 정보 |
+| **skill** | 스킬/능력 | 기술, 역량, 학습된 능력 | 일반 지식, 이벤트 |
+
+```
+대화 예시:
+"퇴근 후에 요리하는 걸 좋아해요. 30살이고, 다음 주에 여행 갈 예정이에요."
+
+추출 결과:
+├── profile: "사용자는 30살이다", "사용자는 퇴근 후 요리를 좋아한다"
+├── event: "사용자가 다음 주에 여행할 예정이다"
+└── behavior: "사용자는 퇴근 후 직접 요리한다"
+```
+
+#### 5.1.2 메모리 카테고리 (Memory Category) - 주제별 분류
+
+카테고리는 메모리 아이템을 **주제별로 그룹화**하여 요약을 생성합니다:
+
+```python
+DEFAULT_CATEGORIES = [
+    "personal_info",    # 개인 정보 (이름, 나이, 직업 등)
+    "preferences",      # 선호도 (좋아하는 것, 싫어하는 것)
+    "relationships",    # 관계 (가족, 친구, 동료)
+    "activities",       # 활동 (취미, 여가)
+    "goals",           # 목표 (계획, 포부)
+    "experiences",     # 경험 (과거 사건, 여행)
+    "knowledge",       # 지식 (학습한 내용)
+    "opinions",        # 의견 (관점, 견해)
+    "habits",          # 습관 (루틴, 패턴)
+    "work_life",       # 직장 생활 (업무, 커리어)
+]
+```
+
+**카테고리 → 아이템 매핑:**
+- 하나의 아이템이 **여러 카테고리에 속할 수 있음**
+- 예: "사용자가 가족과 등산을 좋아한다" → `relationships`, `activities`
+
+#### 5.1.3 리소스 (Resource) - 원본 데이터 그룹
+
+```
+Resource (conv1.json)
+├── MemoryItem 1 (profile) ──┬── Category: personal_info
+├── MemoryItem 2 (profile) ──┼── Category: preferences
+├── MemoryItem 3 (event) ────┼── Category: experiences
+└── MemoryItem 4 (behavior) ─┴── Category: habits
+```
+
+### 5.2 계층화 전략
+
+#### 5.2.1 데이터 흐름
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         원시 입력                                    │
+│  (대화 JSON, 문서, 이미지, 비디오, 오디오)                            │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │
+                           ▼ [전처리]
+┌─────────────────────────────────────────────────────────────────────┐
+│                      전처리된 텍스트                                  │
+│  • 대화: 세그먼트 분할 (20+ 메시지 단위)                              │
+│  • 이미지/비디오: Vision API 설명 추출                               │
+│  • 오디오: Whisper 음성인식 → 텍스트                                 │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │
+                           ▼ [메모리 타입별 추출]
+┌─────────────────────────────────────────────────────────────────────┐
+│                    MemoryItem (개별 메모리)                          │
+│  • 각 메모리 타입별 LLM 프롬프트로 병렬 추출                          │
+│  • 임베딩 벡터 생성                                                  │
+│  • 카테고리 자동 분류                                                │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │
+                           ▼ [카테고리별 집계]
+┌─────────────────────────────────────────────────────────────────────┐
+│                 MemoryCategory (집계 요약)                           │
+│  • 각 카테고리별 Markdown 요약 자동 생성                              │
+│  • 새 아이템 추가 시 요약 점진적 업데이트                             │
+│  • 목표 길이(기본 400토큰) 내로 압축                                  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### 5.2.2 카테고리 요약 업데이트 로직
+
+```python
+# 카테고리 요약 업데이트 흐름
+async def _update_category_summaries(updates, ctx, store, llm_client):
+    for category_id, new_memories in updates.items():
+        category = store.get_category(category_id)
+
+        # 기존 요약 + 새 메모리 → LLM으로 병합
+        prompt = build_summary_prompt(
+            category=category.name,
+            original_content=category.summary,  # 기존 요약
+            new_items=new_memories,             # 새로 추가된 메모리들
+            target_length=400                   # 목표 토큰 수
+        )
+
+        # 업데이트된 요약 생성
+        new_summary = await llm_client.summarize(prompt)
+        store.update_category(category_id, summary=new_summary)
+```
+
+#### 5.2.3 대화 세그먼트 분할
+
+긴 대화는 자동으로 **의미 단위로 세그먼트 분할**됩니다:
+
+```
+입력: 100개 메시지의 대화
+
+분할 기준:
+├── 주제 변경 (Topic Change)
+├── 시간 간격 (Time Gap)
+├── 대화 자연스러운 종료
+└── 톤/의미 초점 변화
+
+결과:
+├── Segment 1: 메시지 0-25 (주제: 일상 대화)
+├── Segment 2: 메시지 26-55 (주제: 여행 계획)
+└── Segment 3: 메시지 56-100 (주제: 업무 논의)
+
+각 세그먼트는 최소 20개 메시지 포함
+```
+
+### 5.3 검색 시 계층 활용
+
+```
+쿼리: "사용자의 여행 계획이 뭐야?"
+
+검색 흐름:
+1️⃣ Category 검색 (요약 기반)
+   └── experiences 카테고리 매칭 (score: 0.85)
+
+2️⃣ 충분성 검사 → "더 상세한 정보 필요"
+
+3️⃣ Item 검색 (임베딩 기반)
+   ├── "사용자가 다음 주에 제주도 여행 예정" (score: 0.92)
+   └── "사용자가 여행 짐을 아직 안 쌌다" (score: 0.78)
+
+4️⃣ 충분성 검사 → "충분함"
+
+5️⃣ 결과 반환 (Resource 검색 생략)
+```
+
+---
+
+## 6. 주요 프롬프트 상세
+
+### 6.1 메모리 추출 프롬프트
+
+#### 6.1.1 Profile 추출 프롬프트
+
+**목적**: 사용자의 장기적/안정적 특성 추출 (직업, 나이, 취미, 성격 등)
+
+```
+# Task Objective
+You are a professional User Memory Extractor. Your core task is to extract
+independent user memory items about the user (e.g., basic info, preferences,
+habits, other long-term stable traits).
+
+# Workflow
+1. Read the full conversation to understand topics and meanings.
+2. Extract memories: Select turns that contain valuable User Information.
+3. Review & validate: Merge semantically similar items, resolve contradictions.
+4. Final output: Output User Information.
+
+# Rules
+## General requirements
+- Use "user" to refer to the user consistently.
+- Each memory item must be complete and self-contained.
+- Each memory item must be < 30 words.
+- A single memory item must NOT contain timestamps.
+
+## Special rules for User Information
+- Any event-related item is forbidden in User Information.
+- Do not extract content from assistant's follow-up questions.
+
+## Forbidden content
+- Knowledge Q&A without a clear user fact.
+- Trivial updates (e.g., "full → too full").
+- Turns where only the assistant spoke.
+- Illegal/harmful sensitive topics.
+- Private financial accounts, IDs, addresses.
+
+# Output Format (XML)
 <profile>
     <memory>
-        <content>사용자가 인터넷 회사에서 제품 관리자로 일한다</content>
+        <content>User memory item content</content>
         <categories>
-            <category>Basic Information</category>
-        </categories>
-    </memory>
-    <memory>
-        <content>사용자는 30살이다</content>
-        <categories>
-            <category>Basic Information</category>
+            <category>Category Name</category>
         </categories>
     </memory>
 </profile>
 ```
 
-**핵심 규칙:**
-- 사용자가 직접 언급/확인한 정보만 추출
-- 임시/일회성 정보 제외 (날씨, 현재 기분 등)
-- 30단어 이내의 간결한 표현
-- 이벤트/일시적 상태는 profile에서 제외
+**예시 입/출력:**
+```
+입력:
+user: 퇴근하고 장 보러 가는 중이에요.
+assistant: 직접 요리하세요?
+user: 네, 건강에 좋잖아요. 인터넷 회사에서 PM으로 일하고 있어요.
+     올해 30살이에요. 퇴근 후에 요리 실험하는 걸 좋아해요.
 
-### 5.2 검색 의도 판단 프롬프트
+출력:
+<profile>
+    <memory>
+        <content>The user works as a PM at an internet company</content>
+        <categories><category>Basic Information</category></categories>
+    </memory>
+    <memory>
+        <content>The user is 30 years old</content>
+        <categories><category>Basic Information</category></categories>
+    </memory>
+    <memory>
+        <content>The user likes experimenting with cooking after work</content>
+        <categories><category>Basic Information</category></categories>
+    </memory>
+</profile>
 
-```xml
-<decision>RETRIEVE 또는 NO_RETRIEVE</decision>
-<rewritten_query>컨텍스트를 포함한 재작성된 쿼리</rewritten_query>
+제외된 것: "다음 주 여행 계획" (이벤트), "장 보러 가는 중" (일시적 상태)
 ```
 
-**NO_RETRIEVE 조건:**
-- 인사, 일상 대화
-- 현재 대화만 관련된 질문
-- 일반 상식 질문
-- 시스템 메타 질문
+#### 6.1.2 Event 추출 프롬프트
+
+**목적**: 특정 시점의 사건, 경험, 활동 추출
+
+```
+# Task Objective
+Extract specific events and experiences that happened to or involved the user.
+
+# Special rules for Event Information
+- Behavioral patterns, habits, preferences are forbidden in Event Information.
+- Focus on concrete happenings with time/place references.
+- Include relevant details: time, location, participants.
+
+# Rules
+- Each memory item must be < 50 words.
+- Focus on specific events at a particular time or period.
+```
+
+**예시:**
+```
+입력: "다음 주에 여행 가요. 아직 짐도 안 쌌어요."
+
+출력:
+<events>
+    <memory>
+        <content>The user is planning a trip next weekend and hasn't packed yet</content>
+        <categories><category>Travel</category></categories>
+    </memory>
+</events>
+```
+
+#### 6.1.3 Knowledge 추출 프롬프트
+
+**목적**: 학습된 지식, 개념, 사실 정보 추출
+
+```
+# Task Objective
+Extract factual knowledge, concepts, definitions, and information
+that the user learned or discussed.
+
+# Special rules for Knowledge Information
+- Personal opinions, preferences are forbidden.
+- Focus on objective facts, concepts, explanations.
+- User-specific traits, events are not knowledge items.
+```
+
+**예시:**
+```
+입력:
+user: Python 데코레이터가 뭐예요?
+assistant: 다른 함수를 감싸서 기능을 확장하는 함수예요.
+user: 아, @ 기호가 문법적 설탕이군요.
+
+출력:
+<knowledge>
+    <memory>
+        <content>In Python, a decorator extends a function's behavior without modifying it</content>
+        <categories><category>Programming</category></categories>
+    </memory>
+    <memory>
+        <content>The @ symbol in Python is syntactic sugar for applying decorators</content>
+        <categories><category>Programming</category></categories>
+    </memory>
+</knowledge>
+```
+
+#### 6.1.4 Behavior 추출 프롬프트
+
+**목적**: 반복되는 행동 패턴, 루틴, 문제 해결 방식 추출
+
+```
+# Task Objective
+Extract behavioral patterns, routines, and solutions that characterize
+how the user acts or behaves.
+
+# Special rules for Behavior Information
+- One-time actions are forbidden unless they demonstrate a pattern.
+- Focus on recurring patterns, typical approaches, established routines.
+```
+
+**예시:**
+```
+입력: "퇴근 후에 요리해요. 배달보다 낫죠. 자주 새 요리 실험해요."
+
+출력:
+<behaviors>
+    <memory>
+        <content>The user typically cooks after work instead of ordering takeout</content>
+        <categories><category>Daily Routine</category></categories>
+    </memory>
+    <memory>
+        <content>The user often experiments with cooking new dishes</content>
+        <categories><category>Daily Routine</category></categories>
+    </memory>
+</behaviors>
+```
+
+### 6.2 카테고리 요약 프롬프트
+
+**목적**: 기존 카테고리 요약에 새 메모리 아이템을 병합하여 업데이트
+
+```
+# Task Objective
+You are a professional User Profile Synchronization Specialist.
+Merge newly extracted user information items into the user's profile
+using only two operations: add and update.
+
+# Workflow
+## Step 1: Preprocessing
+- Parse initial profile and new items.
+- Mark each new item as Add or Update.
+- Remove invalid items: vague, one-off events.
+
+## Step 2: Core Operations
+A. Update
+- Conflict detection: semantic overlap check.
+- Validity priority: keep more specific, clearer information.
+- Overwrite outdated entries.
+
+B. Add
+- Deduplication check.
+- Category matching.
+- Insert following original style.
+
+## Step 3: Merge & Formatting
+- Structured ordering by category.
+- Markdown format (# title, ## category).
+- No contradictions or duplicates.
+
+## Step 4: Summarize
+- Target length: {target_length} tokens.
+- Cluster items and update category names.
+
+# Output Format (Markdown)
+# {category}
+## <category name>
+- User information item
+- User information item
+```
+
+**예시:**
+```
+기존 요약:
+# Personal Basic Information
+## Basic Information
+- The user is 28 years old
+- The user lives in Beijing
+
+새 메모리:
+- The user is 30 years old
+- The user lives in Shanghai
+- The user ate Malatang today  ← 제외됨 (일회성)
+
+결과:
+# Personal Basic Information
+## Basic Information
+- The user is 30 years old    ← 업데이트
+- The user lives in Shanghai  ← 업데이트
+```
+
+### 6.3 검색 관련 프롬프트
+
+#### 6.3.1 검색 의도 판단 (Pre-Retrieval Decision)
+
+**목적**: 쿼리가 메모리 검색이 필요한지 판단하고, 필요시 쿼리 재작성
+
+```
+# Task Objective
+Determine whether the current query requires retrieving information
+from memory or can be answered directly without retrieval.
+
+# Rules
+- NO_RETRIEVE for:
+  - Greetings, casual chat
+  - Questions about only the current conversation
+  - General knowledge questions
+  - Requests for clarification
+
+- RETRIEVE for:
+  - Questions about past events, conversations
+  - Queries about user preferences, habits
+  - Requests to recall specific information
+
+# Output Format
+<decision>RETRIEVE or NO_RETRIEVE</decision>
+<rewritten_query>Context-aware rewritten query</rewritten_query>
+```
+
+#### 6.3.2 카테고리 랭킹 (LLM Category Ranker)
+
+```
+# Task Objective
+Search through categories and identify the most relevant ones,
+then rank them by relevance.
+
+# Rules
+- Only include actually relevant categories.
+- Include at most {top_k} categories.
+- Ranking matters: first = most relevant.
+- Do not invent category IDs.
+
+# Output Format
+{
+  "analysis": "reasoning process",
+  "categories": ["category_id_1", "category_id_2"]
+}
+```
+
+#### 6.3.3 아이템 랭킹 (LLM Item Ranker)
+
+```
+# Task Objective
+Search through memory items within relevant categories
+and identify the most relevant ones.
+
+# Rules
+- Only consider items in provided relevant categories.
+- Include at most {top_k} items.
+- Order matters: first = most relevant.
+
+# Output Format
+{
+  "analysis": "reasoning process",
+  "items": ["item_id_1", "item_id_2"]
+}
+```
+
+### 6.4 멀티모달 전처리 프롬프트
+
+#### 6.4.1 대화 세그먼트 분할
+
+```
+# Task Objective
+Divide conversation into meaningful segments based on:
+- Topic changes
+- Time gaps or pauses
+- Natural conclusions
+- Shifts in tone or semantic focus
+
+# Rules
+- Each segment must contain ≥ 20 messages.
+- Maintain coherent theme per segment.
+- Clear boundary from adjacent segments.
+- No overlapping segments.
+
+# Output Format
+{
+    "segments": [
+        {"start": 0, "end": 25},
+        {"start": 26, "end": 55}
+    ]
+}
+```
+
+#### 6.4.2 이미지 분석
+
+```
+# Task Objective
+Analyze the image and produce:
+1. Detailed Description - thorough explanation
+2. Caption - one-sentence summary
+
+# Workflow
+1. Identify main subjects and objects.
+2. Describe actions and activities.
+3. Analyze setting and environment.
+4. Note visible text, signs, labels.
+5. Describe colors, lighting, composition.
+6. Infer mood and atmosphere.
+
+# Output Format
+<detailed_description>...</detailed_description>
+<caption>One sentence summary</caption>
+```
+
+#### 6.4.3 비디오 분석
+
+```
+# Task Objective
+Analyze video and produce:
+1. Detailed Description - comprehensive explanation
+2. Caption - one-sentence summary
+
+# Workflow
+1. Watch video from start to finish.
+2. Identify main actions over time.
+3. Describe key objects and people.
+4. Analyze scene and setting.
+5. Note audio elements (dialogue, music).
+6. Highlight important events.
+7. Describe temporal flow.
+
+# Output Format
+<detailed_description>...</detailed_description>
+<caption>One sentence summary</caption>
+```
+
+#### 6.4.4 문서 압축
+
+```
+# Task Objective
+Produce:
+1. Condensed version - preserve key info, remove verbosity
+2. Caption - one-sentence summary
+
+# Rules
+- Preserve all key information and conclusions.
+- Do not introduce new information.
+- Caption must be exactly one sentence.
+```
 
 ---
 
-## 6. 통합 및 확장
+## 7. 통합 및 확장
 
-### 6.1 LangGraph 통합
+### 7.1 LangGraph 통합
 
 ```python
 from memu.integrations.langgraph import MemULangGraphTools
@@ -458,7 +962,7 @@ tools = memu_tools.tools()
 # search_memory: 메모리 검색
 ```
 
-### 6.2 파이프라인 커스터마이징
+### 7.2 파이프라인 커스터마이징
 
 ```python
 # 새 스텝 삽입
@@ -481,7 +985,7 @@ service.configure_pipeline(
 )
 ```
 
-### 6.3 지원 LLM 프로바이더
+### 7.3 지원 LLM 프로바이더
 
 | 프로바이더 | 설명 |
 |-----------|------|
@@ -493,9 +997,9 @@ service.configure_pipeline(
 
 ---
 
-## 7. 성능 최적화 기법
+## 8. 성능 최적화 기법
 
-### 7.1 지연 초기화
+### 8.1 지연 초기화
 ```python
 # LLM 클라이언트 첫 사용 시에만 초기화
 def _get_llm_base_client(profile):
@@ -506,20 +1010,20 @@ def _get_llm_base_client(profile):
     return client
 ```
 
-### 7.2 배치 임베딩
+### 8.2 배치 임베딩
 ```python
 # 여러 텍스트를 한 번에 임베딩
 item_embeddings = await client.embed(summary_payloads)
 ```
 
-### 7.3 병렬 LLM 호출
+### 8.3 병렬 LLM 호출
 ```python
 # 메모리 타입별 병렬 추출
 tasks = [client.summarize(prompt) for prompt in prompts]
 responses = await asyncio.gather(*tasks)
 ```
 
-### 7.4 효율적인 Top-K
+### 8.4 효율적인 Top-K
 ```python
 # O(n log n) 정렬 대신 O(n) argpartition
 topk_indices = np.argpartition(scores, -k)[-k:]
@@ -527,33 +1031,33 @@ topk_indices = np.argpartition(scores, -k)[-k:]
 
 ---
 
-## 8. 벤치마크 결과
+## 9. 벤치마크 결과
 
 MemU는 Locomo 벤치마크에서 **평균 92.09% 정확도**를 달성했습니다.
 
 ---
 
-## 9. 에이전트 시스템 적용 시사점
+## 10. 에이전트 시스템 적용 시사점
 
-### 9.1 컨텍스트 관리 전략
+### 10.1 컨텍스트 관리 전략
 
 1. **계층적 구조**: Resource → Item → Category로 세분화하여 효율적 검색
 2. **점진적 요약**: 각 레이어가 점차 추상화된 뷰 제공
 3. **쿼리 재작성**: 대화 컨텍스트를 반영한 동적 쿼리 변환
 
-### 9.2 메모리 추출 패턴
+### 10.2 메모리 추출 패턴
 
 1. **선별적 추출**: 사용자가 직접 언급한 정보만 추출
 2. **중복 제거**: 유사한 아이템 자동 병합
 3. **카테고리 기반 분류**: 미리 정의된 카테고리로 자동 분류
 
-### 9.3 검색 최적화
+### 10.3 검색 최적화
 
 1. **의도 라우팅**: 검색이 필요한지 먼저 판단
 2. **충분성 검사**: 각 계층에서 충분한 정보를 얻었는지 확인
 3. **조기 종료**: 충분한 정보가 있으면 더 깊은 검색 생략
 
-### 9.4 확장성 고려사항
+### 10.4 확장성 고려사항
 
 1. **멀티 프로바이더**: 작업별 다른 LLM 사용 가능
 2. **파이프라인 커스터마이징**: 도메인별 스텝 추가/교체
@@ -561,7 +1065,7 @@ MemU는 Locomo 벤치마크에서 **평균 92.09% 정확도**를 달성했습니
 
 ---
 
-## 10. 주요 의존성
+## 11. 주요 의존성
 
 ```toml
 [dependencies]
@@ -582,7 +1086,7 @@ langgraph = ["langgraph", "langchain-core"]
 
 ---
 
-## 11. 결론
+## 12. 결론
 
 MemU는 에이전트 시스템을 위한 포괄적인 메모리 솔루션을 제공합니다:
 
