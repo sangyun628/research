@@ -6,11 +6,12 @@
 ## 목차
 
 1. [프로젝트 개요](#1-프로젝트-개요)
-2. [Kubernetes 사용 방식](#2-kubernetes-사용-방식)
-3. [LLM 통합 및 제어 방식](#3-llm-통합-및-제어-방식)
-4. [코딩 에이전트와의 핵심 차이점](#4-코딩-에이전트와의-핵심-차이점)
-5. [구현 상세](#5-구현-상세)
-6. [결론](#6-결론)
+2. [설치 및 사용 방법](#2-설치-및-사용-방법)
+3. [Kubernetes 사용 방식](#3-kubernetes-사용-방식)
+4. [LLM 통합 및 제어 방식](#4-llm-통합-및-제어-방식)
+5. [코딩 에이전트와의 핵심 차이점](#5-코딩-에이전트와의-핵심-차이점)
+6. [구현 상세](#6-구현-상세)
+7. [결론](#7-결론)
 
 ---
 
@@ -50,9 +51,248 @@ K8sGPT는 **Kubernetes 클러스터 진단 도구**입니다. SRE(Site Reliabili
 
 ---
 
-## 2. Kubernetes 사용 방식
+## 2. 설치 및 사용 방법
 
-### 2.1 K8s 클라이언트 구조
+### 2.1 CLI 설치
+
+#### macOS / Linux (Homebrew)
+
+```bash
+# 기본 설치
+brew install k8sgpt
+
+# 또는 tap을 통한 설치
+brew tap k8sgpt-ai/k8sgpt
+brew install k8sgpt
+```
+
+#### Linux (DEB/RPM)
+
+```bash
+# Ubuntu/Debian (64bit)
+curl -LO https://github.com/k8sgpt-ai/k8sgpt/releases/download/v0.4.27/k8sgpt_amd64.deb
+sudo dpkg -i k8sgpt_amd64.deb
+
+# RedHat/CentOS/Fedora (64bit)
+sudo rpm -ivh https://github.com/k8sgpt-ai/k8sgpt/releases/download/v0.4.27/k8sgpt_amd64.rpm
+
+# Alpine (64bit)
+wget https://github.com/k8sgpt-ai/k8sgpt/releases/download/v0.4.27/k8sgpt_amd64.apk
+apk add --allow-untrusted k8sgpt_amd64.apk
+```
+
+#### Windows
+
+[GitHub Releases](https://github.com/k8sgpt-ai/k8sgpt/releases)에서 Windows 바이너리 다운로드 후 PATH에 추가
+
+#### Kubernetes Operator (클러스터 내 설치)
+
+```bash
+# k8sgpt-operator를 통한 설치 (지속적 모니터링용)
+# 상세: https://github.com/k8sgpt-ai/k8sgpt-operator
+```
+
+### 2.2 AI 백엔드 설정
+
+#### OpenAI (기본)
+
+```bash
+# API 키 생성 (브라우저에서 OpenAI 페이지 열림)
+k8sgpt generate
+
+# API 키 등록
+k8sgpt auth add
+# 또는 직접 입력
+k8sgpt auth add --password <your-openai-api-key>
+```
+
+#### 다른 AI 백엔드 설정
+
+```bash
+# 사용 가능한 백엔드 목록 확인
+k8sgpt auth list
+
+# Azure OpenAI 설정
+k8sgpt auth add --backend azureopenai --baseurl https://<resource>.openai.azure.com \
+  --model <deployment-name> --password <api-key>
+
+# AWS Bedrock 설정
+k8sgpt auth add --backend amazonbedrock --providerRegion us-east-1 \
+  --model anthropic.claude-3-sonnet-20240229-v1:0
+
+# Ollama (로컬 LLM) 설정
+k8sgpt auth add --backend ollama --baseurl http://localhost:11434 --model llama3
+
+# Google Gemini 설정
+k8sgpt auth add --backend google --password <google-api-key> --model gemini-pro
+
+# 기본 백엔드 변경
+k8sgpt auth default -p azureopenai
+```
+
+### 2.3 기본 사용법
+
+#### 클러스터 분석
+
+```bash
+# 기본 분석 (문제 감지만)
+k8sgpt analyze
+
+# AI 설명 포함 분석 (권장)
+k8sgpt analyze --explain
+
+# 특정 네임스페이스만 분석
+k8sgpt analyze --explain --namespace default
+
+# 특정 리소스만 분석
+k8sgpt analyze --explain --filter=Pod
+k8sgpt analyze --explain --filter=Service,Deployment
+
+# 공식 K8s 문서 링크 포함
+k8sgpt analyze --explain --with-doc
+
+# JSON 출력
+k8sgpt analyze --explain --output=json
+
+# 민감 정보 익명화 (프로덕션 권장)
+k8sgpt analyze --explain --anonymize
+```
+
+#### 필터 관리
+
+```bash
+# 활성화된 필터 목록
+k8sgpt filters list
+
+# 필터 추가
+k8sgpt filters add Service
+k8sgpt filters add Ingress,Pod
+
+# 필터 제거
+k8sgpt filters remove Service
+```
+
+### 2.4 MCP 서버 모드 (Claude Desktop 연동)
+
+#### MCP 서버 실행
+
+```bash
+# Stdio 모드 (로컬 AI 어시스턴트용)
+k8sgpt serve --mcp
+
+# HTTP 모드 (네트워크 접근용)
+k8sgpt serve --mcp --mcp-http --mcp-port 8089
+
+# 전체 서버 모드 (gRPC + MCP)
+k8sgpt serve --mcp --mcp-http --port 8080 --metrics-port 8081 --mcp-port 8089
+```
+
+#### Claude Desktop 설정
+
+`claude_desktop_config.json`에 추가:
+
+```json
+{
+  "mcpServers": {
+    "k8sgpt": {
+      "command": "k8sgpt",
+      "args": ["serve", "--mcp"]
+    }
+  }
+}
+```
+
+#### Claude Desktop에서 사용
+
+연동 후 Claude에게 다음과 같이 요청:
+- "Analyze my Kubernetes cluster"
+- "What's the health status of my cluster?"
+- "Show me any issues in the default namespace"
+
+### 2.5 고급 사용법
+
+#### 캐시 관리
+
+```bash
+# 캐시 목록
+k8sgpt cache list
+
+# 원격 캐시 추가 (AWS S3)
+k8sgpt cache add s3 --region ap-northeast-2 --bucket k8sgpt-cache
+
+# 원격 캐시 추가 (Azure Blob)
+k8sgpt cache add azure --storageacc <storage-account> --container k8sgpt-cache
+
+# 원격 캐시 추가 (GCS)
+k8sgpt cache add gcs --region asia-northeast3 --bucket k8sgpt-cache --projectid <project-id>
+
+# 캐시 제거
+k8sgpt cache remove
+```
+
+#### 커스텀 분석기
+
+```bash
+# 커스텀 분석기로 분석
+k8sgpt analyze --custom-analysis
+
+# 커스텀 분석기 목록
+k8sgpt custom-analyzer list
+
+# 커스텀 분석기 추가
+k8sgpt custom-analyzer add --name my-analyzer --port 8085
+
+# 커스텀 분석기 제거
+k8sgpt custom-analyzer remove --names "my-analyzer"
+```
+
+#### 외부 시스템 연동
+
+```bash
+# 통합 목록
+k8sgpt integrations list
+
+# Prometheus/Trivy 등 통합 활성화
+k8sgpt integrations activate prometheus
+k8sgpt integrations activate trivy
+
+# 통합 분석기로 분석
+k8sgpt analyze --filter=prometheus
+```
+
+#### 분석 통계 및 디버깅
+
+```bash
+# 분석기별 실행 시간 통계
+k8sgpt analyze -s
+
+# 진단 정보 덤프
+k8sgpt dump
+```
+
+### 2.6 설정 파일 위치
+
+| OS | 경로 |
+|----|------|
+| macOS | `~/Library/Application Support/k8sgpt/k8sgpt.yaml` |
+| Linux | `~/.config/k8sgpt/k8sgpt.yaml` |
+| Windows | `%LOCALAPPDATA%/k8sgpt/k8sgpt.yaml` |
+
+### 2.7 MCP 제공 도구 목록
+
+K8sGPT MCP 서버는 12개 도구, 3개 리소스, 3개 프롬프트를 제공:
+
+| 카테고리 | 항목 |
+|----------|------|
+| **도구** | analyze, list-resources, get-resource, get-logs, describe-resource, get-events, get-namespace, top-pods, top-nodes, explain, version, health |
+| **리소스** | cluster-info, namespaces, analyzers |
+| **프롬프트** | troubleshoot-pod, cluster-health, namespace-overview |
+
+---
+
+## 3. Kubernetes 사용 방식
+
+### 3.1 K8s 클라이언트 구조
 
 K8sGPT는 **읽기 전용(Read-Only)** 방식으로 Kubernetes와 상호작용합니다.
 
@@ -69,7 +309,7 @@ type Client struct {
 
 **핵심 포인트**: K8sGPT는 **K8s 리소스를 수정하지 않습니다**. 오직 조회(List/Get)만 수행합니다.
 
-### 2.2 클라이언트 초기화 프로세스
+### 3.2 클라이언트 초기화 프로세스
 
 ```
 1. InCluster 설정 시도 (Pod 내부 실행 시)
@@ -85,7 +325,7 @@ type Client struct {
    └─ Discovery Client (API 메타데이터)
 ```
 
-### 2.3 K8s API 호출 패턴
+### 3.3 K8s API 호출 패턴
 
 **Pod 목록 조회 예제:**
 ```go
@@ -106,7 +346,7 @@ func (PodAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) {
 }
 ```
 
-### 2.4 지원 리소스 범위
+### 3.4 지원 리소스 범위
 
 | 카테고리 | 리소스 |
 |----------|--------|
@@ -119,9 +359,9 @@ func (PodAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) {
 
 ---
 
-## 3. LLM 통합 및 제어 방식
+## 4. LLM 통합 및 제어 방식
 
-### 3.1 핵심 개념: LLM은 "설명자"이지 "제어자"가 아님
+### 4.1 핵심 개념: LLM은 "설명자"이지 "제어자"가 아님
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
@@ -159,7 +399,7 @@ func (PodAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) {
 
 **중요**: LLM은 K8s를 직접 제어하지 않습니다. LLM의 역할은 오직 **문제에 대한 설명 생성**입니다.
 
-### 3.2 지원 AI 백엔드
+### 4.2 지원 AI 백엔드
 
 ```go
 // pkg/ai/iai.go
@@ -181,7 +421,7 @@ var clients = []IAI{
 }
 ```
 
-### 3.3 AI 인터페이스 설계
+### 4.3 AI 인터페이스 설계
 
 ```go
 // pkg/ai/iai.go
@@ -195,7 +435,7 @@ type IAI interface {
 
 **단순함이 핵심**: 인터페이스는 `GetCompletion()` 하나로 통일됩니다. 모든 백엔드가 동일한 방식으로 작동합니다.
 
-### 3.4 프롬프트 구성
+### 4.4 프롬프트 구성
 
 LLM에 전달되는 프롬프트는 다음 형식입니다:
 
@@ -213,9 +453,9 @@ LLM은 이 정보를 바탕으로 **설명과 권장사항**을 생성합니다:
 
 ---
 
-## 4. 코딩 에이전트와의 핵심 차이점
+## 5. 코딩 에이전트와의 핵심 차이점
 
-### 4.1 아키텍처 비교
+### 5.1 아키텍처 비교
 
 | 항목 | K8sGPT | Claude Code / Gemini CLI |
 |------|--------|--------------------------|
@@ -225,7 +465,7 @@ LLM은 이 정보를 바탕으로 **설명과 권장사항**을 생성합니다:
 | **수정 권한** | 읽기 전용 | 파일/코드 수정 가능 |
 | **자율성** | 낮음 (규칙 기반) | 높음 (LLM 기반) |
 
-### 4.2 상세 비교
+### 5.2 상세 비교
 
 #### K8sGPT 방식 (규칙 기반 + LLM 설명)
 
@@ -280,7 +520,7 @@ LLM은 이 정보를 바탕으로 **설명과 권장사항**을 생성합니다:
 └──────────────────────────────────────────────────────────┘
 ```
 
-### 4.3 핵심 차이점 분석
+### 5.3 핵심 차이점 분석
 
 #### 1) 문제 감지 방식
 
@@ -333,7 +573,7 @@ LLM 판단: "코드를 읽어보니 null 체크가 없어서
 - LLM이 모든 결정을 주도
 - LLM 없이는 작동 불가
 
-### 4.4 MCP를 통한 브릿지
+### 5.4 MCP를 통한 브릿지
 
 K8sGPT는 **MCP(Model Context Protocol)**를 통해 코딩 에이전트와 연동됩니다:
 
@@ -376,9 +616,9 @@ K8sGPT는 **MCP(Model Context Protocol)**를 통해 코딩 에이전트와 연�
 
 ---
 
-## 5. 구현 상세
+## 6. 구현 상세
 
-### 5.1 분석 흐름
+### 6.1 분석 흐름
 
 ```
 k8sgpt analyze --explain --namespace default
@@ -423,7 +663,7 @@ k8sgpt analyze --explain --namespace default
 └───────────────────────────────────────┘
 ```
 
-### 5.2 분석기 구현 예시 (Pod Analyzer)
+### 6.2 분석기 구현 예시 (Pod Analyzer)
 
 ```go
 // pkg/analyzer/pod.go
@@ -479,7 +719,7 @@ func (PodAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) {
 }
 ```
 
-### 5.3 AI 설명 생성 프로세스
+### 6.3 AI 설명 생성 프로세스
 
 ```go
 // pkg/analysis/analysis.go
@@ -508,7 +748,7 @@ func (a *Analysis) GetAIResults(output string, anonymize bool) error {
 }
 ```
 
-### 5.4 MCP 서버 구현
+### 6.4 MCP 서버 구현
 
 ```go
 // pkg/server/mcp.go
@@ -539,7 +779,7 @@ func NewMCPServer(...) (*K8sGptMCPServer, error) {
 }
 ```
 
-### 5.5 프로젝트 구조
+### 6.5 프로젝트 구조
 
 ```
 k8sgpt/
@@ -583,9 +823,9 @@ k8sgpt/
 
 ---
 
-## 6. 결론
+## 7. 결론
 
-### 6.1 K8sGPT의 위치
+### 7.1 K8sGPT의 위치
 
 K8sGPT는 **코딩 에이전트와 다른 카테고리**의 도구입니다:
 
@@ -594,20 +834,20 @@ K8sGPT는 **코딩 에이전트와 다른 카테고리**의 도구입니다:
 | **도메인 특화 진단 도구** | 규칙 기반, 읽기 전용, LLM 보조 | K8sGPT |
 | **범용 AI 에이전트** | LLM 주도, 수정 권한, 자율적 | Claude Code, Gemini CLI |
 
-### 6.2 K8sGPT의 강점
+### 7.2 K8sGPT의 강점
 
 1. **안전성**: K8s 클러스터를 수정하지 않음
 2. **예측 가능성**: 하드코딩된 규칙으로 일관된 결과
 3. **전문성**: SRE 경험이 녹아든 30+ 분석기
 4. **유연성**: 15+ AI 백엔드, MCP 통합 지원
 
-### 6.3 한계점
+### 7.3 한계점
 
 1. **새로운 문제 감지 어려움**: 사전정의 규칙에 없는 문제는 감지 불가
 2. **자동 수정 불가**: 문제 감지만 하고 수정은 사용자 몫
 3. **LLM 의존성**: 설명 품질은 LLM에 의존
 
-### 6.4 활용 시나리오
+### 7.4 활용 시나리오
 
 **K8sGPT가 적합한 경우:**
 - 클러스터 헬스 체크 자동화
