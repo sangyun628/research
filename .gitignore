@@ -9,3 +9,6 @@ agno-analysis/
 k8sgpt/
 kagent/
 holmesgpt/
+
+.idea/
+.DS_Store
