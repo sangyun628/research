@@ -390,7 +390,455 @@ class ToolResult(BaseModel):
 
 ---
 
-## 3. 도구 시스템
+## 3. 파일 탐색 전략 — 에이전트의 "눈"
+
+이 섹션이 OpenCode 에이전트의 핵심이다. 에이전트가 어떻게 프로젝트를 파악하고, 필요한 정보를 찾고, 컨텍스트를 낭비하지 않는지를 결정하는 것은 **도구의 구현 코드가 아니라 도구의 description(LLM에게 보내는 프롬프트)** 이다.
+
+### 3.1 핵심 통찰: 도구 description이 곧 전략이다
+
+OpenCode의 각 도구는 `.txt` 파일에 description을 가지고 있고, 이것이 LLM의 시스템 프롬프트에 포함된다. 에이전트는 이 description을 읽고 **어떤 도구를 어떤 순서로 써야 하는지** 스스로 판단한다.
+
+```
+도구 description (.txt)  →  LLM 시스템 프롬프트에 포함  →  에이전트가 전략 학습
+```
+
+따라서 Python 재구현 시 **도구의 description 문구가 코드만큼 중요하다.** 아래에 OpenCode 원본 description을 전문 첨부하고, 각각이 유도하는 행동 패턴을 해설한다.
+
+### 3.2 3단계 깔때기: Glob → Grep → Read
+
+에이전트가 파일을 찾는 과정은 넓은 범위에서 좁은 범위로 좁혀가는 **깔때기(funnel)** 구조다.
+
+```mermaid
+graph TD
+    A["1단계: GLOB<br/>패턴으로 파일 후보 발견<br/>'**/*.md', 'src/**/*.py'"]
+    B["2단계: GREP<br/>내용으로 관련 파일 특정<br/>'class ReportGenerator', 'def process'"]
+    C["3단계: READ<br/>특정 파일의 필요한 구간만 읽기<br/>offset=150, limit=100"]
+    D["판단: 추가 탐색 필요?"]
+    E["완료: 충분한 정보 확보"]
+
+    A -->|"100건 제한, mtime 정렬"| B
+    B -->|"100건 제한, 파일+줄번호"| C
+    C -->|"2000줄/50KB 제한, 다음 offset 안내"| D
+    D -->|"Yes"| A
+    D -->|"No"| E
+
+    style A fill:#3498db,color:white
+    style B fill:#2ecc71,color:white
+    style C fill:#e74c3c,color:white
+```
+
+### 3.3 Glob — 1단계: 파일 후보 발견
+
+#### OpenCode 원본 description (`glob.txt` 전문)
+
+```
+- Fast file pattern matching tool that works with any codebase size
+- Supports glob patterns like "**/*.js" or "src/**/*.ts"
+- Returns matching file paths sorted by modification time
+- Use this tool when you need to find files by name patterns
+- When you are doing an open-ended search that may require multiple rounds of
+  globbing and grepping, use the Task tool instead
+- You have the capability to call multiple tools in a single response. It is
+  always better to speculatively perform multiple searches as a batch that are
+  potentially useful.
+```
+
+#### 이 description이 유도하는 에이전트 행동
+
+| 문구 | 유도하는 행동 |
+|------|-------------|
+| "sorted by modification time" | 최근 수정된 파일이 먼저 → 에이전트가 가장 관련 높은 파일부터 봄 |
+| "find files by name patterns" | 내용이 아닌 **이름**으로 먼저 후보를 좁히라는 지침 |
+| "multiple rounds of globbing and grepping → use Task tool" | 탐색이 복잡하면 서브에이전트에 위임하여 메인 에이전트 컨텍스트 절약 |
+| "call multiple tools in a single response... speculatively perform multiple searches as a batch" | **추측적 병렬 호출** — 한 턴에 여러 패턴을 동시 검색 |
+
+마지막 줄이 특히 중요하다. 에이전트가 `glob("**/*.md")`, `glob("**/*.rst")`, `glob("docs/**/*")`를 한 번에 병렬 호출하도록 유도한다. 한 턴에 한 도구만 호출하면 왕복이 늘어나 토큰이 낭비된다.
+
+#### OpenCode 원본 구현 (`glob.ts`) — 정렬과 제한
+
+```typescript
+// glob.ts — 핵심 부분
+
+const limit = 100                    // 최대 100건
+const files = []
+let truncated = false
+
+for await (const file of Ripgrep.files({
+  cwd: search,
+  glob: [params.pattern],
+  signal: ctx.abort,
+})) {
+  if (files.length >= limit) {
+    truncated = true
+    break                             // 100건 넘으면 즉시 중단
+  }
+  const full = path.resolve(search, file)
+  const stats = Filesystem.stat(full)?.mtime.getTime() ?? 0
+  files.push({ path: full, mtime: stats })
+}
+
+// ★ 최근 수정된 파일이 먼저 오도록 정렬
+files.sort((a, b) => b.mtime - a.mtime)
+```
+
+**Python 구현 포인트:**
+- ripgrep의 `--files` 모드로 `.gitignore`를 자동 존중하면서 파일 목록 확보
+- `os.stat().st_mtime`으로 수정 시간 정렬
+- 100건 제한 후 `break`로 즉시 중단
+
+### 3.4 Grep — 2단계: 내용으로 관련 파일 특정
+
+#### OpenCode 원본 description (`grep.txt` 전문)
+
+```
+- Fast content search tool that works with any codebase size
+- Searches file contents using regular expressions
+- Supports full regex syntax (eg. "log.*Error", "function\s+\w+", etc.)
+- Filter files by pattern with the include parameter (eg. "*.js", "*.{ts,tsx}")
+- Returns file paths and line numbers with at least one match sorted by
+  modification time
+- Use this tool when you need to find files containing specific patterns
+- If you need to identify/count the number of matches within files, use the
+  Bash tool with `rg` (ripgrep) directly. Do NOT use `grep`.
+- When you are doing an open-ended search that may require multiple rounds of
+  globbing and grepping, use the Task tool instead
+```
+
+#### 이 description이 유도하는 에이전트 행동
+
+| 문구 | 유도하는 행동 |
+|------|-------------|
+| "file contents using regular expressions" | 이름이 아닌 **내용**으로 검색 — glob 다음 단계 |
+| "Filter files by pattern with the include parameter" | **이중 필터링**: 먼저 파일 확장자로 범위 축소 → 그 안에서 내용 검색 |
+| "Returns file paths and line numbers... sorted by modification time" | 어디서 몇 번째 줄인지 정확히 알려줌 → Read에서 offset으로 바로 이동 가능 |
+| "multiple rounds... use Task tool instead" | 복잡한 탐색은 서브에이전트로 위임 |
+
+핵심은 **include 파라미터**다. `grep(pattern="class Report", include="*.py")`처럼 파일 타입을 먼저 좁히면 검색 범위가 대폭 줄어든다. 에이전트가 이 패턴을 자연스럽게 사용하도록 description에서 예시를 제공한다.
+
+#### OpenCode 원본 구현 (`grep.ts`) — 정렬과 그룹핑
+
+```typescript
+// grep.ts — 핵심 부분
+
+// ripgrep 호출 — include 패턴으로 파일 타입 사전 필터링
+const args = ["-nH", "--hidden", "--no-messages",
+              "--field-match-separator=|", "--regexp", params.pattern]
+if (params.include) {
+  args.push("--glob", params.include)      // ★ 파일 타입 필터
+}
+
+// 결과를 mtime으로 정렬 — 최근 수정 파일 우선
+matches.sort((a, b) => b.modTime - a.modTime)
+
+// 100건 제한
+const limit = 100
+const truncated = matches.length > limit
+const finalMatches = truncated ? matches.slice(0, limit) : matches
+
+// ★ 출력 포맷: 파일별 그룹핑 + 줄 번호
+// /path/to/file.py:
+//   Line 42: class ReportGenerator:
+//   Line 78: def generate_report(self):
+let currentFile = ""
+for (const match of finalMatches) {
+  if (currentFile !== match.path) {
+    currentFile = match.path
+    outputLines.push(`${match.path}:`)       // 파일 경로 헤더
+  }
+  outputLines.push(`  Line ${match.lineNum}: ${truncatedLineText}`)  // 줄 번호 + 내용
+}
+```
+
+**파일별 그룹핑이 중요한 이유:** LLM이 "이 파일의 42번째 줄에 관련 코드가 있구나" → `read(file_path, offset=35, limit=50)` 같은 **정밀 읽기 판단**을 할 수 있게 된다.
+
+### 3.5 Read — 3단계: 정밀 읽기
+
+#### OpenCode 원본 description (`read.txt` 전문)
+
+```
+Read a file or directory from the local filesystem. If the path does not exist,
+an error is returned.
+
+Usage:
+- The filePath parameter should be an absolute path.
+- By default, this tool returns up to 2000 lines from the start of the file.
+- The offset parameter is the line number to start from (1-indexed).
+- To read later sections, call this tool again with a larger offset.
+- Use the grep tool to find specific content in large files or files with long lines.
+- If you are unsure of the correct file path, use the glob tool to look up
+  filenames by glob pattern.
+- Contents are returned with each line prefixed by its line number as
+  `<line>: <content>`.
+- Any line longer than 2000 characters is truncated.
+- Call this tool in parallel when you know there are multiple files you want to read.
+- Avoid tiny repeated slices (30 line chunks). If you need more context, read
+  a larger window.
+- This tool can read image files and PDFs and return them as file attachments.
+```
+
+#### 이 description이 유도하는 에이전트 행동
+
+| 문구 | 유도하는 행동 |
+|------|-------------|
+| "Use the grep tool to find specific content in large files" | 큰 파일은 Read로 전부 읽지 말고 Grep으로 먼저 위치 특정 → Read(offset) |
+| "use the glob tool to look up filenames" | 경로가 불확실하면 Glob으로 먼저 찾기 → **순환 안내** (Read → Glob → Read) |
+| "Call this tool in parallel when you know there are multiple files" | 여러 파일을 한 턴에 병렬 읽기 (왕복 최소화) |
+| "Avoid tiny repeated slices (30 line chunks)" | 30줄씩 읽지 말고 넉넉하게 읽어라 → 왕복 줄이기 |
+| "offset parameter is the line number to start from" | Grep 결과의 줄 번호를 offset으로 바로 사용 |
+
+**순환 안내(circular guidance)** 가 핵심 설계다:
+```
+Read description: "경로가 불확실하면 Glob을 써라"
+Glob description: "파일을 찾을 때 써라"
+Grep description: "큰 파일에서 위치를 찾을 때 써라"
+Read description: "Grep으로 찾은 줄 번호를 offset으로 써라"
+```
+
+이 순환 구조가 에이전트를 자연스럽게 Glob → Grep → Read 깔때기로 유도한다.
+
+### 3.6 Bash — 파일 탐색 금지 구역
+
+#### OpenCode 원본 description (`bash.txt` 핵심 발췌)
+
+```
+IMPORTANT: This tool is for terminal operations like git, npm, docker, etc.
+DO NOT use it for file operations (reading, writing, editing, searching,
+finding files) - use the specialized tools for this instead.
+
+Avoid using Bash with the `find`, `grep`, `cat`, `head`, `tail`, `sed`,
+`awk`, or `echo` commands, unless explicitly instructed.
+Instead, always prefer using the dedicated tools:
+  - File search: Use Glob (NOT find or ls)
+  - Content search: Use Grep (NOT grep or rg)
+  - Read files: Use Read (NOT cat/head/tail)
+  - Edit files: Use Edit (NOT sed/awk)
+  - Write files: Use Write (NOT echo >/cat <<EOF)
+```
+
+#### 이 description이 유도하는 에이전트 행동
+
+**모든 파일 관련 작업을 전용 도구로 강제 유도한다.** 에이전트가 `bash("cat large_file.txt")`처럼 비효율적인 호출을 하지 못하게 한다.
+
+이것이 중요한 이유:
+- `cat`은 파일 전체를 읽어 context에 넣음 → 토큰 낭비
+- `find`는 .gitignore를 무시하고 전체 탐색 → node_modules 등 불필요한 결과
+- `grep`(시스템 명령)은 ripgrep보다 느리고 출력 포맷이 일관되지 않음
+
+전용 도구는 이 모든 문제를 해결한다: 크기 제한, .gitignore 존중, mtime 정렬, 구조화된 출력.
+
+### 3.7 Task (서브에이전트 위임) — 컨텍스트 보존의 핵심
+
+#### OpenCode 원본 description (`task.txt` 핵심 발췌)
+
+```
+Launch a new agent to handle complex, multistep tasks autonomously.
+
+When NOT to use the Task tool:
+- If you want to read a specific file path, use the Read or Glob tool instead
+- If you are searching for a specific class definition like "class Foo",
+  use the Glob tool instead
+- If you are searching for code within a specific file or set of 2-3 files,
+  use the Read tool instead
+
+Usage notes:
+1. Launch multiple agents concurrently whenever possible, to maximize
+   performance; to do that, use a single message with multiple tool uses
+2. Each agent invocation starts with a fresh context...
+3. Clearly tell the agent whether you expect it to write code or just to
+   do research (search, file reads, web fetches, etc.)
+```
+
+#### 이 description이 유도하는 에이전트 행동
+
+**"When NOT to use" 섹션이 핵심이다.** 간단한 탐색은 직접 하고, 복잡한 탐색만 서브에이전트에 위임하도록 유도한다:
+
+| 상황 | 행동 |
+|------|------|
+| 특정 파일 1개 읽기 | → Read 직접 호출 (Task 사용 X) |
+| 클래스 정의 찾기 | → Glob 직접 호출 (Task 사용 X) |
+| 2-3개 파일 내 검색 | → Read 직접 호출 (Task 사용 X) |
+| 여러 라운드의 glob+grep 필요 | → Task로 explore 에이전트에 위임 |
+| Truncation된 대용량 출력 분석 | → Task로 서브에이전트가 Read(offset) + Grep |
+
+서브에이전트는 **자체 컨텍스트**를 가지므로 대용량 탐색을 해도 메인 에이전트의 컨텍스트를 소비하지 않는다. 최종 결과만 요약해서 메인에 반환한다.
+
+### 3.8 Explore 에이전트 — 파일 탐색 전문가
+
+#### OpenCode 원본 시스템 프롬프트 (`explore.txt` 전문)
+
+```
+You are a file search specialist. You excel at thoroughly navigating and
+exploring codebases.
+
+Your strengths:
+- Rapidly finding files using glob patterns
+- Searching code and text with powerful regex patterns
+- Reading and analyzing file contents
+
+Guidelines:
+- Use Glob for broad file pattern matching
+- Use Grep for searching file contents with regex
+- Use Read when you know the specific file path you need to read
+- Adapt your search approach based on the thoroughness level specified
+- Return file paths as absolute paths in your final response
+- Do not create any files, or run bash commands that modify the user's
+  system state in any way
+```
+
+이 에이전트가 **읽기 전용**으로 설계된 이유: 파일을 수정하면 안 되므로 탐색에만 집중할 수 있고, 권한 확인 오버헤드도 없다.
+
+### 3.9 전체 전략 흐름도
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant M as Main Agent (build)
+    participant G as Glob Tool
+    participant GR as Grep Tool
+    participant R as Read Tool
+    participant T as Task Tool
+    participant E as Explore 서브에이전트
+
+    U->>M: "프로젝트의 데이터 처리 로직을 분석해줘"
+
+    Note over M: 전략 판단: 어디서부터 볼까?
+
+    par 추측적 병렬 호출 (한 턴에 여러 도구)
+        M->>G: glob("**/*.py")
+        M->>G: glob("**/data*/**")
+        M->>G: glob("**/*process*")
+    end
+
+    G-->>M: 45건 (mtime 정렬)
+
+    Note over M: 후보 파일 확인. 핵심 파일을 특정하자
+
+    par 내용 기반 필터링
+        M->>GR: grep("class.*Processor", include="*.py")
+        M->>GR: grep("def process", include="*.py")
+    end
+
+    GR-->>M: 8건 (파일별 그룹핑 + 줄 번호)
+
+    Note over M: src/processor.py:42에 핵심 클래스 발견
+
+    par 정밀 읽기 (여러 파일 병렬)
+        M->>R: read("src/processor.py", offset=35, limit=100)
+        M->>R: read("src/models.py", offset=1, limit=80)
+    end
+
+    R-->>M: 코드 내용 (2000줄/50KB 이내)
+
+    Note over M: 더 깊은 분석 필요 → 서브에이전트 위임
+
+    M->>T: "src/processor.py의 모든 import를 추적하고<br/>의존 관계를 정리해줘"
+    T->>E: (별도 컨텍스트에서 Glob+Grep+Read 반복)
+
+    loop 서브에이전트 자체 탐색 (메인 컨텍스트 소비 안 함)
+        E->>G: glob(...)
+        E->>GR: grep(...)
+        E->>R: read(...)
+    end
+
+    E-->>T: "의존 관계 요약: ..."
+    T-->>M: 요약 결과만 반환 (메인 컨텍스트 절약)
+
+    M->>U: 분석 결과 보고서
+```
+
+### 3.10 Python 구현 — 도구 description 설계
+
+Python으로 재구현할 때 가장 중요한 파일은 각 도구의 description 문자열이다. OpenCode의 `.txt` 파일을 참고하되, 보고서 에디터 맥락에 맞게 조정한다:
+
+```python
+"""
+tool/descriptions.py — 도구 description (LLM에 전달되는 프롬프트)
+
+★ 이 파일의 문구가 에이전트의 파일 탐색 능력을 결정한다.
+문구 하나하나가 에이전트의 행동 패턴을 유도한다.
+"""
+
+GLOB_DESCRIPTION = """Fast file pattern matching tool that works with any project size.
+- Supports glob patterns like "**/*.md", "reports/**/*.py", "data/**/*.csv"
+- Returns matching file paths sorted by modification time (most recent first)
+- Use this tool when you need to find files by name or extension patterns
+- Results are limited to 100 files. Use a more specific path or pattern to narrow down.
+- You can call multiple tools in a single response. It is always better to speculatively
+  perform multiple searches as a batch. For example, search for "**/*.md" and "**/*.rst"
+  simultaneously rather than sequentially.
+- When you need multiple rounds of searching, use the Task tool to delegate to an
+  explore sub-agent instead of consuming your own context."""
+
+GREP_DESCRIPTION = """Fast content search tool using regular expressions.
+- Searches file contents with full regex syntax (e.g. "# .*Results", "def process")
+- Filter files by pattern with include parameter (e.g. "*.md", "*.{py,yaml}")
+- Returns file paths, line numbers, and matching text sorted by modification time
+- Results are limited to 100 matches. Use include to narrow the search scope first.
+- Use this AFTER glob to narrow down by content within discovered files.
+- The line numbers in results can be used directly as the offset parameter in the Read tool.
+- When you need multiple rounds of searching, use the Task tool to delegate."""
+
+READ_DESCRIPTION = """Read a file or directory from the local filesystem.
+- Returns up to 2000 lines or 50KB per call (whichever limit is reached first)
+- Use the offset parameter (1-indexed) to read specific sections. To read later
+  sections, call again with a larger offset.
+- Use the grep tool to find specific content in large files first, then read the
+  relevant section using offset from grep's line numbers.
+- If you are unsure of the correct file path, use the glob tool to find it first.
+- Call this tool in parallel when you know there are multiple files to read.
+- Avoid tiny repeated slices (30 line chunks). If you need more context, read a
+  larger window (200-500 lines) at once.
+- Contents include line numbers: '42: line content here'"""
+
+BASH_DESCRIPTION = """Execute shell commands for terminal operations (git, pip, etc).
+IMPORTANT: DO NOT use for file operations. Use specialized tools instead:
+- File search: Use Glob (NOT find or ls)
+- Content search: Use Grep (NOT grep or rg)
+- Read files: Use Read (NOT cat/head/tail)
+- Edit files: Use Edit (NOT sed/awk)
+- Write files: Use Write (NOT echo)
+These dedicated tools respect .gitignore, limit output size, and provide structured
+results. Using bash for file ops wastes context and produces uncontrolled output."""
+
+TASK_DESCRIPTION = """Launch a sub-agent to handle complex, multi-step tasks autonomously.
+The sub-agent has its own context window, so large searches don't consume yours.
+
+When NOT to use Task:
+- Reading a specific file → use Read directly
+- Finding a file by name → use Glob directly
+- Searching 2-3 known files → use Read directly
+
+When to use Task:
+- Open-ended exploration requiring multiple rounds of glob + grep + read
+- Analyzing truncated output (saved to disk by truncation service)
+- Parallel investigation of multiple independent topics
+
+Usage notes:
+- Launch multiple agents concurrently for independent tasks
+- Clearly specify whether the agent should just research or also write files
+- Each agent starts fresh unless you provide task_id to resume"""
+```
+
+### 3.11 구현 체크리스트
+
+이 파일 탐색 전략을 Python으로 구현할 때 확인해야 할 핵심 포인트:
+
+| # | 항목 | 중요도 | 구현 방법 |
+|---|------|--------|----------|
+| 1 | **Glob 결과 mtime 정렬** | 필수 | `os.stat().st_mtime` 내림차순 |
+| 2 | **Grep 결과를 파일별 그룹핑 + 줄 번호** | 필수 | `rg -nH --field-match-separator=\|` 파싱 |
+| 3 | **Read의 offset/limit 페이지네이션** | 필수 | 스트리밍 읽기 + 다음 offset 안내 |
+| 4 | **Bash에서 파일 명령 금지 안내** | 필수 | description에 명시적 금지 문구 |
+| 5 | **병렬 도구 호출 유도** | 높음 | description에 "call multiple tools in a single response" 명시 |
+| 6 | **서브에이전트 위임 판단** | 높음 | Task description에 "When NOT to use" 섹션 |
+| 7 | **100건 결과 제한 (Glob/Grep)** | 필수 | 100건 초과 시 "more specific pattern" 안내 |
+| 8 | **Truncation 후 안내 메시지** | 필수 | "Use Grep/Read(offset) to explore" 안내 |
+| 9 | **Explore 에이전트 읽기 전용** | 높음 | 파일 수정 권한 없는 서브에이전트 |
+| 10 | **.gitignore 존중** | 높음 | ripgrep이 자동 처리, Python에서도 동일 |
+
+---
+
+## 4. 도구 시스템 구현
 
 ### 3.1 도구 인터페이스
 
@@ -1061,7 +1509,7 @@ class BashTool(BaseTool):
 
 ---
 
-## 4. 컨텍스트 관리 엔진
+## 5. 컨텍스트 관리 엔진
 
 ### 4.1 토큰 추정
 
@@ -1439,7 +1887,7 @@ class CompactionEngine:
 
 ---
 
-## 5. 메시지 프로세서
+## 6. 메시지 프로세서
 
 ### 5.1 핵심 처리 루프
 
@@ -1645,7 +2093,7 @@ class MessageProcessor:
 
 ---
 
-## 6. LLM 서비스
+## 7. LLM 서비스
 
 ### 6.1 멀티 프로바이더 통합
 
@@ -1754,7 +2202,7 @@ class LLMService:
 
 ---
 
-## 7. 에이전트 시스템
+## 8. 에이전트 시스템
 
 ### 7.1 에이전트 정의
 
@@ -1852,7 +2300,7 @@ class AgentRegistry:
 
 ---
 
-## 8. 세션 관리
+## 9. 세션 관리
 
 ```python
 """
@@ -1997,7 +2445,7 @@ class SessionManager:
 
 ---
 
-## 9. 핵심 상수 총정리
+## 10. 핵심 상수 총정리
 
 ```python
 """
@@ -2054,7 +2502,7 @@ SQLITE_PRAGMAS = {
 
 ---
 
-## 10. 초기화 및 실행
+## 11. 초기화 및 실행
 
 ```python
 """
@@ -2189,7 +2637,7 @@ if __name__ == "__main__":
 
 ---
 
-## 11. OpenCode 원본 소스코드 참조
+## 12. OpenCode 원본 소스코드 참조
 
 Python 구현 시 참조해야 할 OpenCode TypeScript 핵심 코드를 원본 그대로 첨부한다. 각 코드에 대한 해설을 함께 제공한다.
 
@@ -2650,7 +3098,7 @@ export const getUsage = (input: {
 
 ---
 
-## 12. 컨텍스트 관리 흐름도 (최종 정리)
+## 13. 컨텍스트 관리 흐름도 (최종 정리)
 
 ```mermaid
 flowchart TD
