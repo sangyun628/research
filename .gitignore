@@ -4,22 +4,22 @@
 
 # Cloned repos for source code analysis (re-clone as needed)
 # These directories no longer exist but are kept in case of future cloning
-Memori/
-OpenMemory/
-OpenViking/
-Second-Me/
-TradingAgents/
-cognee/
-holmesgpt/
-k8sgpt/
-kagent/
-mem0/
-memU/
-opencode-repo/
-openmemory_repo/
-supermemory/
-surrealdb/
-webmcp-source/
-OpenSpace/
+/Memori/
+/OpenMemory/
+/OpenViking/
+/Second-Me/
+/TradingAgents/
+/cognee/
+/holmesgpt/
+/k8sgpt/
+/kagent/
+/mem0/
+/memU/
+/opencode-repo/
+/openmemory_repo/
+/supermemory/
+/surrealdb/
+/webmcp-source/
+/OpenSpace/
 /OpenHarness/
-_repos/
+/_repos/
