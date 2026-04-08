@@ -1,0 +1,317 @@
+==============================================================================
+CLAUDE CODE PROMPT EXTRACTION & ANALYSIS — EXECUTIVE SUMMARY
+==============================================================================
+
+Date: 2026-04-08
+Source: Claude Code Leaked Source (2026-03-31)
+Analysis Scope: /Users/sangyun-han/OpenSource/leaked-claude-code/ (53 TS files)
+
+==============================================================================
+KEY FINDINGS
+==============================================================================
+
+TOTAL PROMPTS FOUND: 8
+ESTIMATED TOTAL PROMPTS (full system): 25-35
+DISCOVERY RATE: ~25-30%
+
+Primary reason for low discovery: The leaked source is a recovery from source
+maps in compiled bundles. Core prompts are either:
+  - In compiled binary form (not recoverable from source map)
+  - In external imported modules (function signatures only)
+  - Dynamically generated at runtime (no static text)
+
+==============================================================================
+ACTUAL PROMPTS DISCOVERED (8 total)
+==============================================================================
+
+1. SHUTDOWN_TEAM_PROMPT (print.ts:379-391)
+   Category: System Message / Agent Control
+   Type: <system-reminder> tag with instructions
+   Length: ~150 tokens
+   Purpose: Force multi-agent shutdown before returning response in non-interactive mode
+
+2. CRITIQUE_SYSTEM_PROMPT (autoMode.ts:49-71)
+   Category: Evaluation / Meta-Prompting
+   Type: System prompt for a side-query
+   Length: ~300 tokens
+   Purpose: Review user-written auto-mode classifier rules for clarity/completeness
+
+3. companionIntroText (buddy/prompt.ts:7-12)
+   Category: UI Message / Role Definition
+   Type: Template function with variables
+   Length: ~80 tokens
+   Purpose: Explain to user that sidebar companion sprite is separate watcher
+
+4. BRIDGE_LOGIN_INSTRUCTION (types.ts:5-6)
+   Category: Error Message / User Guidance
+   Type: String constant
+   Length: ~30 tokens
+   Purpose: Direct user to /login when Remote Control requires authentication
+
+5. BRIDGE_LOGIN_ERROR (types.ts:9-11)
+   Category: Error Message
+   Type: Concatenated strings
+   Length: ~40 tokens
+   Purpose: Inform user they must be logged in for Remote Control
+
+6-8. Remote Control Messages (bridgeMain.ts, various)
+   Category: User Interaction Messages
+   Type: Informational strings
+   Examples:
+     - "Remote Control session has expired..."
+     - "This session is outbound-only..."
+     - "Remote Control is not enabled for your account..."
+   Total: ~200 tokens across multiple strings
+
+==============================================================================
+CONFIRMED PROMPTS (References but no implementation)
+==============================================================================
+
+MISSING (known to exist but not in leaked source):
+
+1. Main System Prompt
+   Location: Likely in QueryEngine.ts or compiler-generated code
+   Estimated tokens: 2-5K
+   Components: base instructions, environment info, tool descriptions, memory
+
+2. Auto-mode Classifier Prompt (buildDefaultExternalSystemPrompt)
+   Location: Imported from external module
+   Function: Core decision logic for tool call approval/denial
+   Estimated tokens: 1-2K
+
+3. Tool Description Prompts
+   Location: Tool implementations (not in leaked source)
+   Count: 18+ tools (Bash, Read, Edit, Grep, etc.)
+   Estimated tokens: 50-500 per tool
+
+4. Sub-agent System Prompts
+   Location: tools/AgentTool/
+   Known agents: Code-Reviewer, Plan-Mode, Explore, Extract-Memories
+   Estimated tokens: 300-500 per agent
+
+5. Compaction/Summarization Prompt
+   Location: services/compact/
+   Purpose: Compress conversation history when approaching token limits
+   Estimated tokens: 200-500
+
+6. Memory Extraction Prompt
+   Location: services/extractMemories/
+   Purpose: Auto-classify memories as user/feedback/project/reference
+   Estimated tokens: 300-500
+
+7. Session Title Generation Prompt
+   Location: utils/sessionTitle.ts (function signature only)
+   Purpose: Create short titles from initial conversation
+   Estimated tokens: 50-100
+
+8. Skill Prompts
+   Location: skills/ (not in leaked source)
+   Known skills: /commit, /review-pr, /explain-code
+   Estimated tokens: 100-300 per skill
+
+==============================================================================
+PROMPT ARCHITECTURE PATTERNS IDENTIFIED
+==============================================================================
+
+Pattern 1: Hierarchical Prompts
+  ├─ Level 1: Main system prompt (global behavior)
+  ├─ Level 2: Sub-agent prompts (specialized roles)
+  ├─ Level 3: Tool descriptions (specific actions)
+  └─ Level 4: System reminders (dynamic adjustments)
+
+Pattern 2: Dynamic Reminder Injection
+  • <system-reminder> tags injected mid-conversation
+  • Updates on: date, permissions, available tools, status changes
+  • Purpose: Prevent LLM from forgetting earlier system prompt in long conversations
+
+Pattern 3: Meta-Prompting
+  • User writes rules → System evaluates rules with a meta-prompt
+  • Example: auto-mode CRITIQUE_SYSTEM_PROMPT evaluates user allow/deny rules
+  • Enables AI-assisted rule validation
+
+Pattern 4: Role & Boundary Setting
+  • "You are X" (role definition)
+  • "You're not Y" (role boundary)
+  • "Don't Z" (forbidden actions)
+  • Purpose: Prevent role confusion, clarify responsibilities
+
+Pattern 5: Structured Evaluation Criteria
+  • Always broken down into numbered/bulleted items
+  • Example: Clarity, Completeness, Conflicts, Actionability
+  • Ensures consistent application of rules
+
+==============================================================================
+IMPORTANT DIRECTIVE BLOCKS FOUND
+==============================================================================
+
+Type 1: MUST / MUST NOT (Absolute Requirements)
+  "You MUST shut down your team before preparing your final response"
+  "The user cannot receive your response until the team is completely shut down"
+
+Type 2: Forbidden Actions (Don't X)
+  "Don't explain that you're not ${name} — they know"
+  "Don't narrate what ${name} might say — the bubble handles that"
+
+Type 3: Role Exclusions
+  "You're not ${name} — it's a separate watcher"
+
+Type 4: Boundary Constraints
+  "respond in ONE line or less"
+
+==============================================================================
+SYSTEM REMINDER PATTERN
+==============================================================================
+
+Structure:
+  <system-reminder>
+  [dynamic state information]
+  </system-reminder>
+
+Injection Points:
+  • After tool execution results
+  • On new user message arrival
+  • On permission mode changes
+  • Between conversation turns (periodic)
+
+Estimated Content (not found, but evidenced):
+  • Current date/time
+  • Available tools list
+  • Current permission mode
+  • MEMORY.md index
+  • Session status
+
+Purpose: Prevent context drift in long conversations (100+ turns)
+
+==============================================================================
+TOKEN USAGE ESTIMATION
+==============================================================================
+
+Per-turn overhead (estimated):
+  Main system prompt:     2-5K tokens (1x per session)
+  System reminder:        500-1K tokens (every turn)
+  Tool descriptions:      50-500 tokens (as needed)
+  Auto-mode classifier:   1-2K tokens (permission checks only)
+  Memory:                 500-1K tokens (every turn)
+  ___________________________________________________________
+  Total baseline:         ~5-10K tokens per turn
+
+With 1M token context window:
+  • Estimated max turns: 100-200 (excluding tool results)
+  • Auto-compression triggers at ~80% capacity
+
+==============================================================================
+CRITICAL MISSING PIECES
+==============================================================================
+
+1. Main System Prompt
+   ⚠ Most important, cannot recover from source map
+   Impact: Baseline behavior of entire system
+
+2. Tool Descriptions (18+)
+   ⚠ Core instruction set for tool selection/execution
+   Impact: How LLM decides to use tools
+
+3. Auto-mode Classifier Logic
+   ⚠ Determines what gets auto-approved vs requiring user confirmation
+   Impact: Permission system behavior
+
+4. Compaction Logic
+   ⚠ How to summarize conversations to fit in context
+   Impact: Long conversation support
+
+5. Memory Extraction
+   ⚠ How to classify and store learned information
+   Impact: Inter-conversation learning
+
+==============================================================================
+PROMPT ENGINEERING TECHNIQUES IDENTIFIED
+==============================================================================
+
+Technique 1: Explicit Role Definition
+  "You are an expert reviewer of..."
+  → Establishes identity and expertise
+
+Technique 2: Constraint Setting with MUST
+  "You MUST X before Y"
+  → Enforces sequential constraints
+
+Technique 3: Negative Instructions
+  "Don't X", "You're not Y"
+  → Defines role boundaries to prevent confusion
+
+Technique 4: Structured Criteria
+  Numbered lists (1. Clarity 2. Completeness 3. ...)
+  → Ensures consistent evaluation
+
+Technique 5: Context Injection
+  Background explanation of system capabilities
+  → Helps LLM understand why it's doing something
+
+Technique 6: Meta-Prompting
+  Using LLM to evaluate another LLM's prompt
+  → Enables AI-assisted rule validation
+
+Technique 7: Dynamic Reminders
+  Mid-conversation system state re-injection
+  → Prevents information drift in long contexts
+
+==============================================================================
+FILES ANALYZED
+==============================================================================
+
+Primary Sources:
+  • /Users/sangyun-han/OpenSource/leaked-claude-code/cli/print.ts
+  • /Users/sangyun-han/OpenSource/leaked-claude-code/cli/handlers/autoMode.ts
+  • /Users/sangyun-han/OpenSource/leaked-claude-code/buddy/prompt.ts
+  • /Users/sangyun-han/OpenSource/leaked-claude-code/bridge/types.ts
+  • /Users/sangyun-han/OpenSource/leaked-claude-code/bridge/bridgeMain.ts
+
+Supporting References:
+  • ARCHITECTURE_ANALYSIS.md (architecture context)
+  • KEY_FINDINGS.md (system design insights)
+  • README.md (feature flags, architecture overview)
+
+==============================================================================
+DELIVERABLE
+==============================================================================
+
+Output Location:
+  /Users/sangyun-han/OpenSource/research/ai-tools/claude-code/prompts-catalog.md
+
+Document Contents:
+  • 1006 lines
+  • 12 major sections
+  • 8 actual prompts (with full text)
+  • 8+ inferred prompts (with analysis)
+  • Mermaid diagram of injection flow
+  • Pattern analysis & techniques
+  • Token usage estimates
+
+Language: Korean (as requested)
+
+==============================================================================
+KEY INSIGHTS FOR AGENT BUILDERS
+==============================================================================
+
+1. Use system reminders for long conversations
+   → Prevents LLM from forgetting initial constraints
+
+2. Separate role definition from action constraints
+   → "You are X" vs "You're not Y" vs "Don't do Z"
+
+3. Structure decision criteria explicitly
+   → Numbered criteria improve consistency
+
+4. Use meta-prompting for rule validation
+   → Let LLM evaluate user-provided rules/instructions
+
+5. Build hierarchical prompt system
+   → Main prompt + sub-agent prompts + tool descriptions
+
+6. Plan for token efficiency
+   → Deferred tool loading, dynamic reminders, compression
+
+7. Implement permission checks as separate classifier
+   → Auto-mode: separate LLM call for approval decisions
+
+==============================================================================
