@@ -15,6 +15,33 @@
 - 각 문서는 적절한 키워드나 기술 단위로 디렉토리를 만들어서 분류한다.
 - 아키텍처, 데이터 흐름, 시스템 구조 등 시각적 다이어그램은 반드시 Mermaid 문법으로 작성한다.
 
+### Mermaid 다이어그램 작성·검증
+
+GitHub의 Mermaid 렌더러는 파싱에 엄격해서 라벨 안의 특수문자가 자주 깨진다. 다음 규칙을 따르고, **푸시 전 반드시 검증**한다.
+
+**작성 규칙 (사고 예방)**
+
+- **노드 라벨은 따옴표로 감싼다** — 한글·공백·특수문자(`()`, `:`, `/`, `?`, `+`) 포함 시 필수.
+  - ❌ `MF[MetricFlow (dbt Labs)]` → 괄호가 다른 도형으로 오인되어 파싱 실패
+  - ✅ `MF["MetricFlow (dbt Labs)"]` 또는 ✅ `MF["MetricFlow — dbt Labs"]`
+- **다이아몬드 `{...}` 안에도 따옴표** — `?`, `+`, `:` 같은 특수문자 포함 시.
+  - ❌ `Q1{2개 이상 +1?}` → ✅ `Q1{"2개 이상 +1?"}`
+- **dotted edge 라벨도 따옴표** — `A -. "PR · Discussion" .-> B`
+- **라벨 안의 `/`, `:` 는 가급적 텍스트로 치환** — `BI/AI` → `BI · AI`, `Phase 1: Eval` → `Phase 1 — Eval`
+- **`classDiagram`에 트레일링 `// 주석` 금지** — Mermaid는 인라인 주석을 지원하지 않아 멤버명 일부로 흡수된다.
+  - ❌ `+string source  // db.schema.table` → ✅ `+string source`
+
+**검증 프로세스 (푸시 전 필수)**
+
+신규/수정한 mermaid 블록이 있는 문서는 항상 다음을 실행한다. 종료코드 0이면 통과.
+
+```bash
+scripts/validate-mermaid.sh path/to/doc.md
+# 여러 파일 동시: scripts/validate-mermaid.sh doc1.md doc2.md
+```
+
+스크립트는 markdown에서 ```` ```mermaid ```` 블록을 모두 추출해 `mermaid-cli`(npx로 자동 설치)로 SVG 렌더링을 시도하고 블록별 ✅/❌를 출력한다. ❌가 나오면 위 작성 규칙에 따라 수정 후 재검증한다.
+
 ### 분석 범위 및 품질
 - 웹 검색을 병행하여 정확도를 높이고 최신 정보를 포함한다.
 - 분석 시 다음 관점을 반드시 포함한다:
