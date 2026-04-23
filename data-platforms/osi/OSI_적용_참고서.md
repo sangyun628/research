@@ -33,7 +33,7 @@ OSI는 이 4개를 **Hub-and-Spoke 모델**로 한 번에 푼다.
 
 ```mermaid
 flowchart LR
-    subgraph BI["BI/시각화"]
+    subgraph BI["BI / 시각화"]
         Tab[Tableau]
         Sig[Sigma]
         Hex[Hex]
@@ -42,7 +42,7 @@ flowchart LR
     end
 
     subgraph SL["Semantic Layer 엔진"]
-        MF[MetricFlow<br/>(dbt Labs)]
+        MF["MetricFlow<br/>dbt Labs"]
         Cube[Cube]
         AtScale[AtScale]
         Honey[Honeydew]
@@ -57,10 +57,10 @@ flowchart LR
     subgraph AI["AI Agents"]
         Cortex[Snowflake Cortex]
         Mistral[Mistral AI]
-        Custom[자체 LLM Agent]
+        Custom["자체 LLM Agent"]
     end
 
-    Hub[("OSI YAML<br/>v0.1.1<br/>(Hub)")]
+    Hub["OSI YAML<br/>v0.1.1 · Hub"]
 
     BI <--> Hub
     SL <--> Hub
@@ -97,7 +97,7 @@ classDiagram
 
     class Dataset {
         +string name
-        +string source  // db.schema.table or query
+        +string source
         +string[] primary_key
         +string[][] unique_keys
         +string description
@@ -118,8 +118,8 @@ classDiagram
 
     class Relationship {
         +string name
-        +string from   // many side
-        +string to     // one side
+        +string from
+        +string to
         +string[] from_columns
         +string[] to_columns
         +AIContext ai_context
@@ -138,13 +138,13 @@ classDiagram
     }
 
     class DialectExpression {
-        +Dialect dialect  // ANSI_SQL/SNOWFLAKE/MDX/TABLEAU/DATABRICKS
+        +Dialect dialect
         +string expression
     }
 
     class CustomExtension {
         +Vendor vendor_name
-        +string data  // JSON string
+        +string data
     }
 
     class AIContext {
@@ -402,12 +402,12 @@ ai_context:
 
 ```mermaid
 flowchart LR
-    YAML[your-model.yaml]
-    YAML --> S1[1. JSON Schema 검사<br/>구조·타입·enum]
-    S1 --> S2[2. Unique 검사<br/>dataset/field/metric/relationship 이름 중복]
-    S2 --> S3[3. Reference 검사<br/>relationship의 from/to가 실제 dataset 가리키는가]
-    S3 --> S4[4. SQL 검사<br/>sqlglot로 dialect별 파싱]
-    S4 --> Report[PASS / FAIL 리포트]
+    YAML["your-model.yaml"]
+    YAML --> S1["1. JSON Schema 검사<br/>구조·타입·enum"]
+    S1 --> S2["2. Unique 검사<br/>dataset, field, metric, relationship 이름 중복"]
+    S2 --> S3["3. Reference 검사<br/>relationship의 from·to가 실제 dataset 가리키는가"]
+    S3 --> S4["4. SQL 검사<br/>sqlglot로 dialect별 파싱"]
+    S4 --> Report["PASS or FAIL 리포트"]
 ```
 
 ### 사용법
@@ -461,21 +461,21 @@ jobs:
 ```mermaid
 flowchart LR
     subgraph Import
-        V1[Vendor Model<br/>예: dbt semantic_models YAML] --> CI[import converter]
+        V1["Vendor Model<br/>예 — dbt semantic_models YAML"] --> CI[import converter]
         CI --> O1[OSI YAML]
     end
     
     subgraph Export
         O2[OSI YAML] --> CE[export converter]
-        CE --> V2[Vendor Model<br/>예: Snowflake Cortex YAML]
+        CE --> V2["Vendor Model<br/>예 — Snowflake Cortex YAML"]
     end
 
     subgraph Lossless
-        Original[원본 모델] --> ImportE[import]
-        ImportE --> OSIMid[OSI 중간형]
+        Original["원본 모델"] --> ImportE[import]
+        ImportE --> OSIMid["OSI 중간형"]
         OSIMid --> ExportE[export]
-        ExportE --> Restored[복원된 모델]
-        OSIMid -. custom_extensions로<br/>벤더 메타 보존 .-> ExportE
+        ExportE --> Restored["복원된 모델"]
+        OSIMid -. "custom_extensions로<br/>벤더 메타 보존" .-> ExportE
     end
 ```
 
@@ -519,19 +519,19 @@ OSI는 The ASF(Apache Software Foundation) 거버넌스를 모델로 한다.
 
 ```mermaid
 flowchart TD
-    TSC[Technical Steering Committee<br/>4인:<br/>- Khushboo Bhatia · Snowflake<br/>- Lior Ebel · Salesforce<br/>- Quigley Malcom · dbt Labs<br/>- JB Onofré · The ASF]
+    TSC["Technical Steering Committee — 4인<br/>Khushboo Bhatia · Snowflake<br/>Lior Ebel · Salesforce<br/>Quigley Malcom · dbt Labs<br/>JB Onofré · The ASF"]
     
-    Comm[Committers<br/>(repo write access)]
-    Reviewers[Specification Reviewers<br/>(도메인 전문가)]
-    Contrib[Contributors<br/>(누구나)]
+    Comm["Committers<br/>repo write access"]
+    Reviewers["Specification Reviewers<br/>도메인 전문가"]
+    Contrib["Contributors<br/>누구나"]
 
-    TSC --> SpecChange[Spec Change Vote]
+    TSC --> SpecChange["Spec Change Vote"]
     Comm --> SpecChange
-    SpecChange --> Pass{2개 이상 binding +1<br/>+ 거부권 0?}
+    SpecChange --> Pass{"binding +1 두 개 이상<br/>그리고 거부권 0?"}
     Pass -- 통과 --> Merge[merge]
-    Pass -- 실패 --> Veto[veto 해소 또는<br/>2/3 supermajority 오버라이드]
+    Pass -- 실패 --> Veto["veto 해소 또는<br/>2·3 supermajority 오버라이드"]
 
-    Contrib -. PR/Discussion .-> SpecChange
+    Contrib -. "PR · Discussion" .-> SpecChange
     Reviewers -. Review .-> SpecChange
 ```
 
@@ -559,10 +559,10 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    P1[Phase 1: Evaluate]
-    P2[Phase 2: Pilot]
-    P3[Phase 3: Expand]
-    P4[Phase 4: Govern]
+    P1["Phase 1 — Evaluate"]
+    P2["Phase 2 — Pilot"]
+    P3["Phase 3 — Expand"]
+    P4["Phase 4 — Govern"]
     P1 --> P2 --> P3 --> P4
 ```
 
@@ -617,15 +617,15 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    Q1{현재 의미층 도구가<br/>2개 이상인가?}
-    Q1 -- 아니오 --> Wait1[지금 도입 ROI 낮음<br/>도구가 늘어날 때 다시 평가]
-    Q1 -- 예 --> Q2{같은 KPI가<br/>도구마다 다른 값을<br/>보였던 적 있나?}
-    Q2 -- 아니오 --> Wait2[훌륭함. 그래도<br/>핵심 메트릭만 OSI YAML로<br/>한 카피 보관 권장]
-    Q2 -- 예 --> Q3{AI 코파일럿/text-to-SQL을<br/>도입했거나 도입 예정인가?}
-    Q3 -- 예 --> Adopt[즉시 Pilot 권장<br/>AI grounding 가치가 큼]
-    Q3 -- 아니오 --> Q4{사용 중인 의미층 도구가<br/>OSI 1st-class 지원<br/>(dbt/Cube/AtScale 등)인가?}
-    Q4 -- 예 --> Adopt2[OSI 1.0 spec 안정화<br/>(2026-01 이미 완료)<br/>지금 Phase 1 시작 OK]
-    Q4 -- 아니오 --> Wait3[해당 도구의 OSI 로드맵<br/>모니터링 + 자체 컨버터 평가]
+    Q1{"현재 의미층 도구가<br/>2개 이상인가?"}
+    Q1 -- 아니오 --> Wait1["지금 도입 ROI 낮음<br/>도구가 늘어날 때 다시 평가"]
+    Q1 -- 예 --> Q2{"같은 KPI가<br/>도구마다 다른 값을<br/>보였던 적 있나?"}
+    Q2 -- 아니오 --> Wait2["훌륭함. 그래도<br/>핵심 메트릭만 OSI YAML로<br/>한 카피 보관 권장"]
+    Q2 -- 예 --> Q3{"AI 코파일럿 또는 text-to-SQL을<br/>도입했거나 도입 예정인가?"}
+    Q3 -- 예 --> Adopt["즉시 Pilot 권장<br/>AI grounding 가치가 큼"]
+    Q3 -- 아니오 --> Q4{"사용 중인 의미층 도구가<br/>OSI 1st-class 지원<br/>dbt · Cube · AtScale 등인가?"}
+    Q4 -- 예 --> Adopt2["OSI 1.0 spec 안정화<br/>2026-01 이미 완료<br/>지금 Phase 1 시작 OK"]
+    Q4 -- 아니오 --> Wait3["해당 도구의 OSI 로드맵<br/>모니터링 + 자체 컨버터 평가"]
 ```
 
 ### 도입을 미뤄도 되는 신호
@@ -691,23 +691,23 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    UI[BI 도구 / AI Agent / 사용자]
-    OSI[OSI<br/>의미층 표준]
-    SL[MetricFlow / Cube / AtScale<br/>의미층 엔진]
-    OL[OpenLineage<br/>리니지 표준]
-    OM[OpenMetadata / DataHub<br/>카탈로그]
-    DBT[dbt<br/>변환 도구]
-    DW[(Warehouse)]
+    UI["BI 도구 · AI Agent · 사용자"]
+    OSI["OSI<br/>의미층 표준"]
+    SL["MetricFlow · Cube · AtScale<br/>의미층 엔진"]
+    OL["OpenLineage<br/>리니지 표준"]
+    OM["OpenMetadata · DataHub<br/>카탈로그"]
+    DBT["dbt<br/>변환 도구"]
+    DW[("Warehouse")]
     
     UI --> OSI
     OSI --> SL
     SL --> DW
     DBT --> DW
-    OL -.리니지 추적.-> SL
-    OL -.리니지 추적.-> DBT
-    OM -.메타데이터.-> OSI
-    OM -.메타데이터.-> DBT
-    OM -.메타데이터.-> DW
+    OL -. 리니지 추적 .-> SL
+    OL -. 리니지 추적 .-> DBT
+    OM -. 메타데이터 .-> OSI
+    OM -. 메타데이터 .-> DBT
+    OM -. 메타데이터 .-> DW
 ```
 
 ---
