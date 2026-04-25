@@ -119,62 +119,62 @@ def _robust_json_parse(self, response: str) -> dict:
 ```mermaid
 flowchart TB
     subgraph Input["문서 입력"]
-        PDF[PDF]
-        OFFICE[Word/Excel/PPT]
-        IMG[이미지]
-        TXT[텍스트]
+        PDF["PDF"]
+        OFFICE["Word · Excel · PPT"]
+        IMG["이미지"]
+        TXT["텍스트"]
     end
 
     subgraph Parsing["문서 파싱 (MinerU)"]
-        MINERU[MinerU 2.0<br/>구조 추출]
-        CONVERT[포맷 변환<br/>Office→PDF<br/>BMP→PNG]
-        CACHE[파싱 캐시<br/>mtime + method 기반]
+        MINERU["MinerU 2.0<br/>구조 추출"]
+        CONVERT["포맷 변환<br/>Office→PDF<br/>BMP→PNG"]
+        CACHE["파싱 캐시<br/>mtime + method 기반"]
     end
 
     subgraph Separation["콘텐츠 분리"]
-        SEP{type?}
-        TEXT_PARTS[텍스트 부분]
-        MM_ITEMS[멀티모달 아이템<br/>이미지/표/수식]
+        SEP{"type?"}
+        TEXT_PARTS["텍스트 부분"]
+        MM_ITEMS["멀티모달 아이템<br/>이미지 · 표 · 수식"]
     end
 
     subgraph TextPath["텍스트 경로 (LightRAG)"]
-        LR_INSERT[LightRAG.ainsert()<br/>엔티티/관계 추출<br/>KG 구축]
+        LR_INSERT["LightRAG.ainsert<br/>엔티티 · 관계 추출<br/>KG 구축"]
     end
 
     subgraph ModalPath["멀티모달 경로"]
-        CTX[ContextExtractor<br/>주변 페이지/청크 추출]
-        PROC{모달리티 타입?}
-        IMG_PROC[ImageModalProcessor<br/>Vision LLM 분석]
-        TBL_PROC[TableModalProcessor<br/>구조 분석]
-        EQ_PROC[EquationModalProcessor<br/>수식 파싱]
-        GEN_PROC[GenericModalProcessor<br/>폴백]
+        CTX["ContextExtractor<br/>주변 페이지 · 청크 추출"]
+        PROC{"모달리티 타입?"}
+        IMG_PROC["ImageModalProcessor<br/>Vision LLM 분석"]
+        TBL_PROC["TableModalProcessor<br/>구조 분석"]
+        EQ_PROC["EquationModalProcessor<br/>수식 파싱"]
+        GEN_PROC["GenericModalProcessor<br/>폴백"]
 
-        ENTITY[엔티티 생성<br/>KG 노드 + 벡터 임베딩]
-        RELS[관계 추출<br/>cross-modal belongs_to]
+        ENTITY["엔티티 생성<br/>KG 노드 + 벡터 임베딩"]
+        RELS["관계 추출<br/>cross-modal belongs_to"]
     end
 
     subgraph KG["LightRAG Knowledge Graph"]
-        NODES[(엔티티 노드<br/>텍스트 + 멀티모달)]
-        EDGES[(관계 엣지<br/>텍스트 + cross-modal)]
-        VDB[(벡터 인덱스<br/>entities/relations/chunks)]
+        NODES[("엔티티 노드<br/>텍스트 + 멀티모달")]
+        EDGES[("관계 엣지<br/>텍스트 + cross-modal")]
+        VDB[("벡터 인덱스<br/>entities · relations · chunks")]
     end
 
     subgraph Query["쿼리"]
-        Q[사용자 질문<br/>+ 선택적 이미지/표]
-        ENHANCE[멀티모달 쿼리 강화<br/>이미지→설명 변환]
-        LR_QUERY[LightRAG.aquery()<br/>5가지 모드]
+        Q["사용자 질문<br/>+ 선택적 이미지 · 표"]
+        ENHANCE["멀티모달 쿼리 강화<br/>이미지→설명 변환"]
+        LR_QUERY["LightRAG.aquery<br/>5가지 모드"]
     end
 
     Input --> Parsing
     PDF --> MINERU
     OFFICE --> CONVERT --> MINERU
     MINERU --> CACHE --> SEP
-    SEP -->|text| TEXT_PARTS --> LR_INSERT --> KG
-    SEP -->|image/table/eq| MM_ITEMS --> CTX --> PROC
-    PROC -->|image| IMG_PROC --> ENTITY
-    PROC -->|table| TBL_PROC --> ENTITY
-    PROC -->|equation| EQ_PROC --> ENTITY
-    PROC -->|other| GEN_PROC --> ENTITY
+    SEP -->|"text"| TEXT_PARTS --> LR_INSERT --> KG
+    SEP -->|"image · table · eq"| MM_ITEMS --> CTX --> PROC
+    PROC -->|"image"| IMG_PROC --> ENTITY
+    PROC -->|"table"| TBL_PROC --> ENTITY
+    PROC -->|"equation"| EQ_PROC --> ENTITY
+    PROC -->|"other"| GEN_PROC --> ENTITY
     ENTITY --> KG
     ENTITY --> RELS --> KG
 

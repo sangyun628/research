@@ -44,46 +44,46 @@ README 원문 인용:
 ```mermaid
 flowchart LR
     subgraph Client["Browser"]
-        UI[Chat UI<br/>Next.js React]
+        UI["Chat UI<br/>Next.js React"]
     end
 
     subgraph Web["apps/web (Next.js on Vercel)"]
         ChatRoute["/api/chat<br/>POST"]
-        SandboxAPI["/api/sandbox/*<br/>(create/status/extend/<br/>snapshot/activity/reconnect)"]
-        WorkflowChat["runAgentWorkflow<br/>(durable)"]
-        WorkflowLifecycle["sandboxLifecycleWorkflow<br/>(durable, sleep-based)"]
+        SandboxAPI["/api/sandbox/*<br/>create · status · extend ·<br/>snapshot · activity · reconnect"]
+        WorkflowChat["runAgentWorkflow<br/>durable"]
+        WorkflowLifecycle["sandboxLifecycleWorkflow<br/>durable, sleep-based"]
         DB[("Neon Postgres<br/>sessions 테이블")]
     end
 
     subgraph AgentPkg["packages/agent"]
-        OpenHarnessAgent[ToolLoopAgent<br/>openHarnessAgent]
-        Tools["tools/<br/>read,write,edit,grep,<br/>glob,bash,task,skill..."]
-        Subagents["subagents/<br/>executor,explorer,design"]
+        OpenHarnessAgent["ToolLoopAgent<br/>openHarnessAgent"]
+        Tools["tools —<br/>read · write · edit · grep ·<br/>glob · bash · task · skill..."]
+        Subagents["subagents —<br/>executor · explorer · design"]
     end
 
     subgraph SandboxPkg["packages/sandbox"]
-        Interface["Sandbox interface<br/>(readFile/exec/snapshot/...)"]
-        VercelImpl["VercelSandbox<br/>(Firecracker microVM wrapper)"]
+        Interface["Sandbox interface<br/>readFile · exec · snapshot · ..."]
+        VercelImpl["VercelSandbox<br/>Firecracker microVM wrapper"]
     end
 
     subgraph VercelSandbox["Vercel Sandbox (Firecracker microVM)"]
-        FS["/vercel/sandbox<br/>(working dir)"]
-        Shell[bash, git, node,<br/>npm, bun, jq, ...]
-        Servers["dev servers on<br/>3000/5173/4321/8000"]
+        FS["/vercel/sandbox<br/>working dir"]
+        Shell["bash, git, node,<br/>npm, bun, jq, ..."]
+        Servers["dev servers on<br/>3000 · 5173 · 4321 · 8000"]
     end
 
-    UI -->|HTTP + SSE| ChatRoute
-    UI -->|poll 15s| SandboxAPI
-    ChatRoute -->|start| WorkflowChat
-    SandboxAPI -->|start/kick| WorkflowLifecycle
-    WorkflowChat -->|stream| OpenHarnessAgent
+    UI -->|"HTTP + SSE"| ChatRoute
+    UI -->|"poll 15s"| SandboxAPI
+    ChatRoute -->|"start"| WorkflowChat
+    SandboxAPI -->|"start · kick"| WorkflowLifecycle
+    WorkflowChat -->|"stream"| OpenHarnessAgent
     OpenHarnessAgent --> Tools
     OpenHarnessAgent --> Subagents
-    Tools -->|connectSandbox(state)| Interface
-    Subagents -->|connectSandbox(state)| Interface
+    Tools -->|"connectSandbox(state)"| Interface
+    Subagents -->|"connectSandbox(state)"| Interface
     Interface --> VercelImpl
-    VercelImpl -->|@vercel/sandbox SDK| VercelSandbox
-    WorkflowLifecycle -->|connectSandbox +<br/>sandbox.stop()| VercelImpl
+    VercelImpl -->|"@vercel/sandbox SDK"| VercelSandbox
+    WorkflowLifecycle -->|"connectSandbox +<br/>sandbox.stop()"| VercelImpl
     WorkflowChat <--> DB
     WorkflowLifecycle <--> DB
     SandboxAPI <--> DB

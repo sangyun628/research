@@ -151,14 +151,14 @@ DeerFlow 의 가장 차별적인 부분. **순서가 곧 의미**입니다 (CLAU
 
 ```mermaid
 flowchart LR
-    CONF[config.yaml<br/>tools[].use<br/>tool_groups[]] --> RES[resolve_variable]
-    EXT[extensions_config.json<br/>mcpServers] --> MCP[get_cached_mcp_tools<br/>mtime invalidate]
-    BLT[Builtins<br/>present_files<br/>ask_clarification<br/>view_image*]
-    SUB[task tool<br/>if subagent_enabled]
-    SBT[Sandbox Tools<br/>bash · ls · read · write · str_replace]
+    CONF["config.yaml<br/>tools[].use<br/>tool_groups[]"] --> RES["resolve_variable"]
+    EXT["extensions_config.json<br/>mcpServers"] --> MCP["get_cached_mcp_tools<br/>mtime invalidate"]
+    BLT["Builtins<br/>present_files<br/>ask_clarification<br/>view_image*"]
+    SUB["task tool<br/>if subagent_enabled"]
+    SBT["Sandbox Tools<br/>bash · ls · read · write · str_replace"]
 
-    RES & MCP & BLT & SUB & SBT --> AGG[get_available_tools]
-    AGG --> CA[create_agent tools]
+    RES & MCP & BLT & SUB & SBT --> AGG["get_available_tools"]
+    AGG --> CA["create_agent tools"]
 ```
 
 특이사항:

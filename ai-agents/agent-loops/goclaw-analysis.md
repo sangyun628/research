@@ -233,29 +233,29 @@ flowchart TB
 
 ```mermaid
 flowchart TD
-    IN[사용자 메시지] --> SCHED{스케줄러<br/>세션 직렬화}
-    SCHED --> CTX[ContextStage<br/>워크스페이스 해석<br/>메모리 L0 자동 주입<br/>시스템 프롬프트 빌드]
-    CTX --> ITER_START[Iteration Loop 시작]
+    IN["사용자 메시지"] --> SCHED{"스케줄러<br/>세션 직렬화"}
+    SCHED --> CTX["ContextStage<br/>워크스페이스 해석<br/>메모리 L0 자동 주입<br/>시스템 프롬프트 빌드"]
+    CTX --> ITER_START["Iteration Loop 시작"]
 
-    ITER_START --> THINK[ThinkStage<br/>LLM 호출<br/>truncation 재시도 (최대 3회)<br/>budget nudge 70%/90%]
-    THINK -->|BreakLoop: tool 없음| FINAL
-    THINK -->|Continue: tool 있음| PRUNE
+    ITER_START --> THINK["ThinkStage<br/>LLM 호출<br/>truncation 재시도 — 최대 3회<br/>budget nudge 70% · 90%"]
+    THINK -->|"BreakLoop — tool 없음"| FINAL
+    THINK -->|"Continue — tool 있음"| PRUNE
 
-    PRUNE[PruneStage<br/>70%: soft prune<br/>100%: memory flush → LLM compaction]
-    PRUNE -->|AbortRun: 예산 초과| FINAL
+    PRUNE["PruneStage<br/>70% — soft prune<br/>100% — memory flush → LLM compaction"]
+    PRUNE -->|"AbortRun — 예산 초과"| FINAL
     PRUNE --> TOOL
 
-    TOOL[ToolStage<br/>단일: 순차 / 복수: 병렬 I/O + 순차 mutation<br/>루프 감지 + 읽기전용 스트릭 감지]
-    TOOL -->|BreakLoop: 루프/예산| FINAL
+    TOOL["ToolStage<br/>단일 — 순차 · 복수 — 병렬 I/O + 순차 mutation<br/>루프 감지 + 읽기전용 스트릭 감지"]
+    TOOL -->|"BreakLoop — 루프 · 예산"| FINAL
     TOOL --> OBSERVE
 
-    OBSERVE[ObserveStage<br/>InjectCh 드레인<br/>block reply 추적<br/>final content 수집]
+    OBSERVE["ObserveStage<br/>InjectCh 드레인<br/>block reply 추적<br/>final content 수집"]
     OBSERVE --> CHECKPOINT
 
-    CHECKPOINT[CheckpointStage<br/>매 N 이터레이션마다 pending flush]
+    CHECKPOINT["CheckpointStage<br/>매 N 이터레이션마다 pending flush"]
     CHECKPOINT --> ITER_START
 
-    FINAL[FinalizeStage<br/>결과 정리, 미디어 merge<br/>세션 메타 업데이트<br/>비동기 요약 트리거<br/>consolidation 이벤트 발행]
+    FINAL["FinalizeStage<br/>결과 정리, 미디어 merge<br/>세션 메타 업데이트<br/>비동기 요약 트리거<br/>consolidation 이벤트 발행"]
 ```
 
 ### 3.3 병렬 도구 실행의 2-Phase 모델

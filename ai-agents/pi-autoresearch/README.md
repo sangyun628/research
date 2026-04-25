@@ -493,16 +493,16 @@ function computeConfidence(
 
 ```mermaid
 flowchart TB
-    Start[사용자가 groups.json 작성<br/>- base: merge-base<br/>- groups[]: 논리적 묶음]
-    Parse[parse_groups<br/>Node.js로 JSON → flat files]
-    Pre[preflight<br/>- feature branch 확인<br/>- commit 존재 확인<br/>- group 간 파일 겹침 검사<br/>- 브랜치명 중복 검사]
-    Create[create_branches<br/>각 group마다:<br/>checkout BASE<br/>checkout -b autoresearch/GOAL/NN-slug<br/>group의 파일만 last_commit에서 체크아웃<br/>commit]
-    Verify[verify_branches<br/>- union == FINAL_TREE<br/>- session artifact 없음<br/>- empty commit 없음<br/>- metric 힌트 있음]
-    Summary[print_summary<br/>cleanup 명령 안내<br/>ideas backlog 표시]
+    Start["사용자가 groups.json 작성<br/>- base — merge-base<br/>- groups[] — 논리적 묶음"]
+    Parse["parse_groups<br/>Node.js로 JSON → flat files"]
+    Pre["preflight<br/>- feature branch 확인<br/>- commit 존재 확인<br/>- group 간 파일 겹침 검사<br/>- 브랜치명 중복 검사"]
+    Create["create_branches<br/>각 group마다 —<br/>checkout BASE<br/>checkout -b autoresearch · GOAL · NN-slug<br/>group의 파일만 last_commit에서 체크아웃<br/>commit"]
+    Verify["verify_branches<br/>- union == FINAL_TREE<br/>- session artifact 없음<br/>- empty commit 없음<br/>- metric 힌트 있음"]
+    Summary["print_summary<br/>cleanup 명령 안내<br/>ideas backlog 표시"]
 
     Start --> Parse --> Pre --> Create --> Verify --> Summary
-    Pre -- fail --> Exit1[cleanup + exit]
-    Create -- 예외 --> Rollback[rollback: branch -D,<br/>원 브랜치 복귀, stash pop]
+    Pre -- fail --> Exit1["cleanup + exit"]
+    Create -- 예외 --> Rollback["rollback — branch -D,<br/>원 브랜치 복귀, stash pop"]
 ```
 
 몇 가지 눈여겨볼 bash 테크닉:

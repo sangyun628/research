@@ -1038,37 +1038,37 @@ const result = await Promise.race([
 ```mermaid
 graph TB
     subgraph "ReAct 루프 (공통)"
-      L[while true → model → tool? → result → model]
+      L["while true → model → tool? → result → model"]
     end
 
     subgraph "Opencode 특수성"
-      OC1[session/prompt 폴더<br/>13개 provider별 정적 prompt]
-      OC2[max-steps.txt / plan.txt<br/>정적 system-reminder]
-      OC3[reasoning = MessageV2 1급 파트]
-      OC4[Effect.ts abort 신호가<br/>tool 실행까지 관통]
-      OC5[task tool = child session + recursive runLoop]
+      OC1["session/prompt 폴더<br/>13개 provider별 정적 prompt"]
+      OC2["max-steps.txt · plan.txt<br/>정적 system-reminder"]
+      OC3["reasoning = MessageV2 1급 파트"]
+      OC4["Effect.ts abort 신호가<br/>tool 실행까지 관통"]
+      OC5["task tool = child session + recursive runLoop"]
     end
 
     subgraph "OpenHarness 특수성"
-      OH1[3-tier compaction<br/>micro/full/reactive]
-      OH2[tool_metadata carryover<br/>task_focus_state 등]
-      OH3[Coordinator Mode<br/>519 lines 프롬프트]
-      OH4[Swarm 4908 lines<br/>진짜 subprocess + 파일 mailbox]
-      OH5[bundled skills<br/>commit/debug/plan/review/simplify/test]
-      OH6[Hooks hot reload + 다수 event]
+      OH1["3-tier compaction<br/>micro · full · reactive"]
+      OH2["tool_metadata carryover<br/>task_focus_state 등"]
+      OH3["Coordinator Mode<br/>519 lines 프롬프트"]
+      OH4["Swarm 4908 lines<br/>진짜 subprocess + 파일 mailbox"]
+      OH5["bundled skills<br/>commit · debug · plan · review · simplify · test"]
+      OH6["Hooks hot reload + 다수 event"]
     end
 
     subgraph "Claude Code 유출본 특수성"
-      CC1[매 턴 system prompt 재빌드<br/>memory index 주입]
-      CC2[대화 중간 system-reminder XML 주입]
-      CC3[hook-vs-prompt race]
-      CC4[bridge 원격 session runner]
-      CC5[NDJSON transcript 복구]
+      CC1["매 턴 system prompt 재빌드<br/>memory index 주입"]
+      CC2["대화 중간 system-reminder XML 주입"]
+      CC3["hook-vs-prompt race"]
+      CC4["bridge 원격 session runner"]
+      CC5["NDJSON transcript 복구"]
     end
 
-    L -.→ OC1 & OC3 & OC4
-    L -.→ OH1 & OH3 & OH4
-    L -.→ CC1 & CC2 & CC3
+    L -.-> OC1 & OC3 & OC4
+    L -.-> OH1 & OH3 & OH4
+    L -.-> CC1 & CC2 & CC3
 ```
 
 ---

@@ -95,67 +95,67 @@ BigQuery, Snowflake, PostgreSQL, MySQL, DuckDB, Databricks, ClickHouse, MSSQL, T
 ```mermaid
 flowchart TB
     subgraph Frontend["wren-ui (Next.js)"]
-        UI[시맨틱 모델링 UI<br/>자연어 질의<br/>결과 시각화]
+        UI["시맨틱 모델링 UI<br/>자연어 질의<br/>결과 시각화"]
     end
 
     subgraph AIService["wren-ai-service (Python/FastAPI)"]
         direction TB
-        API[FastAPI REST API<br/>POST /v1/asks<br/>GET /v1/asks/{id}/result]
+        API["FastAPI REST API<br/>POST /v1/asks<br/>GET /v1/asks/:id/result"]
 
         subgraph Pipelines["파이프라인"]
             direction TB
-            IC[Intent Classification<br/>TEXT_TO_SQL / GENERAL /<br/>USER_GUIDE / MISLEADING]
-            RET[Schema Retrieval<br/>Qdrant 벡터 검색<br/>+ Column Pruning]
-            SQLP[SQL Pairs Retrieval<br/>유사 예시 SQL]
-            INST[Instructions Retrieval<br/>사용자 지시사항]
-            REASON[SQL Generation Reasoning<br/>Chain-of-Thought]
-            GEN[SQL Generation<br/>Jinja2 프롬프트<br/>+ Structured Output]
-            VAL[SQL Validation<br/>dry-run / dry-plan]
-            CORR[SQL Correction<br/>최대 3회 재시도]
-            CHART[Chart Generation<br/>Vega-Lite JSON]
+            IC["Intent Classification<br/>TEXT_TO_SQL · GENERAL ·<br/>USER_GUIDE · MISLEADING"]
+            RET["Schema Retrieval<br/>Qdrant 벡터 검색<br/>+ Column Pruning"]
+            SQLP["SQL Pairs Retrieval<br/>유사 예시 SQL"]
+            INST["Instructions Retrieval<br/>사용자 지시사항"]
+            REASON["SQL Generation Reasoning<br/>Chain-of-Thought"]
+            GEN["SQL Generation<br/>Jinja2 프롬프트<br/>+ Structured Output"]
+            VAL["SQL Validation<br/>dry-run · dry-plan"]
+            CORR["SQL Correction<br/>최대 3회 재시도"]
+            CHART["Chart Generation<br/>Vega-Lite JSON"]
         end
 
         subgraph Providers["프로바이더"]
-            LLM_P[LLM Provider<br/>LiteLLM Router]
-            EMB_P[Embedder Provider<br/>AsyncTextEmbedder]
-            DOC_P[DocumentStore Provider<br/>Qdrant]
-            ENG_P[Engine Provider<br/>wren-engine HTTP]
+            LLM_P["LLM Provider<br/>LiteLLM Router"]
+            EMB_P["Embedder Provider<br/>AsyncTextEmbedder"]
+            DOC_P["DocumentStore Provider<br/>Qdrant"]
+            ENG_P["Engine Provider<br/>wren-engine HTTP"]
         end
 
         subgraph Indexing["인덱싱 파이프라인"]
-            IDX_S[Schema Indexing<br/>MDL → DDL → 벡터]
-            IDX_T[Table Description<br/>테이블 요약 벡터]
-            IDX_Q[SQL Pairs Indexing<br/>예시 SQL 벡터]
-            IDX_I[Instructions Indexing<br/>사용자 지시사항 벡터]
+            IDX_S["Schema Indexing<br/>MDL → DDL → 벡터"]
+            IDX_T["Table Description<br/>테이블 요약 벡터"]
+            IDX_Q["SQL Pairs Indexing<br/>예시 SQL 벡터"]
+            IDX_I["Instructions Indexing<br/>사용자 지시사항 벡터"]
         end
     end
 
     subgraph Engine["wren-engine (Rust)"]
-        QP[Query Planner<br/>MDL 조인 해석]
-        EXEC[SQL Executor<br/>데이터소스 실행]
+        QP["Query Planner<br/>MDL 조인 해석"]
+        EXEC["SQL Executor<br/>데이터소스 실행"]
     end
 
     subgraph VectorDB["Qdrant"]
-        VS[(벡터 스토어<br/>스키마/SQL/지시사항)]
+        VS[("벡터 스토어<br/>스키마 · SQL · 지시사항")]
     end
 
     subgraph DataSources["데이터소스 (15+)"]
-        BQ[BigQuery]
-        SF[Snowflake]
-        PG[PostgreSQL]
-        DK[DuckDB]
-        ETC[...]
+        BQ["BigQuery"]
+        SF["Snowflake"]
+        PG["PostgreSQL"]
+        DK["DuckDB"]
+        ETC["..."]
     end
 
-    UI -->|GraphQL| API
+    UI -->|"GraphQL"| API
     API --> IC --> RET & SQLP & INST
     RET --> GEN
     SQLP --> GEN
     INST --> GEN
     REASON --> GEN
     GEN --> VAL
-    VAL -->|실패| CORR --> VAL
-    VAL -->|성공| CHART
+    VAL -->|"실패"| CORR --> VAL
+    VAL -->|"성공"| CHART
     GEN --> LLM_P
     CORR --> LLM_P
     RET --> EMB_P

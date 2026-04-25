@@ -154,43 +154,43 @@ flowchart TB
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant Loop as run_conversation
-    participant SP as System Prompt<br/>(cached)
+    participant RC as run_conversation
+    participant SP as System Prompt (cached)
     participant LLM
     participant Tool
-    participant FS as Disk<br/>(skills/memory/sessionDB)
+    participant FS as Disk (skills/memory/sessionDB)
     participant BG as BG Review Agent
 
-    U->>Loop: "/research llama 4 reasoning"
-    Loop->>Loop: _user_turn_count++,<br/>_turns_since_memory++
-    Loop->>SP: 첫 호출이면 build_system_prompt()<br/>(memory + skills + context files)
+    U->>RC: "/research llama 4 reasoning"
+    RC->>RC: _user_turn_count++,<br/>_turns_since_memory++
+    RC->>SP: 첫 호출이면 build_system_prompt()<br/>(memory + skills + context files)
     Note over SP: 이후 턴들은 캐시된 동일 프롬프트<br/>(prefix cache 활성)
-    Loop->>LLM: chat.completions.create(messages, tools)
+    RC->>LLM: chat.completions.create(messages, tools)
 
     loop max_iterations × IterationBudget
-        LLM-->>Loop: assistant_message + tool_calls
-        Loop->>Loop: _execute_tool_calls_concurrent or _sequential
+        LLM-->>RC: assistant_message + tool_calls
+        RC->>RC: _execute_tool_calls_concurrent or _sequential
         par 도구 N개
-            Loop->>Tool: registry.dispatch(name, args)
+            RC->>Tool: registry.dispatch(name, args)
             Tool->>FS: (옵션) checkpoint snapshot
-            Tool-->>Loop: JSON result
+            Tool-->>RC: JSON result
         end
-        Loop->>LLM: messages + tool results
+        RC->>LLM: messages + tool results
     end
-    LLM-->>Loop: final assistant content
-    Loop->>FS: SessionDB.append_message + FTS index
+    LLM-->>RC: final assistant content
+    RC->>FS: SessionDB.append_message + FTS index
 
     alt _turns_since_memory >= 10
-        Loop-->>BG: fork(_MEMORY_REVIEW_PROMPT)
+        RC-->>BG: fork(_MEMORY_REVIEW_PROMPT)
         BG->>LLM: 분리된 자식 에이전트 (8 iter cap)
         BG->>FS: memory_tool(add/replace) on MEMORY.md / USER.md
     end
     alt iteration count >= 10 (skill threshold)
-        Loop-->>BG: fork(_SKILL_REVIEW_PROMPT)
+        RC-->>BG: fork(_SKILL_REVIEW_PROMPT)
         BG->>FS: skill_manage(create/patch) on SKILL.md
     end
 
-    Loop-->>U: response (CLI/TUI/messaging)
+    RC-->>U: response (CLI/TUI/messaging)
 ```
 
 ### 3.3 핵심 클래스 모델
@@ -280,50 +280,50 @@ classDiagram
 
 ```mermaid
 flowchart TD
-    Start[run_conversation 시작]
-    Inc1[_user_turn_count++]
-    CheckMem{_turns_since_memory<br/>>= _memory_nudge_interval<br/>(default 10)?}
+    Start["run_conversation 시작"]
+    Inc1["_user_turn_count++"]
+    CheckMem{"_turns_since_memory<br/>>= _memory_nudge_interval<br/>default 10 ?"}
     Inc1 --> CheckMem
 
-    Loop[메인 도구 루프 실행]
+    Loop["메인 도구 루프 실행"]
     CheckMem --> Loop
 
-    CheckSkill{이번 턴 iteration count<br/>>= _skill_nudge_interval<br/>(default 10)?}
+    CheckSkill{"이번 턴 iteration count<br/>>= _skill_nudge_interval<br/>default 10 ?"}
     Loop --> CheckSkill
 
-    Decide{review_memory<br/>or review_skills?}
+    Decide{"review_memory<br/>or review_skills?"}
     CheckMem -- yes --> Decide
     CheckSkill -- yes --> Decide
 
-    Spawn[_spawn_background_review:<br/>새 daemon Thread<br/>+ 새 AIAgent fork]
-    Decide -- both --> SpawnComb[fork with _COMBINED_REVIEW_PROMPT]
-    Decide -- memory only --> SpawnMem[fork with _MEMORY_REVIEW_PROMPT]
-    Decide -- skills only --> SpawnSkill[fork with _SKILL_REVIEW_PROMPT]
+    Spawn["_spawn_background_review —<br/>새 daemon Thread<br/>+ 새 AIAgent fork"]
+    Decide -- both --> SpawnComb["fork with _COMBINED_REVIEW_PROMPT"]
+    Decide -- "memory only" --> SpawnMem["fork with _MEMORY_REVIEW_PROMPT"]
+    Decide -- "skills only" --> SpawnSkill["fork with _SKILL_REVIEW_PROMPT"]
 
     SpawnComb --> Spawn
     SpawnMem --> Spawn
     SpawnSkill --> Spawn
 
-    Quiet[review_agent =<br/>quiet_mode=True,<br/>max_iterations=8,<br/>나누지 않은 messages_snapshot 사용]
+    Quiet["review_agent —<br/>quiet_mode=True,<br/>max_iterations=8,<br/>나누지 않은 messages_snapshot 사용"]
     Spawn --> Quiet
 
-    Run[review_agent.run_conversation 실행<br/>stdout/stderr 모두 /dev/null]
+    Run["review_agent.run_conversation 실행<br/>stdout · stderr 모두 /dev/null"]
     Quiet --> Run
 
-    DoTools{LLM이 판단:<br/>저장 가치 있나?}
+    DoTools{"LLM이 판단 —<br/>저장 가치 있나?"}
     Run --> DoTools
 
-    Save[memory tool 또는<br/>skill_manage tool 호출]
+    Save["memory tool 또는<br/>skill_manage tool 호출"]
     DoTools -- yes --> Save
-    DoTools -- no --> End1[Nothing to save. → 종료]
+    DoTools -- no --> End1["Nothing to save. → 종료"]
 
-    Persist[디스크에 즉시 반영:<br/>MEMORY.md / USER.md /<br/>~/.hermes/skills/SKILL.md]
+    Persist["디스크에 즉시 반영 —<br/>MEMORY.md · USER.md ·<br/>~/.hermes/skills/SKILL.md"]
     Save --> Persist
 
-    Notify[부모 turn에 💾 알림 출력<br/>+ background_review_callback]
+    Notify["부모 turn에 💾 알림 출력<br/>+ background_review_callback"]
     Persist --> Notify
 
-    NextSession[다음 세션 시작 시<br/>build_system_prompt가<br/>새 메모리·스킬을 픽업]
+    NextSession["다음 세션 시작 시<br/>build_system_prompt가<br/>새 메모리·스킬을 픽업"]
     Notify --> NextSession
     End1 --> NextSession
 ```
@@ -517,16 +517,16 @@ _CONTEXT_INVISIBLE_CHARS = {
 
 ```mermaid
 flowchart LR
-    User[사용자 메시지]
-    Tier1[Tier 1: skills_list<br/>이름 + 1줄 설명만<br/>(시스템 프롬프트에 인덱스로)]
-    Tier2[Tier 2: skill_view name<br/>SKILL.md 본문 로딩]
-    Tier3[Tier 3: skill_view name path<br/>references/scripts/templates/<br/>특정 파일 로딩]
+    User["사용자 메시지"]
+    Tier1["Tier 1 — skills_list<br/>이름 + 1줄 설명만<br/>시스템 프롬프트에 인덱스로"]
+    Tier2["Tier 2 — skill_view name<br/>SKILL.md 본문 로딩"]
+    Tier3["Tier 3 — skill_view name path<br/>references · scripts · templates<br/>특정 파일 로딩"]
 
-    User -.LLM이 적절히 선택.-> Tier1 -.필요시.-> Tier2 -.필요시.-> Tier3
+    User -. "LLM이 적절히 선택" .-> Tier1 -. "필요시" .-> Tier2 -. "필요시" .-> Tier3
 
-    Cache1[in-process LRU cache<br/>(skills_dir, tools, toolsets) key]
-    Cache2[disk snapshot<br/>.skills_prompt_snapshot.json<br/>mtime/size manifest로 검증]
-    Tier1 -.miss.-> Cache1 -.miss.-> Cache2 -.miss.-> Scan[full FS scan]
+    Cache1["in-process LRU cache<br/>skills_dir · tools · toolsets key"]
+    Cache2["disk snapshot<br/>.skills_prompt_snapshot.json<br/>mtime · size manifest로 검증"]
+    Tier1 -. "miss" .-> Cache1 -. "miss" .-> Cache2 -. "miss" .-> Scan["full FS scan"]
 ```
 
 72개 빌트인 스킬 + 사용자/프로젝트 스킬을 각각 SKILL.md 파일로 두고, **시스템 프롬프트에는 한 줄짜리 인덱스만** 들어간다. LLM이 필요할 때 `skill_view`로 본문을 끌어온다. 이 progressive disclosure 패턴이 시스템 프롬프트 폭주를 막는다.
