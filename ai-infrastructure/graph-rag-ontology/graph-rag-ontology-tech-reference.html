@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graph 기반 RAG & 온톨로지 기술 심화 레퍼런스</title>
+<style>
+  :root{
+    --bg:#0c1018; --bg2:#121826; --bg3:#1a2334; --panel:#151c2b;
+    --line:#243047; --line2:#2f3e59;
+    --txt:#e6ecf5; --txt2:#aab6cc; --txt3:#7e8aa3;
+    --accent:#5b8cff; --accent2:#34d9c4; --accent3:#b78cff; --accent4:#ff9d5c;
+    --green:#3ddc97; --red:#ff6b6b; --yellow:#ffd166;
+    --code:#0a0e16;
+    --radius:14px;
+    --maxw:1180px;
+    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Pretendard","Apple SD Gothic Neo",Roboto,"Helvetica Neue",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:radial-gradient(1200px 700px at 80% -10%,#16213a 0%,var(--bg) 55%);
+    color:var(--txt);font-family:var(--sans);line-height:1.7;font-size:16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* Layout */
+  .wrap{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:var(--maxw);margin:0 auto;gap:0}
+  nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:28px 18px 60px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(18,24,38,.6),rgba(12,16,24,.2))}
+  nav.toc h2{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin:22px 0 8px;font-weight:700}
+  nav.toc a{display:block;color:var(--txt2);font-size:13.5px;padding:5px 10px;border-radius:8px;border-left:2px solid transparent}
+  nav.toc a:hover{background:var(--bg3);color:var(--txt);text-decoration:none}
+  nav.toc a.lvl2{padding-left:22px;font-size:12.5px;color:var(--txt3)}
+  main{padding:0 38px 120px;min-width:0}
+
+  /* Hero */
+  header.hero{padding:64px 0 40px;border-bottom:1px solid var(--line);margin-bottom:10px}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent2);font-weight:700;border:1px solid var(--line2);padding:5px 12px;border-radius:30px;background:var(--bg2)}
+  h1{font-size:40px;line-height:1.18;margin:20px 0 14px;letter-spacing:-.02em;background:linear-gradient(120deg,#fff 10%,#9db8ff 60%,#7ee9da 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .lede{font-size:18px;color:var(--txt2);max-width:760px}
+  .meta-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+  .chip{font-size:12.5px;color:var(--txt2);background:var(--bg2);border:1px solid var(--line);padding:6px 12px;border-radius:8px}
+  .chip b{color:var(--txt)}
+
+  /* Sections */
+  section{padding:46px 0;border-bottom:1px solid var(--line)}
+  section:last-child{border-bottom:none}
+  h2.sec{font-size:27px;letter-spacing:-.01em;margin:0 0 6px;display:flex;align-items:baseline;gap:12px}
+  h2.sec .num{font-family:var(--mono);font-size:15px;color:var(--accent);font-weight:600}
+  h3{font-size:20px;margin:34px 0 10px;color:#fff}
+  h4{font-size:16px;margin:22px 0 8px;color:var(--accent2);letter-spacing:.01em}
+  p{color:var(--txt2)}
+  .sec-sub{color:var(--txt3);font-size:15px;margin:0 0 18px}
+  strong{color:var(--txt)}
+  ul,ol{color:var(--txt2)}
+  li{margin:6px 0}
+  code.inl{font-family:var(--mono);font-size:13px;background:var(--bg3);border:1px solid var(--line);padding:1.5px 6px;border-radius:5px;color:#cfe0ff}
+
+  /* Callouts */
+  .note{border-left:3px solid var(--accent);background:linear-gradient(90deg,rgba(91,140,255,.09),transparent);padding:14px 18px;border-radius:0 10px 10px 0;margin:18px 0}
+  .note.warn{border-color:var(--yellow);background:linear-gradient(90deg,rgba(255,209,102,.09),transparent)}
+  .note.tip{border-color:var(--green);background:linear-gradient(90deg,rgba(61,220,151,.09),transparent)}
+  .note .t{font-weight:700;color:var(--txt);font-size:13px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+  .note.warn .t{color:var(--yellow)} .note.tip .t{color:var(--green)} .note .t{color:var(--accent)}
+
+  /* Cards */
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+  .card h4{margin-top:0}
+  .card .k{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--accent2)}
+  .card .kl{font-size:12.5px;color:var(--txt3)}
+
+  /* Tables */
+  .tbl-wrap{overflow-x:auto;margin:18px 0;border:1px solid var(--line);border-radius:var(--radius)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+  th{background:var(--bg3);color:var(--txt);font-weight:600;font-size:12.5px;letter-spacing:.02em;position:sticky;top:0}
+  td{color:var(--txt2);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:rgba(91,140,255,.04)}
+  .pill{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:20px;font-family:var(--mono)}
+  .p-hi{background:rgba(61,220,151,.16);color:var(--green)}
+  .p-mid{background:rgba(255,209,102,.16);color:var(--yellow)}
+  .p-lo{background:rgba(255,107,107,.16);color:var(--red)}
+  .p-info{background:rgba(91,140,255,.16);color:var(--accent)}
+
+  /* Code blocks */
+  pre{background:var(--code);border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow-x:auto;margin:16px 0}
+  pre code{font-family:var(--mono);font-size:12.8px;color:#d6e0f0;line-height:1.6}
+  .c-kw{color:#ff9d5c} .c-str{color:#7ee9da} .c-com{color:#647089;font-style:italic} .c-fn{color:#8cb4ff} .c-num{color:#b78cff}
+
+  /* SVG figure */
+  figure{margin:24px 0;background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);padding:22px 18px 14px;overflow-x:auto}
+  figure svg{display:block;margin:0 auto;max-width:100%;height:auto}
+  figcaption{text-align:center;color:var(--txt3);font-size:12.5px;margin-top:12px}
+  .svg-label{font-family:var(--sans);fill:var(--txt);font-size:13px}
+  .svg-sub{font-family:var(--mono);fill:var(--txt3);font-size:10.5px}
+  .svg-title{font-family:var(--sans);fill:#fff;font-size:14px;font-weight:700}
+
+  /* bars */
+  .bar-row{display:grid;grid-template-columns:170px 1fr 56px;align-items:center;gap:12px;margin:9px 0;font-size:13px}
+  .bar-track{background:var(--bg3);border-radius:7px;height:22px;overflow:hidden;border:1px solid var(--line)}
+  .bar-fill{height:100%;border-radius:7px 0 0 7px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-family:var(--mono);font-size:11px;color:#06121f;font-weight:700}
+  .bar-name{color:var(--txt2)} .bar-val{font-family:var(--mono);color:var(--txt);text-align:right}
+
+  footer{padding:40px 0 0;color:var(--txt3);font-size:13px}
+  .ref-list{font-size:13px;columns:1}
+  .ref-list li{margin:7px 0;color:var(--txt3)}
+  .tag{display:inline-block;font-size:11px;font-family:var(--mono);color:var(--accent3);border:1px solid var(--line2);border-radius:6px;padding:1px 7px;margin-right:6px}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin-top:6px;font-size:12px;color:var(--txt3)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+  @media(max-width:920px){
+    .wrap{grid-template-columns:1fr}
+    nav.toc{display:none}
+    main{padding:0 18px 80px}
+    .g2,.g3,.g4{grid-template-columns:1fr}
+    h1{font-size:30px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc">
+  <div style="font-weight:800;font-size:15px;color:#fff;letter-spacing:-.01em">Graph RAG &amp; 온톨로지</div>
+  <div style="font-size:11.5px;color:var(--txt3);margin-top:2px">기술 심화 레퍼런스 · 2026.05</div>
+
+  <h2>기초</h2>
+  <a href="#intro">0. 한눈에 보기</a>
+  <a href="#why">1. 왜 Graph RAG인가</a>
+
+  <h2>아키텍처</h2>
+  <a href="#pipeline">2. GraphRAG 파이프라인</a>
+  <a href="#algos">3. 핵심 알고리즘 비교</a>
+  <a href="#retrieval">4. Retrieval 전략</a>
+
+  <h2>지식 모델링</h2>
+  <a href="#ontology">5. 온톨로지 &amp; 지식그래프</a>
+  <a href="#kgc">6. LLM 기반 KG 구축</a>
+
+  <h2>구현</h2>
+  <a href="#tooling">7. 오픈소스 &amp; 툴링</a>
+  <a href="#agent">8. 에이전트 시스템 통합</a>
+  <a href="#cost">9. 비용·성능 트레이드오프</a>
+
+  <h2>실전</h2>
+  <a href="#decision">10. 아키텍처 의사결정</a>
+  <a href="#refarch">11. 레퍼런스 스택</a>
+  <a href="#refs">출처 &amp; 더 읽기</a>
+</nav>
+
+<main>
+<header class="hero" id="top">
+  <span class="eyebrow">● Engineer's Technical Deep-Dive</span>
+  <h1>Graph 기반 RAG와 온톨로지<br>기술 심화 레퍼런스</h1>
+  <p class="lede">에이전트 시스템을 설계·개발하는 소프트웨어 엔지니어 관점에서, 그래프 기반 RAG와 온톨로지/지식그래프 기술을 아키텍처·알고리즘·오픈소스·에이전트 통합 4개 축으로 정리한 실전 레퍼런스입니다. 최신 논문(2024–2026)과 오픈소스 동향을 기반으로 합니다.</p>
+  <div class="meta-row">
+    <span class="chip">📅 기준 <b>2026년 5월</b></span>
+    <span class="chip">🎯 대상 <b>에이전트/RAG 엔지니어</b></span>
+    <span class="chip">📚 범위 <b>아키텍처 · KG 모델링 · 툴링 · 에이전트</b></span>
+    <span class="chip">🔬 근거 <b>arXiv 서베이 + OSS</b></span>
+  </div>
+</header>
+
+<!-- ============ 0. 한눈에 보기 ============ -->
+<section id="intro">
+  <h2 class="sec"><span class="num">00</span>한눈에 보기</h2>
+  <p class="sec-sub">전체 지형을 한 장으로. 아래 다이어그램은 이 문서가 다루는 4개 영역과 핵심 기술의 관계를 보여줍니다.</p>
+
+  <figure>
+    <svg viewBox="0 0 940 470" role="img" aria-label="Graph RAG와 온톨로지 기술 지형도">
+      <defs>
+        <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#5b8cff"/><stop offset="1" stop-color="#3a5fd0"/>
+        </linearGradient>
+        <linearGradient id="gB" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#34d9c4"/><stop offset="1" stop-color="#1f9e8e"/>
+        </linearGradient>
+        <linearGradient id="gC" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#b78cff"/><stop offset="1" stop-color="#8557d6"/>
+        </linearGradient>
+        <linearGradient id="gD" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ff9d5c"/><stop offset="1" stop-color="#e0703a"/>
+        </linearGradient>
+      </defs>
+      <!-- center -->
+      <circle cx="470" cy="235" r="62" fill="#151c2b" stroke="#2f3e59" stroke-width="1.5"/>
+      <text x="470" y="228" text-anchor="middle" class="svg-title">Knowledge-</text>
+      <text x="470" y="246" text-anchor="middle" class="svg-title">Grounded Agent</text>
+      <text x="470" y="266" text-anchor="middle" class="svg-sub">LLM + 구조화 지식</text>
+
+      <!-- quadrant boxes -->
+      <g>
+        <rect x="60" y="40" width="330" height="140" rx="14" fill="url(#gA)" opacity="0.14" stroke="#5b8cff" stroke-width="1.2"/>
+        <text x="80" y="70" class="svg-title" fill="#9db8ff">① Graph RAG 아키텍처</text>
+        <text x="80" y="95" class="svg-sub" fill="#aab6cc">MS GraphRAG · LightRAG · HippoRAG 2</text>
+        <text x="80" y="113" class="svg-sub" fill="#aab6cc">RAPTOR · PathRAG · LazyGraphRAG</text>
+        <text x="80" y="131" class="svg-sub" fill="#aab6cc">Leiden 커뮤니티 · Local/Global/DRIFT</text>
+        <text x="80" y="149" class="svg-sub" fill="#aab6cc">Personalized PageRank · 멀티홉 추론</text>
+      </g>
+      <g>
+        <rect x="550" y="40" width="330" height="140" rx="14" fill="url(#gB)" opacity="0.14" stroke="#34d9c4" stroke-width="1.2"/>
+        <text x="570" y="70" class="svg-title" fill="#7ee9da">② 온톨로지 / 지식그래프</text>
+        <text x="570" y="95" class="svg-sub" fill="#aab6cc">RDF · OWL · SHACL · SPARQL</text>
+        <text x="570" y="113" class="svg-sub" fill="#aab6cc">스키마 설계 · Reasoning 엔진</text>
+        <text x="570" y="131" class="svg-sub" fill="#aab6cc">EDC 추출 파이프라인 · 엔티티 해소</text>
+        <text x="570" y="149" class="svg-sub" fill="#aab6cc">LLM 온톨로지 학습 · Wikidata 정렬</text>
+      </g>
+      <g>
+        <rect x="60" y="290" width="330" height="140" rx="14" fill="url(#gC)" opacity="0.14" stroke="#b78cff" stroke-width="1.2"/>
+        <text x="80" y="320" class="svg-title" fill="#cbb0ff">③ 오픈소스 / 툴링</text>
+        <text x="80" y="345" class="svg-sub" fill="#aab6cc">Neo4j · FalkorDB · Memgraph</text>
+        <text x="80" y="363" class="svg-sub" fill="#aab6cc">LangGraph · LlamaIndex · LightRAG</text>
+        <text x="80" y="381" class="svg-sub" fill="#aab6cc">Qdrant · 하이브리드 검색</text>
+        <text x="80" y="399" class="svg-sub" fill="#aab6cc">Graphiti / Zep 시간 그래프</text>
+      </g>
+      <g>
+        <rect x="550" y="290" width="330" height="140" rx="14" fill="url(#gD)" opacity="0.14" stroke="#ff9d5c" stroke-width="1.2"/>
+        <text x="570" y="320" class="svg-title" fill="#ffc09a">④ 에이전트 통합</text>
+        <text x="570" y="345" class="svg-sub" fill="#aab6cc">Agentic RAG · 멀티 에이전트</text>
+        <text x="570" y="363" class="svg-sub" fill="#aab6cc">MCP 서버 · KG as Memory</text>
+        <text x="570" y="381" class="svg-sub" fill="#aab6cc">Read/Write KG · Reflection 루프</text>
+        <text x="570" y="399" class="svg-sub" fill="#aab6cc">Bi-temporal 메모리 · 도구 라우팅</text>
+      </g>
+      <!-- connectors -->
+      <g opacity="0.5">
+        <line x1="390" y1="110" x2="416" y2="200" stroke="#5b8cff" stroke-width="1.6"/>
+        <line x1="550" y1="110" x2="524" y2="200" stroke="#34d9c4" stroke-width="1.6"/>
+        <line x1="390" y1="360" x2="416" y2="270" stroke="#b78cff" stroke-width="1.6"/>
+        <line x1="550" y1="360" x2="524" y2="270" stroke="#ff9d5c" stroke-width="1.6"/>
+      </g>
+    </svg>
+    <figcaption>그림 0. 본 문서의 4개 축과 핵심 기술 — 가운데의 "지식 기반 에이전트"가 모든 영역의 수렴점</figcaption>
+  </figure>
+
+  <div class="grid g4" style="margin-top:8px">
+    <div class="card"><div class="k">86%</div><div class="kl">MS GraphRAG 정확도 (vanilla RAG 32% 대비, 엔터프라이즈 벤치)</div></div>
+    <div class="card"><div class="k">~700×</div><div class="kl">LazyGraphRAG global 쿼리 비용 절감 (full GraphRAG 대비)</div></div>
+    <div class="card"><div class="k">94.8%</div><div class="kl">Zep DMR 메모리 정확도 (MemGPT 93.4% 상회)</div></div>
+    <div class="card"><div class="k">+36%</div><div class="kl">HopRAG 그래프 순회 답변 정확도 향상 (dense retriever 대비)</div></div>
+  </div>
+
+  <div class="note tip">
+    <div class="t">엔지니어를 위한 TL;DR</div>
+    Graph RAG는 "벡터 유사도 1-hop 검색"의 한계(멀티홉 추론·전역 요약·관계 질의)를 <strong>구조화된 그래프 + 커뮤니티 요약</strong>으로 보강한다. 온톨로지(RDF/OWL/SHACL)는 그 그래프에 <strong>스키마·제약·추론</strong>을 부여해 신뢰성을 높인다. 에이전트는 이 그래프를 <strong>장기 메모리이자 도구(MCP)</strong>로 삼아 읽고 쓴다. 단, 인덱싱 비용과 점진적 업데이트가 핵심 트레이드오프다.
+  </div>
+</section>
+
+<!-- ============ 1. 왜 Graph RAG인가 ============ -->
+<section id="why">
+  <h2 class="sec"><span class="num">01</span>왜 Graph RAG인가 — Vector RAG의 구조적 한계</h2>
+  <p class="sec-sub">표준(naive) RAG는 "청크 임베딩 → top-k 코사인 유사도 → 컨텍스트 주입"이다. 이 단순함이 강력하지만, 세 가지 질의 유형에서 구조적으로 약하다.</p>
+
+  <div class="grid g3">
+    <div class="card">
+      <h4>① 멀티홉 추론</h4>
+      <p style="font-size:14px">"A의 공급사가 투자한 회사의 CEO는?" 같은 질문은 <strong>여러 문서를 연결</strong>해야 답이 나온다. 벡터 검색은 각 청크를 독립적으로 보기 때문에 연결 고리가 같은 청크에 없으면 실패한다.</p>
+    </div>
+    <div class="card">
+      <h4>② 전역 요약 (sense-making)</h4>
+      <p style="font-size:14px">"이 코퍼스 전체의 핵심 테마 5가지는?" 같은 질문은 top-k로는 답할 수 없다. <strong>전체 구조를 조망</strong>해야 하는데, 벡터 검색은 국소적이다.</p>
+    </div>
+    <div class="card">
+      <h4>③ 관계·집계 질의</h4>
+      <p style="font-size:14px">"이 사람과 직·간접적으로 연결된 모든 프로젝트"처럼 <strong>관계 자체가 답</strong>인 질문. 그래프 순회(traversal)·집계가 본질적으로 필요하다.</p>
+    </div>
+  </div>
+
+  <h3>벡터 RAG vs Graph RAG 패러다임 비교</h3>
+  <figure>
+    <svg viewBox="0 0 920 300" role="img" aria-label="벡터 RAG와 Graph RAG 비교">
+      <!-- vector side -->
+      <text x="215" y="30" text-anchor="middle" class="svg-title" fill="#aab6cc">Vector RAG</text>
+      <line x1="40" y1="42" x2="390" y2="42" stroke="#243047"/>
+      <g>
+        <rect x="55" y="70" width="90" height="34" rx="7" fill="#1a2334" stroke="#2f3e59"/><text x="100" y="92" text-anchor="middle" class="svg-sub" fill="#aab6cc">chunk</text>
+        <rect x="55" y="120" width="90" height="34" rx="7" fill="#1a2334" stroke="#2f3e59"/><text x="100" y="142" text-anchor="middle" class="svg-sub" fill="#aab6cc">chunk</text>
+        <rect x="55" y="170" width="90" height="34" rx="7" fill="#1a2334" stroke="#2f3e59"/><text x="100" y="192" text-anchor="middle" class="svg-sub" fill="#aab6cc">chunk</text>
+        <rect x="55" y="220" width="90" height="34" rx="7" fill="#1a2334" stroke="#2f3e59"/><text x="100" y="242" text-anchor="middle" class="svg-sub" fill="#aab6cc">chunk</text>
+      </g>
+      <text x="225" y="160" text-anchor="middle" class="svg-sub" fill="#7e8aa3">독립적 임베딩</text>
+      <text x="225" y="178" text-anchor="middle" class="svg-sub" fill="#7e8aa3">top-k 코사인</text>
+      <g stroke="#5b8cff" stroke-dasharray="3 3" opacity="0.6">
+        <line x1="145" y1="87" x2="300" y2="150"/><line x1="145" y1="137" x2="300" y2="160"/>
+      </g>
+      <rect x="300" y="135" width="78" height="50" rx="8" fill="#5b8cff" opacity="0.18" stroke="#5b8cff"/><text x="339" y="165" text-anchor="middle" class="svg-sub" fill="#9db8ff">LLM</text>
+
+      <!-- divider -->
+      <line x1="460" y1="20" x2="460" y2="280" stroke="#243047" stroke-dasharray="4 4"/>
+
+      <!-- graph side -->
+      <text x="700" y="30" text-anchor="middle" class="svg-title" fill="#7ee9da">Graph RAG</text>
+      <line x1="520" y1="42" x2="880" y2="42" stroke="#243047"/>
+      <g stroke="#34d9c4" stroke-width="1.4" opacity="0.7">
+        <line x1="585" y1="95" x2="660" y2="130"/><line x1="660" y1="130" x2="745" y2="100"/>
+        <line x1="660" y1="130" x2="690" y2="200"/><line x1="745" y1="100" x2="800" y2="160"/>
+        <line x1="690" y1="200" x2="780" y2="220"/><line x1="800" y1="160" x2="780" y2="220"/>
+        <line x1="585" y1="95" x2="600" y2="180"/>
+      </g>
+      <g fill="#34d9c4">
+        <circle cx="585" cy="95" r="13"/><circle cx="660" cy="130" r="15"/><circle cx="745" cy="100" r="13"/>
+        <circle cx="690" cy="200" r="13"/><circle cx="800" cy="160" r="13"/><circle cx="780" cy="220" r="12"/><circle cx="600" cy="180" r="11"/>
+      </g>
+      <ellipse cx="660" cy="130" rx="120" ry="80" fill="none" stroke="#b78cff" stroke-dasharray="5 4" opacity="0.6"/>
+      <text x="660" y="55" text-anchor="middle" class="svg-sub" fill="#cbb0ff">community (Leiden)</text>
+      <text x="700" y="262" text-anchor="middle" class="svg-sub" fill="#7e8aa3">엔티티+관계+커뮤니티 요약 → 멀티홉/전역 추론</text>
+    </svg>
+    <figcaption>그림 1. 벡터 RAG는 독립 청크의 1-hop 유사도 검색, Graph RAG는 엔티티·관계·커뮤니티 구조를 활용</figcaption>
+  </figure>
+
+  <div class="note warn">
+    <div class="t">균형 잡힌 시각</div>
+    Graph RAG가 만능은 아니다. <strong>GraphRAG-Bench(ICLR'26)</strong>와 여러 연구는 단순 사실 검색(fact lookup)에서는 벡터 RAG가 더 싸고 충분히 정확하며, 일부 실무 태스크에서 GraphRAG가 vanilla RAG보다 <em>못한</em> 경우도 보고한다. Graph RAG의 가치는 <strong>질의 복잡도에 비례</strong>한다.
+  </div>
+</section>
+
+<!-- ============ 2. 파이프라인 ============ -->
+<section id="pipeline">
+  <h2 class="sec"><span class="num">02</span>GraphRAG 파이프라인 — 인덱싱·검색·생성</h2>
+  <p class="sec-sub">서베이(arXiv 2408.08921 등)가 정의하는 표준 워크플로우는 3단계다: <strong>Graph-Based Indexing → Graph-Guided Retrieval → Graph-Enhanced Generation</strong>. 각 단계의 설계 결정이 비용·정확도를 좌우한다.</p>
+
+  <figure>
+    <svg viewBox="0 0 920 430" role="img" aria-label="GraphRAG 인덱싱 및 검색 파이프라인">
+      <defs>
+        <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#5b8cff"/></marker>
+        <marker id="arr2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#34d9c4"/></marker>
+      </defs>
+
+      <!-- INDEXING lane -->
+      <rect x="20" y="30" width="880" height="180" rx="12" fill="#5b8cff" opacity="0.05" stroke="#243047"/>
+      <text x="38" y="55" class="svg-title" fill="#9db8ff">A · 인덱싱 (오프라인, 비용 집중 구간)</text>
+
+      <g>
+        <rect x="40" y="80" width="120" height="58" rx="9" fill="#151c2b" stroke="#5b8cff"/>
+        <text x="100" y="105" text-anchor="middle" class="svg-label">문서 청킹</text>
+        <text x="100" y="122" text-anchor="middle" class="svg-sub">chunk + overlap</text>
+
+        <rect x="195" y="80" width="135" height="58" rx="9" fill="#151c2b" stroke="#5b8cff"/>
+        <text x="262" y="100" text-anchor="middle" class="svg-label">엔티티·관계 추출</text>
+        <text x="262" y="117" text-anchor="middle" class="svg-sub">LLM triple extract</text>
+        <text x="262" y="131" text-anchor="middle" class="svg-sub">(node, edge, claim)</text>
+
+        <rect x="365" y="80" width="135" height="58" rx="9" fill="#151c2b" stroke="#5b8cff"/>
+        <text x="432" y="100" text-anchor="middle" class="svg-label">엔티티 해소</text>
+        <text x="432" y="117" text-anchor="middle" class="svg-sub">dedup / merge</text>
+        <text x="432" y="131" text-anchor="middle" class="svg-sub">동의어 정규화</text>
+
+        <rect x="535" y="80" width="150" height="58" rx="9" fill="#151c2b" stroke="#5b8cff"/>
+        <text x="610" y="100" text-anchor="middle" class="svg-label">커뮤니티 탐지</text>
+        <text x="610" y="117" text-anchor="middle" class="svg-sub">Leiden (계층적)</text>
+        <text x="610" y="131" text-anchor="middle" class="svg-sub">Level 0..N</text>
+
+        <rect x="720" y="80" width="155" height="58" rx="9" fill="#151c2b" stroke="#5b8cff"/>
+        <text x="797" y="100" text-anchor="middle" class="svg-label">커뮤니티 요약</text>
+        <text x="797" y="117" text-anchor="middle" class="svg-sub">LLM summary/node</text>
+        <text x="797" y="131" text-anchor="middle" class="svg-sub">+ 임베딩 색인</text>
+
+        <line x1="160" y1="109" x2="193" y2="109" stroke="#5b8cff" marker-end="url(#arr)"/>
+        <line x1="330" y1="109" x2="363" y2="109" stroke="#5b8cff" marker-end="url(#arr)"/>
+        <line x1="500" y1="109" x2="533" y2="109" stroke="#5b8cff" marker-end="url(#arr)"/>
+        <line x1="685" y1="109" x2="718" y2="109" stroke="#5b8cff" marker-end="url(#arr)"/>
+      </g>
+      <text x="470" y="170" text-anchor="middle" class="svg-sub" fill="#7e8aa3">⚠ LLM 호출이 청크·엔티티 수에 비례 → 인덱싱 토큰 비용의 대부분이 여기서 발생 (LazyGraphRAG는 요약 단계를 쿼리 시점으로 지연)</text>
+      <line x1="40" y1="185" x2="875" y2="185" stroke="#243047" stroke-dasharray="3 3"/>
+      <text x="100" y="202" text-anchor="middle" class="svg-sub" fill="#647089">→ Graph Store (Neo4j)</text>
+      <text x="432" y="202" text-anchor="middle" class="svg-sub" fill="#647089">→ Vector Store (Qdrant)</text>
+      <text x="797" y="202" text-anchor="middle" class="svg-sub" fill="#647089">→ Community report 인덱스</text>
+
+      <!-- RETRIEVAL/GEN lane -->
+      <rect x="20" y="240" width="880" height="170" rx="12" fill="#34d9c4" opacity="0.05" stroke="#243047"/>
+      <text x="38" y="265" class="svg-title" fill="#7ee9da">B · 검색 &amp; 생성 (온라인)</text>
+
+      <rect x="40" y="290" width="120" height="56" rx="9" fill="#151c2b" stroke="#34d9c4"/>
+      <text x="100" y="314" text-anchor="middle" class="svg-label">질의 분석</text>
+      <text x="100" y="331" text-anchor="middle" class="svg-sub">router / 의도</text>
+
+      <rect x="195" y="280" width="150" height="34" rx="8" fill="#151c2b" stroke="#34d9c4"/>
+      <text x="270" y="302" text-anchor="middle" class="svg-sub" fill="#aab6cc">Local: 엔티티 이웃 fan-out</text>
+      <rect x="195" y="322" width="150" height="34" rx="8" fill="#151c2b" stroke="#34d9c4"/>
+      <text x="270" y="344" text-anchor="middle" class="svg-sub" fill="#aab6cc">Global: 커뮤니티 요약 map-reduce</text>
+      <rect x="195" y="364" width="150" height="32" rx="8" fill="#151c2b" stroke="#34d9c4"/>
+      <text x="270" y="385" text-anchor="middle" class="svg-sub" fill="#aab6cc">DRIFT: local+global 혼합</text>
+
+      <rect x="385" y="300" width="140" height="56" rx="9" fill="#151c2b" stroke="#34d9c4"/>
+      <text x="455" y="324" text-anchor="middle" class="svg-label">서브그래프/경로</text>
+      <text x="455" y="341" text-anchor="middle" class="svg-sub">node·triple·path</text>
+
+      <rect x="560" y="300" width="140" height="56" rx="9" fill="#151c2b" stroke="#34d9c4"/>
+      <text x="630" y="324" text-anchor="middle" class="svg-label">컨텍스트 조립</text>
+      <text x="630" y="341" text-anchor="middle" class="svg-sub">rank + prune</text>
+
+      <rect x="735" y="300" width="140" height="56" rx="9" fill="#151c2b" stroke="#34d9c4"/>
+      <text x="805" y="324" text-anchor="middle" class="svg-label">LLM 생성</text>
+      <text x="805" y="341" text-anchor="middle" class="svg-sub">+ 인용/근거</text>
+
+      <line x1="160" y1="318" x2="193" y2="310" stroke="#34d9c4" marker-end="url(#arr2)"/>
+      <line x1="345" y1="328" x2="383" y2="328" stroke="#34d9c4" marker-end="url(#arr2)"/>
+      <line x1="525" y1="328" x2="558" y2="328" stroke="#34d9c4" marker-end="url(#arr2)"/>
+      <line x1="700" y1="328" x2="733" y2="328" stroke="#34d9c4" marker-end="url(#arr2)"/>
+    </svg>
+    <figcaption>그림 2. GraphRAG 표준 파이프라인 — 인덱싱(오프라인)과 검색·생성(온라인)의 분리. 비용은 인덱싱 LLM 호출에 집중된다.</figcaption>
+  </figure>
+
+  <h3>각 단계의 핵심 설계 결정</h3>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th>단계</th><th>핵심 결정</th><th>옵션 / 트레이드오프</th></tr>
+    <tr><td><b>청킹</b></td><td>청크 크기·오버랩</td><td>작게=정밀하지만 엔티티 단절↑ / 크게=문맥 보존하나 노이즈↑. 보통 600~1200 토큰</td></tr>
+    <tr><td><b>추출</b></td><td>스키마 기반 vs 자유형</td><td>스키마 기반=일관성·정렬 용이 / 자유형(open IE)=커버리지↑ 노이즈↑. EDC로 절충</td></tr>
+    <tr><td><b>엔티티 해소</b></td><td>매칭·병합 전략</td><td>문자열 매칭(MS GraphRAG/LightRAG 기본)은 싸지만 누락 / 임베딩+LLM 검증은 정확하나 비쌈</td></tr>
+    <tr><td><b>커뮤니티</b></td><td>탐지 알고리즘</td><td>Leiden(연결성 보장, Louvain 개선) 권장. 계층 레벨 수 = 요약 비용 ↔ 추상화 단계</td></tr>
+    <tr><td><b>요약</b></td><td>요약 시점</td><td>인덱싱 시(full GraphRAG, 비쌈) vs 쿼리 시 지연(LazyGraphRAG, 0.1% 비용)</td></tr>
+    <tr><td><b>검색</b></td><td>모드 라우팅</td><td>Local(특정 엔티티)·Global(전역 테마)·DRIFT(혼합)를 질의 의도로 분기</td></tr>
+  </table>
+  </div>
+</section>
+
+<!-- ============ 3. 알고리즘 비교 ============ -->
+<section id="algos">
+  <h2 class="sec"><span class="num">03</span>핵심 알고리즘 비교 — 6대 Graph RAG 변종</h2>
+  <p class="sec-sub">서베이는 GraphRAG를 <span class="pill p-info">Knowledge-based</span> <span class="pill p-info">Index-based</span> <span class="pill p-info">Hybrid</span> 세 부류로 나눈다. 대표 구현 6종을 엔지니어 관점(인덱싱·검색 메커니즘·증분 업데이트·비용)에서 비교한다.</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <tr>
+      <th>시스템</th><th>핵심 메커니즘</th><th>그래프 구조</th><th>검색 방식</th><th>증분 업데이트</th><th>인덱싱 비용</th>
+    </tr>
+    <tr>
+      <td><b>MS GraphRAG</b><br><span class="tag">2024 MSR</span></td>
+      <td>Leiden 계층 커뮤니티 + LLM 요약</td>
+      <td>엔티티-관계 KG + 커뮤니티 트리</td>
+      <td>Local / Global / DRIFT</td>
+      <td><span class="pill p-lo">불가(전체 재구축)</span></td>
+      <td><span class="pill p-lo">매우 높음</span></td>
+    </tr>
+    <tr>
+      <td><b>LazyGraphRAG</b><br><span class="tag">2025 MSR</span></td>
+      <td>경량 그래프만 인덱싱, 요약을 쿼리 시 지연</td>
+      <td>경량 엔티티 그래프</td>
+      <td>best-first + 동적 요약</td>
+      <td><span class="pill p-mid">유리</span></td>
+      <td><span class="pill p-hi">벡터 RAG 수준(0.1%)</span></td>
+    </tr>
+    <tr>
+      <td><b>LightRAG</b><br><span class="tag">HKUDS</span></td>
+      <td>이중 레벨(저/고차) 검색 + 그래프 인덱싱</td>
+      <td>엔티티 KG + 키워드 인덱스</td>
+      <td>dual-level (local+global 키워드)</td>
+      <td><span class="pill p-hi">지원(증분)</span></td>
+      <td><span class="pill p-mid">중간</span></td>
+    </tr>
+    <tr>
+      <td><b>HippoRAG 2</b><br><span class="tag">2025 OSU</span></td>
+      <td>Personalized PageRank + LLM triple 필터</td>
+      <td>이중노드(passage+phrase) KG</td>
+      <td>PPR 확산 + dense/sparse 결합</td>
+      <td><span class="pill p-hi">지원(KG 추가)</span></td>
+      <td><span class="pill p-mid">중간</span></td>
+    </tr>
+    <tr>
+      <td><b>RAPTOR</b><br><span class="tag">트리</span></td>
+      <td>재귀 클러스터링으로 요약 트리 구축</td>
+      <td>계층 요약 트리(그래프 아님)</td>
+      <td>트리 순회(collapsed/tree)</td>
+      <td><span class="pill p-mid">부분</span></td>
+      <td><span class="pill p-mid">중간</span></td>
+    </tr>
+    <tr>
+      <td><b>PathRAG</b><br><span class="tag">2025</span></td>
+      <td>관계 경로 가지치기(pruning)로 노이즈 억제</td>
+      <td>엔티티 KG + relational path</td>
+      <td>핵심 경로 선택 → 경로 기반 프롬프트</td>
+      <td><span class="pill p-mid">부분</span></td>
+      <td><span class="pill p-mid">중간</span></td>
+    </tr>
+  </table>
+  </div>
+
+  <div class="note">
+    <div class="t">읽는 법</div>
+    <strong>MS GraphRAG</strong>는 품질·전역요약의 기준점이지만 비용·증분이 약점. <strong>LazyGraphRAG</strong>는 그 비용 문제의 공식 해법. <strong>LightRAG</strong>는 증분 업데이트가 강점이라 운영 친화적. <strong>HippoRAG 2</strong>는 연상기억(associative)·멀티홉에 강하고 에이전트 메모리에 적합. <strong>RAPTOR</strong>는 교과서형 계층 문서에서 벤치 최상위권. <strong>PathRAG</strong>는 경로 가지치기로 토큰 효율을 노린다.
+  </div>
+
+  <h3>대표 알고리즘 동작 원리</h3>
+  <div class="grid g2">
+    <figure style="margin-top:8px">
+      <svg viewBox="0 0 420 260" role="img" aria-label="Leiden 계층 커뮤니티">
+        <text x="210" y="24" text-anchor="middle" class="svg-title" fill="#9db8ff">MS GraphRAG · Leiden 계층</text>
+        <!-- level0 -->
+        <rect x="30" y="45" width="360" height="58" rx="8" fill="#5b8cff" opacity="0.10" stroke="#5b8cff"/>
+        <text x="45" y="65" class="svg-sub" fill="#9db8ff">Level 0 — 매크로 토픽</text>
+        <circle cx="120" cy="85" r="9" fill="#5b8cff"/><circle cx="290" cy="85" r="9" fill="#5b8cff"/>
+        <!-- level1 -->
+        <rect x="30" y="115" width="170" height="56" rx="8" fill="#34d9c4" opacity="0.10" stroke="#34d9c4"/>
+        <rect x="220" y="115" width="170" height="56" rx="8" fill="#34d9c4" opacity="0.10" stroke="#34d9c4"/>
+        <text x="45" y="134" class="svg-sub" fill="#7ee9da">Level 1 — 서브토픽</text>
+        <text x="235" y="134" class="svg-sub" fill="#7ee9da">Level 1 — 서브토픽</text>
+        <circle cx="80" cy="152" r="6" fill="#34d9c4"/><circle cx="120" cy="152" r="6" fill="#34d9c4"/><circle cx="160" cy="152" r="6" fill="#34d9c4"/>
+        <circle cx="270" cy="152" r="6" fill="#34d9c4"/><circle cx="310" cy="152" r="6" fill="#34d9c4"/><circle cx="350" cy="152" r="6" fill="#34d9c4"/>
+        <!-- entities -->
+        <text x="210" y="200" text-anchor="middle" class="svg-sub" fill="#7e8aa3">↓ 각 커뮤니티 = LLM이 작성한 요약 1개</text>
+        <text x="210" y="222" text-anchor="middle" class="svg-sub" fill="#7e8aa3">Global 검색 = 요약들의 map-reduce</text>
+        <text x="210" y="244" text-anchor="middle" class="svg-sub" fill="#7e8aa3">Local 검색 = 엔티티 이웃 fan-out</text>
+      </svg>
+      <figcaption>그림 3a. Leiden은 Louvain의 "비연결 커뮤니티" 문제를 해결, 재귀적으로 계층 생성</figcaption>
+    </figure>
+
+    <figure style="margin-top:8px">
+      <svg viewBox="0 0 420 260" role="img" aria-label="HippoRAG Personalized PageRank">
+        <text x="210" y="24" text-anchor="middle" class="svg-title" fill="#ffc09a">HippoRAG 2 · Personalized PageRank</text>
+        <!-- query nodes -->
+        <text x="60" y="55" class="svg-sub" fill="#ff9d5c">질의 seed (인식된 엔티티)</text>
+        <circle cx="90" cy="95" r="14" fill="#ff9d5c"/><text x="90" y="99" text-anchor="middle" class="svg-sub" fill="#06121f">q1</text>
+        <circle cx="90" cy="170" r="14" fill="#ff9d5c"/><text x="90" y="174" text-anchor="middle" class="svg-sub" fill="#06121f">q2</text>
+        <!-- graph -->
+        <g stroke="#647089" opacity="0.6">
+          <line x1="104" y1="95" x2="190" y2="80"/><line x1="190" y1="80" x2="270" y2="110"/>
+          <line x1="104" y1="170" x2="190" y2="150"/><line x1="190" y1="150" x2="270" y2="110"/>
+          <line x1="270" y1="110" x2="340" y2="90"/><line x1="270" y1="110" x2="340" y2="160"/>
+          <line x1="190" y1="80" x2="190" y2="150"/>
+        </g>
+        <circle cx="190" cy="80" r="11" fill="#b78cff"/><circle cx="190" cy="150" r="11" fill="#b78cff"/>
+        <circle cx="270" cy="110" r="15" fill="#34d9c4"/><circle cx="340" cy="90" r="9" fill="#7e8aa3"/><circle cx="340" cy="160" r="9" fill="#7e8aa3"/>
+        <text x="270" y="138" text-anchor="middle" class="svg-sub" fill="#7ee9da">고PPR</text>
+        <text x="210" y="225" text-anchor="middle" class="svg-sub" fill="#7e8aa3">seed에서 PPR 확산 → 그래프 전역에서</text>
+        <text x="210" y="244" text-anchor="middle" class="svg-sub" fill="#7e8aa3">관련도 높은 passage 노드를 랭킹 (단일 검색으로 멀티홉)</text>
+      </svg>
+      <figcaption>그림 3b. PPR은 시드 엔티티에서 확률 확산을 돌려 멀티홉 관련 노드를 한 번에 랭킹 — 10~30× 저렴한 멀티홉</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ 4. Retrieval 전략 ============ -->
+<section id="retrieval">
+  <h2 class="sec"><span class="num">04</span>Retrieval 전략 — Local · Global · DRIFT · Hybrid</h2>
+  <p class="sec-sub">"무엇을 그래프에서 가져올 것인가(node·triple·path·subgraph)"와 "어떤 검색 모드를 쓸 것인가"가 응답 품질을 결정한다. 실무에서는 <strong>질의 라우팅 + 하이브리드</strong>가 정석이다.</p>
+
+  <div class="grid g3">
+    <div class="card">
+      <h4 style="color:#9db8ff">Local Search</h4>
+      <p style="font-size:13.5px">특정 엔티티를 시드로 <strong>이웃·관계·연관 텍스트로 fan-out</strong>. "X에 대해 자세히" 류의 구체적 질문에 강함. 검색 범위가 좁아 빠르고 저렴.</p>
+    </div>
+    <div class="card">
+      <h4 style="color:#7ee9da">Global Search</h4>
+      <p style="font-size:13.5px"><strong>커뮤니티 요약을 map-reduce</strong>로 종합. "전체 코퍼스의 주요 테마는?" 류 sense-making에 필수. 요약을 다 읽으므로 토큰 비용이 큼.</p>
+    </div>
+    <div class="card">
+      <h4 style="color:#cbb0ff">DRIFT Search</h4>
+      <p style="font-size:13.5px">Global의 광역성과 Local의 정밀성을 <strong>동적으로 혼합</strong>. 커뮤니티에서 시작해 관련 엔티티로 drift-in. MS GraphRAG의 권장 기본값.</p>
+    </div>
+  </div>
+
+  <h3>그래프에서 무엇을 검색하는가 — 검색 단위</h3>
+  <figure>
+    <svg viewBox="0 0 900 220" role="img" aria-label="그래프 검색 단위">
+      <g>
+        <text x="110" y="30" text-anchor="middle" class="svg-label" fill="#9db8ff">Node</text>
+        <circle cx="110" cy="110" r="22" fill="#5b8cff"/>
+        <circle cx="60" cy="80" r="8" fill="#2f3e59"/><circle cx="160" cy="80" r="8" fill="#2f3e59"/><circle cx="60" cy="150" r="8" fill="#2f3e59"/><circle cx="160" cy="150" r="8" fill="#2f3e59"/>
+        <text x="110" y="195" text-anchor="middle" class="svg-sub" fill="#7e8aa3">엔티티 단위</text>
+      </g>
+      <g>
+        <text x="320" y="30" text-anchor="middle" class="svg-label" fill="#7ee9da">Triple</text>
+        <circle cx="270" cy="110" r="16" fill="#34d9c4"/><circle cx="370" cy="110" r="16" fill="#34d9c4"/>
+        <line x1="286" y1="110" x2="354" y2="110" stroke="#34d9c4" stroke-width="2"/>
+        <text x="320" y="100" text-anchor="middle" class="svg-sub" fill="#aab6cc">rel</text>
+        <text x="320" y="195" text-anchor="middle" class="svg-sub" fill="#7e8aa3">(s, p, o) 사실</text>
+      </g>
+      <g>
+        <text x="530" y="30" text-anchor="middle" class="svg-label" fill="#cbb0ff">Path</text>
+        <circle cx="470" cy="90" r="13" fill="#b78cff"/><circle cx="530" cy="130" r="13" fill="#b78cff"/><circle cx="590" cy="90" r="13" fill="#b78cff"/>
+        <line x1="481" y1="97" x2="519" y2="123" stroke="#b78cff" stroke-width="2"/><line x1="541" y1="123" x2="579" y2="97" stroke="#b78cff" stroke-width="2"/>
+        <text x="530" y="195" text-anchor="middle" class="svg-sub" fill="#7e8aa3">멀티홉 경로 (PathRAG)</text>
+      </g>
+      <g>
+        <text x="770" y="30" text-anchor="middle" class="svg-label" fill="#ffc09a">Subgraph</text>
+        <g stroke="#ff9d5c" stroke-width="1.6" opacity="0.8">
+          <line x1="720" y1="90" x2="780" y2="80"/><line x1="780" y1="80" x2="820" y2="120"/><line x1="720" y1="90" x2="760" y2="140"/><line x1="760" y1="140" x2="820" y2="120"/>
+        </g>
+        <circle cx="720" cy="90" r="11" fill="#ff9d5c"/><circle cx="780" cy="80" r="11" fill="#ff9d5c"/><circle cx="820" cy="120" r="11" fill="#ff9d5c"/><circle cx="760" cy="140" r="11" fill="#ff9d5c"/>
+        <rect x="700" y="62" width="140" height="96" rx="10" fill="none" stroke="#ff9d5c" stroke-dasharray="4 3" opacity="0.5"/>
+        <text x="770" y="195" text-anchor="middle" class="svg-sub" fill="#7e8aa3">커뮤니티/이웃 부분그래프</text>
+      </g>
+    </svg>
+    <figcaption>그림 4. 검색 단위가 거칠수록(node→subgraph) 문맥은 풍부하지만 토큰·노이즈가 늘어난다 — 질의 유형에 맞춰 선택</figcaption>
+  </figure>
+
+  <div class="note tip">
+    <div class="t">실무 권장: Hybrid + Router</div>
+    프로덕션 RAG는 <strong>벡터 검색(빠른 사실)·그래프 순회(관계/멀티홉)·커뮤니티 요약(전역)</strong>을 모두 두고, 라우팅 레이어가 질의를 분류해 적절한 경로로 보낸다. 예: 단순 질의→벡터, 멀티홉→PPR/path, "요약/전체"→global. Lettria 사례에선 Qdrant(벡터)+Neo4j(그래프) 하이브리드로 정확도 약 20%p 개선이 보고됐다.
+  </div>
+</section>
+
+<!-- ============ 5. 온톨로지 ============ -->
+<section id="ontology">
+  <h2 class="sec"><span class="num">05</span>온톨로지 &amp; 지식그래프 모델링 — RDF · OWL · SHACL</h2>
+  <p class="sec-sub">LLM이 추출한 "노이즈 그래프"와, 시맨틱 웹 표준(W3C)으로 설계된 "온톨로지 기반 KG"는 다르다. 후자는 <strong>스키마·제약·논리적 추론(reasoning)</strong>을 제공해 검증 가능하고 신뢰성 있는 지식을 만든다.</p>
+
+  <h3>시맨틱 웹 스택</h3>
+  <figure>
+    <svg viewBox="0 0 760 360" role="img" aria-label="시맨틱 웹 스택">
+      <defs>
+        <linearGradient id="stk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34d9c4"/><stop offset="1" stop-color="#5b8cff"/></linearGradient>
+      </defs>
+      <!-- layers -->
+      <g>
+        <rect x="180" y="40" width="400" height="46" rx="8" fill="#b78cff" opacity="0.16" stroke="#b78cff"/>
+        <text x="200" y="60" class="svg-label" fill="#cbb0ff">SPARQL</text>
+        <text x="200" y="77" class="svg-sub" fill="#aab6cc">그래프 질의 언어 — 패턴 매칭·집계·추론 결과 조회</text>
+
+        <rect x="180" y="96" width="195" height="80" rx="8" fill="#ff9d5c" opacity="0.14" stroke="#ff9d5c"/>
+        <text x="200" y="116" class="svg-label" fill="#ffc09a">OWL</text>
+        <text x="200" y="133" class="svg-sub" fill="#aab6cc">도메인 모델링·논리</text>
+        <text x="200" y="148" class="svg-sub" fill="#aab6cc">클래스/속성 공리</text>
+        <text x="200" y="163" class="svg-sub" fill="#aab6cc">→ Reasoner가 추론</text>
+
+        <rect x="385" y="96" width="195" height="80" rx="8" fill="#3ddc97" opacity="0.14" stroke="#3ddc97"/>
+        <text x="405" y="116" class="svg-label" fill="#3ddc97">SHACL</text>
+        <text x="405" y="133" class="svg-sub" fill="#aab6cc">데이터 형태 검증</text>
+        <text x="405" y="148" class="svg-sub" fill="#aab6cc">제약(shape) 위반 탐지</text>
+        <text x="405" y="163" class="svg-sub" fill="#aab6cc">스키마 준수 보증</text>
+
+        <rect x="180" y="186" width="400" height="46" rx="8" fill="#34d9c4" opacity="0.16" stroke="#34d9c4"/>
+        <text x="200" y="206" class="svg-label" fill="#7ee9da">RDFS</text>
+        <text x="200" y="223" class="svg-sub" fill="#aab6cc">기본 스키마 — class, subClassOf, domain/range</text>
+
+        <rect x="180" y="242" width="400" height="50" rx="8" fill="#5b8cff" opacity="0.16" stroke="#5b8cff"/>
+        <text x="200" y="263" class="svg-label" fill="#9db8ff">RDF — Triple (Subject, Predicate, Object)</text>
+        <text x="200" y="281" class="svg-sub" fill="#aab6cc">데이터 모델의 원자 단위 — 모든 지식이 트리플로 표현</text>
+
+        <rect x="180" y="302" width="400" height="40" rx="8" fill="#243047" stroke="#2f3e59"/>
+        <text x="200" y="327" class="svg-label" fill="#aab6cc">IRI / Literal — 전역 식별자 &amp; 값</text>
+      </g>
+      <!-- side annotation -->
+      <text x="90" y="63" text-anchor="middle" class="svg-sub" fill="#647089">질의</text>
+      <text x="90" y="140" text-anchor="middle" class="svg-sub" fill="#647089">의미·</text>
+      <text x="90" y="156" text-anchor="middle" class="svg-sub" fill="#647089">검증</text>
+      <text x="90" y="265" text-anchor="middle" class="svg-sub" fill="#647089">데이터</text>
+      <line x1="130" y1="40" x2="130" y2="342" stroke="#243047"/>
+    </svg>
+    <figcaption>그림 5. 시맨틱 웹 스택 — RDF(데이터) 위에 RDFS/OWL(의미)과 SHACL(검증), SPARQL(질의)이 쌓인다</figcaption>
+  </figure>
+
+  <h3>OWL vs SHACL — 자주 혼동되는 둘</h3>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th>구분</th><th>OWL (Web Ontology Language)</th><th>SHACL (Shapes Constraint Language)</th></tr>
+    <tr><td>목적</td><td>도메인 <b>모델링 + 논리적 추론</b></td><td>RDF 데이터 <b>구조 검증</b></td></tr>
+    <tr><td>가정</td><td>Open World (명시 안 된 것 = 미지)</td><td>Closed World (명시 안 된 것 = 위반)</td></tr>
+    <tr><td>전형적 용도</td><td>"A는 B의 하위클래스 → A 인스턴스는 B다" 추론</td><td>"Person은 반드시 name 1개를 가진다" 검증</td></tr>
+    <tr><td>결과</td><td>새로운 사실 도출(entailment)</td><td>위반 리포트(conformance)</td></tr>
+    <tr><td>엔지니어 관점</td><td>타입 시스템 + 추론 엔진</td><td>스키마 validator / 단위 테스트</td></tr>
+  </table>
+  </div>
+  <div class="note">
+    <div class="t">2025 실무 합의</div>
+    최신 연구(KCAP'25 등)는 <strong>OWL로 도메인 모델링 + SHACL로 검증</strong>의 조합을 권장한다. 최소 실행안은 "SHACL 구조 검증"이고, 여기에 "OWL Reasoner로 논리 일관성 체크"를 더하면 신뢰성이 올라간다. LLM 파이프라인에선 추출 직후 SHACL/OWL 제약으로 트리플을 게이트키핑한다.
+  </div>
+</section>
+
+<!-- ============ 6. LLM 기반 KG 구축 ============ -->
+<section id="kgc">
+  <h2 class="sec"><span class="num">06</span>LLM 기반 지식그래프 구축 — Schema-based vs Schema-free, EDC</h2>
+  <p class="sec-sub">LLM-empowered KG construction 서베이(arXiv 2510.20345)는 두 패러다임을 구분한다. 실무에선 둘을 절충한 <strong>EDC(Extract–Define–Canonicalize)</strong> 3단계 파이프라인이 표준으로 자리잡고 있다.</p>
+
+  <div class="grid g2">
+    <div class="card">
+      <h4>Schema-based (온톨로지 주입)</h4>
+      <p style="font-size:13.5px">미리 정의한 온톨로지를 LLM에 주고 <strong>그 스키마로 인스턴스화</strong>. 일관성·정렬·검증이 쉽고 다운스트림 추론에 유리. 반면 스키마 밖 지식은 놓친다. Wikidata schema 기반 KG 구축이 대표 사례.</p>
+    </div>
+    <div class="card">
+      <h4>Schema-free (open extraction)</h4>
+      <p style="font-size:13.5px">LLM이 <strong>엔티티·관계를 자율적으로 추론</strong>. 유연하고 커버리지가 넓지만 동의어·중복·불일치 노이즈가 큼. 사후 정규화(canonicalize)가 필수.</p>
+    </div>
+  </div>
+
+  <h3>EDC 파이프라인 — 추출에서 정규화까지</h3>
+  <figure>
+    <svg viewBox="0 0 900 200" role="img" aria-label="EDC 파이프라인">
+      <defs><marker id="arr3" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#34d9c4"/></marker></defs>
+      <rect x="30" y="60" width="180" height="80" rx="10" fill="#5b8cff" opacity="0.12" stroke="#5b8cff"/>
+      <text x="120" y="90" text-anchor="middle" class="svg-label" fill="#9db8ff">① Extract</text>
+      <text x="120" y="110" text-anchor="middle" class="svg-sub" fill="#aab6cc">open IE로 트리플 추출</text>
+      <text x="120" y="126" text-anchor="middle" class="svg-sub" fill="#aab6cc">(s, r, o) 후보</text>
+
+      <rect x="360" y="60" width="180" height="80" rx="10" fill="#34d9c4" opacity="0.12" stroke="#34d9c4"/>
+      <text x="450" y="90" text-anchor="middle" class="svg-label" fill="#7ee9da">② Define</text>
+      <text x="450" y="110" text-anchor="middle" class="svg-sub" fill="#aab6cc">관계·엔티티에</text>
+      <text x="450" y="126" text-anchor="middle" class="svg-sub" fill="#aab6cc">의미 정의 생성</text>
+
+      <rect x="690" y="60" width="180" height="80" rx="10" fill="#b78cff" opacity="0.12" stroke="#b78cff"/>
+      <text x="780" y="90" text-anchor="middle" class="svg-label" fill="#cbb0ff">③ Canonicalize</text>
+      <text x="780" y="110" text-anchor="middle" class="svg-sub" fill="#aab6cc">기존 스키마에</text>
+      <text x="780" y="126" text-anchor="middle" class="svg-sub" fill="#aab6cc">정렬·중복 통합</text>
+
+      <line x1="210" y1="100" x2="358" y2="100" stroke="#34d9c4" stroke-width="2" marker-end="url(#arr3)"/>
+      <line x1="540" y1="100" x2="688" y2="100" stroke="#34d9c4" stroke-width="2" marker-end="url(#arr3)"/>
+      <text x="285" y="90" text-anchor="middle" class="svg-sub" fill="#647089">임베딩</text>
+      <text x="615" y="90" text-anchor="middle" class="svg-sub" fill="#647089">정규화</text>
+      <text x="450" y="175" text-anchor="middle" class="svg-sub" fill="#7e8aa3">자유형의 커버리지 + 스키마형의 일관성을 결합</text>
+    </svg>
+    <figcaption>그림 6. EDC는 open extraction(유연) → semantic define → schema normalization(정렬)으로 자동 유도 스키마를 기존 온톨로지에 맞춘다</figcaption>
+  </figure>
+
+  <h3>엔티티 해소(Entity Resolution) — 그래프 품질의 핵심</h3>
+  <p>LLM 추출 KG의 가장 큰 적은 <strong>중복 엔티티와 부정확한 관계</strong>다. "IT" vs "Information Technology", "2024" vs "Year 2024"를 다른 노드로 두면 그래프가 파편화된다. MS GraphRAG·LightRAG는 기본적으로 <em>단순 문자열 매칭</em>을 쓰지만, 고품질이 필요하면 다음 파이프라인을 쓴다.</p>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th>단계</th><th>기법</th><th>설명</th></tr>
+    <tr><td>Blocking</td><td>후보 축소</td><td>전체 비교(O(n²)) 대신 키/임베딩 버킷으로 비교 대상 좁힘</td></tr>
+    <tr><td>Matching</td><td>임베딩 유사도 + LLM 판정</td><td>표면형이 달라도 같은 엔티티인지 판단(synonym/약어)</td></tr>
+    <tr><td>Merging</td><td>대표 노드 통합</td><td>속성 합치고 엣지 재연결, 정규 IRI 부여</td></tr>
+    <tr><td>Triple reflection</td><td>관계 검증</td><td>DEG-RAG식 — 잘못된 관계 제거로 노이즈 ↓ (Less is More, 2510.14271)</td></tr>
+  </table>
+  </div>
+  <div class="note tip">
+    <div class="t">측정 가능한 효과</div>
+    전문가 주석 데이터셋에서 LLM 엔티티 추출은 <strong>정밀도 98.8% / 재현율 93.2% / F1 95.9%</strong> 수준. 온톨로지 매칭에서 GPT-4o는 BERTMap 대비 정밀도 <strong>+44.9%p</strong>, F1 <strong>+38.3%p</strong> 향상이 보고됐다. 단, 관계 추출 정밀도는 보통 75%대로 엔티티보다 낮아 검증 단계가 중요하다.
+  </div>
+</section>
+
+<!-- ============ 7. 오픈소스/툴링 ============ -->
+<section id="tooling">
+  <h2 class="sec"><span class="num">07</span>오픈소스 &amp; 툴링 비교 — 스택 레이어별</h2>
+  <p class="sec-sub">Graph RAG 스택은 4개 레이어로 나뉜다: <strong>저장소(그래프/벡터 DB) · 오케스트레이션 · RAG 프레임워크 · 메모리/시간그래프</strong>. 각 레이어의 대표 OSS와 선택 기준을 정리한다.</p>
+
+  <figure>
+    <svg viewBox="0 0 900 330" role="img" aria-label="Graph RAG 오픈소스 스택">
+      <!-- layer 1 -->
+      <rect x="40" y="30" width="820" height="62" rx="10" fill="#ff9d5c" opacity="0.08" stroke="#243047"/>
+      <text x="58" y="52" class="svg-label" fill="#ffc09a">L4 · 에이전트 메모리 / 시간그래프</text>
+      <g font-family="var(--mono)">
+        <rect x="58" y="60" width="120" height="24" rx="6" fill="#1a2334" stroke="#ff9d5c"/><text x="118" y="76" text-anchor="middle" class="svg-sub" fill="#ffc09a">Graphiti / Zep</text>
+        <rect x="190" y="60" width="80" height="24" rx="6" fill="#1a2334" stroke="#ff9d5c"/><text x="230" y="76" text-anchor="middle" class="svg-sub" fill="#ffc09a">mem0</text>
+        <rect x="282" y="60" width="140" height="24" rx="6" fill="#1a2334" stroke="#ff9d5c"/><text x="352" y="76" text-anchor="middle" class="svg-sub" fill="#ffc09a">mcp-neo4j-memory</text>
+      </g>
+      <!-- layer 2 -->
+      <rect x="40" y="100" width="820" height="62" rx="10" fill="#b78cff" opacity="0.08" stroke="#243047"/>
+      <text x="58" y="122" class="svg-label" fill="#cbb0ff">L3 · RAG / KG 프레임워크</text>
+      <g>
+        <rect x="58" y="130" width="150" height="24" rx="6" fill="#1a2334" stroke="#b78cff"/><text x="133" y="146" text-anchor="middle" class="svg-sub" fill="#cbb0ff">Microsoft GraphRAG</text>
+        <rect x="220" y="130" width="90" height="24" rx="6" fill="#1a2334" stroke="#b78cff"/><text x="265" y="146" text-anchor="middle" class="svg-sub" fill="#cbb0ff">LightRAG</text>
+        <rect x="322" y="130" width="90" height="24" rx="6" fill="#1a2334" stroke="#b78cff"/><text x="367" y="146" text-anchor="middle" class="svg-sub" fill="#cbb0ff">HippoRAG</text>
+        <rect x="424" y="130" width="170" height="24" rx="6" fill="#1a2334" stroke="#b78cff"/><text x="509" y="146" text-anchor="middle" class="svg-sub" fill="#cbb0ff">LlamaIndex PropertyGraph</text>
+      </g>
+      <!-- layer 3 -->
+      <rect x="40" y="170" width="820" height="62" rx="10" fill="#34d9c4" opacity="0.08" stroke="#243047"/>
+      <text x="58" y="192" class="svg-label" fill="#7ee9da">L2 · 오케스트레이션</text>
+      <g>
+        <rect x="58" y="200" width="100" height="24" rx="6" fill="#1a2334" stroke="#34d9c4"/><text x="108" y="216" text-anchor="middle" class="svg-sub" fill="#7ee9da">LangGraph</text>
+        <rect x="170" y="200" width="100" height="24" rx="6" fill="#1a2334" stroke="#34d9c4"/><text x="220" y="216" text-anchor="middle" class="svg-sub" fill="#7ee9da">LangChain</text>
+        <rect x="282" y="200" width="120" height="24" rx="6" fill="#1a2334" stroke="#34d9c4"/><text x="342" y="216" text-anchor="middle" class="svg-sub" fill="#7ee9da">MCP 서버 계층</text>
+      </g>
+      <!-- layer 4 -->
+      <rect x="40" y="240" width="820" height="70" rx="10" fill="#5b8cff" opacity="0.08" stroke="#243047"/>
+      <text x="58" y="262" class="svg-label" fill="#9db8ff">L1 · 저장소</text>
+      <g>
+        <rect x="58" y="270" width="90" height="26" rx="6" fill="#1a2334" stroke="#5b8cff"/><text x="103" y="287" text-anchor="middle" class="svg-sub" fill="#9db8ff">Neo4j</text>
+        <rect x="160" y="270" width="90" height="26" rx="6" fill="#1a2334" stroke="#5b8cff"/><text x="205" y="287" text-anchor="middle" class="svg-sub" fill="#9db8ff">FalkorDB</text>
+        <rect x="262" y="270" width="90" height="26" rx="6" fill="#1a2334" stroke="#5b8cff"/><text x="307" y="287" text-anchor="middle" class="svg-sub" fill="#9db8ff">Memgraph</text>
+        <rect x="364" y="270" width="120" height="26" rx="6" fill="#1a2334" stroke="#5b8cff"/><text x="424" y="287" text-anchor="middle" class="svg-sub" fill="#9db8ff">Qdrant (vector)</text>
+        <rect x="496" y="270" width="150" height="26" rx="6" fill="#1a2334" stroke="#5b8cff"/><text x="571" y="287" text-anchor="middle" class="svg-sub" fill="#9db8ff">RDF Triplestore(GraphDB)</text>
+      </g>
+    </svg>
+    <figcaption>그림 7. Graph RAG 오픈소스 스택 — 아래에서 위로 저장소 → 오케스트레이션 → RAG 프레임워크 → 에이전트 메모리</figcaption>
+  </figure>
+
+  <h3>저장소 레이어 — 그래프 DB &amp; 벡터 DB</h3>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th>도구</th><th>유형</th><th>강점</th><th>비고</th></tr>
+    <tr><td><b>Neo4j</b></td><td>Property Graph</td><td>가장 성숙한 생태계, Cypher + <b>네이티브 벡터 인덱스</b>, MCP 통합 선도</td><td>하이브리드 RAG의 사실상 기본값</td></tr>
+    <tr><td><b>FalkorDB</b></td><td>Property Graph</td><td>저지연·경량, Redis 기반, Graphiti MCP 메모리와 결합</td><td>다중 그래프·실시간 에이전트 메모리</td></tr>
+    <tr><td><b>Memgraph</b></td><td>Property Graph</td><td>인메모리 고성능, 스트리밍, GraphRAG 연동</td><td>실시간 분석 워크로드</td></tr>
+    <tr><td><b>Qdrant</b></td><td>Vector DB</td><td>하이브리드 검색, 쉬운 K8s 배포, 낮은 메모리·지연</td><td>Neo4j와 ID로 교차 참조하는 하이브리드 패턴</td></tr>
+    <tr><td><b>GraphDB / Triplestore</b></td><td>RDF</td><td>SPARQL·OWL 추론 네이티브, 표준 온톨로지</td><td>규제·시맨틱 정합성이 중요한 도메인</td></tr>
+  </table>
+  </div>
+
+  <h3>프레임워크 — LangChain/LangGraph vs LlamaIndex</h3>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th>관점</th><th>LangChain / LangGraph</th><th>LlamaIndex</th></tr>
+    <tr><td>강점</td><td>복잡한 <b>상태 기반 에이전트 워크플로우</b>(도구·메모리·멀티스텝, 조건 분기 cyclic graph)</td><td><b>문서 인덱싱·검색 품질</b>, Property Graph Index, 빠른 RAG 반복</td></tr>
+    <tr><td>검색 속도</td><td>기준</td><td>벤치마크상 문서 검색 약 <b>40% 빠름</b></td></tr>
+    <tr><td>전형적 조합</td><td colspan="2">실무에선 <b>LlamaIndex(검색 레이어) + LangGraph(오케스트레이션)</b>를 함께 쓰는 경우가 많음</td></tr>
+  </table>
+  </div>
+  <div class="note">
+    <div class="t">통합형 OSS</div>
+    <code class="inl">flexible-graphrag</code> 같은 프로젝트는 LlamaIndex+LangChain 위에서 15개 Property Graph DB, 4개 RDF, 10개 벡터 DB, 온톨로지, GraphRAG/하이브리드 검색, MCP 서버를 한 번에 묶어 제공한다 — 스택 선택 전 레퍼런스로 유용.
+  </div>
+</section>
+
+<!-- ============ 8. 에이전트 통합 ============ -->
+<section id="agent">
+  <h2 class="sec"><span class="num">08</span>에이전트 시스템 통합 — Agentic GraphRAG · MCP · 그래프 메모리</h2>
+  <p class="sec-sub">에이전트 엔지니어에게 그래프/온톨로지는 두 가지로 쓰인다: <strong>(1) 추론을 위한 검색 도구</strong>, <strong>(2) 읽고 쓰는 장기 메모리</strong>. GraphRAG는 에이전트가 KG를 자율적으로 검색·기록할 때 "agentic"이 된다.</p>
+
+  <h3>Agentic RAG 오케스트레이션 패턴</h3>
+  <div class="grid g4">
+    <div class="card"><h4 style="font-size:15px">Single-Agent</h4><p style="font-size:13px">한 에이전트가 데이터 소스(벡터/그래프/요약)를 스스로 선택. 가장 단순한 라우팅형.</p></div>
+    <div class="card"><h4 style="font-size:15px">Multi-Agent</h4><p style="font-size:13px">코디네이터가 도메인별 sub-agent에 하위작업 위임, 공유 메모리로 상태 전달.</p></div>
+    <div class="card"><h4 style="font-size:15px">Hierarchical</h4><p style="font-size:13px">계층 티어로 에이전트 조직화. master가 분해, sub가 도메인 모델·메모리 보유.</p></div>
+    <div class="card"><h4 style="font-size:15px">Graph-based</h4><p style="font-size:13px">KG/구조적 추론을 코어로. neural-symbolic, 그래프 메모리, 평가-최적화 루프 결합.</p></div>
+  </div>
+
+  <h3>레퍼런스: MCP로 그래프를 에이전트에 연결</h3>
+  <p>MCP(2024.11 공개)는 RAG/GraphRAG를 <strong>MCP 서버</strong>로 노출해 에이전트가 표준 방식으로 검색·기록하게 한다. Neo4j는 2024.12 최초의 데이터 레벨 MCP 통합을 냈고, <code class="inl">mcp-neo4j-memory</code>는 엔티티·관찰·관계를 저장하고 관련 서브그래프를 검색한다.</p>
+
+  <figure>
+    <svg viewBox="0 0 880 280" role="img" aria-label="에이전트-MCP-그래프 통합">
+      <defs><marker id="ma" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#b78cff"/></marker></defs>
+      <!-- agent -->
+      <rect x="40" y="100" width="150" height="80" rx="12" fill="#ff9d5c" opacity="0.14" stroke="#ff9d5c"/>
+      <text x="115" y="132" text-anchor="middle" class="svg-label" fill="#ffc09a">LLM Agent</text>
+      <text x="115" y="152" text-anchor="middle" class="svg-sub" fill="#aab6cc">plan · reflect · act</text>
+      <!-- mcp -->
+      <rect x="300" y="60" width="170" height="160" rx="12" fill="#b78cff" opacity="0.12" stroke="#b78cff"/>
+      <text x="385" y="86" text-anchor="middle" class="svg-label" fill="#cbb0ff">MCP 서버</text>
+      <rect x="320" y="100" width="130" height="30" rx="6" fill="#1a2334" stroke="#b78cff"/><text x="385" y="120" text-anchor="middle" class="svg-sub" fill="#cbb0ff">search_graph()</text>
+      <rect x="320" y="138" width="130" height="30" rx="6" fill="#1a2334" stroke="#b78cff"/><text x="385" y="158" text-anchor="middle" class="svg-sub" fill="#cbb0ff">write_memory()</text>
+      <rect x="320" y="176" width="130" height="30" rx="6" fill="#1a2334" stroke="#b78cff"/><text x="385" y="196" text-anchor="middle" class="svg-sub" fill="#cbb0ff">cypher_query()</text>
+      <!-- stores -->
+      <rect x="580" y="40" width="260" height="60" rx="10" fill="#5b8cff" opacity="0.12" stroke="#5b8cff"/>
+      <text x="710" y="66" text-anchor="middle" class="svg-label" fill="#9db8ff">Knowledge Graph (Neo4j)</text>
+      <text x="710" y="85" text-anchor="middle" class="svg-sub" fill="#aab6cc">엔티티·관계·커뮤니티</text>
+      <rect x="580" y="115" width="260" height="55" rx="10" fill="#34d9c4" opacity="0.12" stroke="#34d9c4"/>
+      <text x="710" y="138" text-anchor="middle" class="svg-label" fill="#7ee9da">Temporal Memory (Graphiti)</text>
+      <text x="710" y="156" text-anchor="middle" class="svg-sub" fill="#aab6cc">bi-temporal fact edges</text>
+      <rect x="580" y="185" width="260" height="55" rx="10" fill="#ff9d5c" opacity="0.10" stroke="#ff9d5c"/>
+      <text x="710" y="208" text-anchor="middle" class="svg-label" fill="#ffc09a">Vector Store (Qdrant)</text>
+      <text x="710" y="226" text-anchor="middle" class="svg-sub" fill="#aab6cc">청크 임베딩 (하이브리드)</text>
+
+      <line x1="190" y1="140" x2="298" y2="140" stroke="#b78cff" stroke-width="2" marker-end="url(#ma)"/>
+      <text x="244" y="132" text-anchor="middle" class="svg-sub" fill="#647089">tool call</text>
+      <line x1="470" y1="115" x2="578" y2="80" stroke="#5b8cff" stroke-width="1.6" marker-end="url(#ma)"/>
+      <line x1="470" y1="150" x2="578" y2="142" stroke="#34d9c4" stroke-width="1.6" marker-end="url(#ma)"/>
+      <line x1="470" y1="185" x2="578" y2="205" stroke="#ff9d5c" stroke-width="1.6" marker-end="url(#ma)"/>
+    </svg>
+    <figcaption>그림 8. 에이전트는 MCP 도구로 KG를 검색하고(<code>search/cypher</code>) 새 사실을 기록(<code>write_memory</code>)한다 — 통합 컨텍스트 레이어</figcaption>
+  </figure>
+
+  <h4>예: LangGraph 에이전트가 GraphRAG MCP 도구를 호출하는 골격</h4>
+  <pre><code><span class="c-com"># 에이전트가 질의 의도에 따라 그래프/벡터/메모리 도구를 라우팅</span>
+<span class="c-kw">from</span> langgraph.graph <span class="c-kw">import</span> StateGraph, END
+
+<span class="c-kw">def</span> <span class="c-fn">route</span>(state):
+    q = state[<span class="c-str">"query"</span>]
+    <span class="c-kw">if</span> is_global(q):       <span class="c-kw">return</span> <span class="c-str">"global_summary"</span>   <span class="c-com"># 커뮤니티 요약 map-reduce</span>
+    <span class="c-kw">if</span> is_multihop(q):     <span class="c-kw">return</span> <span class="c-str">"graph_traverse"</span>   <span class="c-com"># PPR / path 검색 (MCP: search_graph)</span>
+    <span class="c-kw">return</span> <span class="c-str">"vector_lookup"</span>                          <span class="c-com"># 단순 사실 → 벡터</span>
+
+<span class="c-kw">def</span> <span class="c-fn">graph_traverse</span>(state):
+    sub = mcp.call(<span class="c-str">"search_graph"</span>, seeds=extract_entities(state[<span class="c-str">"query"</span>]))
+    <span class="c-kw">return</span> {<span class="c-str">"context"</span>: rank_and_prune(sub)}
+
+<span class="c-kw">def</span> <span class="c-fn">reflect</span>(state):
+    <span class="c-com"># 근거 부족 시 재검색, 새 사실은 메모리에 기록 (bi-temporal)</span>
+    <span class="c-kw">if</span> not grounded(state): <span class="c-kw">return</span> <span class="c-str">"graph_traverse"</span>
+    mcp.call(<span class="c-str">"write_memory"</span>, facts=state[<span class="c-str">"new_facts"</span>], valid_at=now())
+    <span class="c-kw">return</span> END
+
+g = StateGraph(dict)
+g.add_node(<span class="c-str">"graph_traverse"</span>, graph_traverse); g.add_node(<span class="c-str">"reflect"</span>, reflect)
+g.set_conditional_entry_point(route)            <span class="c-com"># 질의 라우팅</span>
+g.add_edge(<span class="c-str">"graph_traverse"</span>, <span class="c-str">"reflect"</span>)        <span class="c-com"># 검색 → 성찰 루프</span>
+agent = g.compile(checkpointer=memory)          <span class="c-com"># 상태 영속화</span>
+</code></pre>
+
+  <h3>그래프 = 에이전트의 장기 메모리 (Temporal KG)</h3>
+  <p>대화·관찰을 KG로 누적하면 관계 기반 회상이 가능하다. 핵심은 <strong>시간성</strong>이다. <code class="inl">Graphiti/Zep</code>의 bi-temporal 모델은 각 엣지에 4개 타임스탬프를 둔다.</p>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th>타임스탬프</th><th>의미</th><th>용도</th></tr>
+    <tr><td><code class="inl">t_valid</code> / <code class="inl">t_invalid</code></td><td>사실이 <b>현실에서</b> 유효한 구간</td><td>"그때는 맞았다" — 과거 상태 질의</td></tr>
+    <tr><td><code class="inl">t_created</code> / <code class="inl">t_expired</code></td><td>사실이 <b>시스템에</b> 기록·폐기된 시점</td><td>provenance·감사, 잘못된 입력 추적</td></tr>
+  </table>
+  </div>
+  <div class="note tip">
+    <div class="t">왜 중요한가</div>
+    새 정보가 기존과 충돌할 때, 옛 사실을 <strong>삭제하지 않고 invalidate</strong>한다. 에이전트는 "현재 사실"과 "과거 사실"을 구분해 회상할 수 있다. Zep은 DMR 벤치 <strong>94.8%</strong>(MemGPT 93.4% 상회), LongMemEval에서 정확도 최대 <strong>+18.5%p</strong> 향상과 응답 지연 <strong>90% 감소</strong>를 보고했다.
+  </div>
+</section>
+
+<!-- ============ 9. 비용/성능 ============ -->
+<section id="cost">
+  <h2 class="sec"><span class="num">09</span>비용·성능 트레이드오프 &amp; 벤치마크</h2>
+  <p class="sec-sub">엔지니어가 가장 먼저 부딪히는 현실: GraphRAG는 인덱싱 LLM 호출이 비싸고, 쿼리 토큰도 많다. 숫자로 본다.</p>
+
+  <h3>인덱싱 비용의 현실 (2025 모델 가격 기준)</h3>
+  <div class="grid g3">
+    <div class="card"><div class="k">$10–15</div><div class="kl">GPT-4.1로 800KB 텍스트 인덱싱. mini/Gemini Flash로 90%+ 절감 가능(품질 트레이드오프)</div></div>
+    <div class="card"><div class="k">$47K</div><div class="kl">한 금융사가 문서 10만 건 인덱싱에만 쓴 API 비용 — 첫 질문 전에 발생</div></div>
+    <div class="card"><div class="k">~6,000×</div><div class="kl">쿼리당 토큰: full GraphRAG ≈ 610K vs 경량 대안 ≈ 100 토큰</div></div>
+  </div>
+
+  <h3>쿼리 비용 스펙트럼 (상대값, 낮을수록 저렴)</h3>
+  <div class="legend"><span><i class="dot" style="background:#3ddc97"></i>저비용</span><span><i class="dot" style="background:#ffd166"></i>중간</span><span><i class="dot" style="background:#ff6b6b"></i>고비용</span></div>
+  <div style="margin-top:14px">
+    <div class="bar-row"><span class="bar-name">Vector RAG</span><div class="bar-track"><div class="bar-fill" style="width:6%;background:#3ddc97">1×</div></div><span class="bar-val">기준</span></div>
+    <div class="bar-row"><span class="bar-name">LazyGraphRAG</span><div class="bar-track"><div class="bar-fill" style="width:9%;background:#3ddc97">~1.4×</div></div><span class="bar-val">저</span></div>
+    <div class="bar-row"><span class="bar-name">LightRAG</span><div class="bar-track"><div class="bar-fill" style="width:22%;background:#ffd166">중</div></div><span class="bar-val">중</span></div>
+    <div class="bar-row"><span class="bar-name">HippoRAG 2</span><div class="bar-track"><div class="bar-fill" style="width:30%;background:#ffd166">중</div></div><span class="bar-val">중</span></div>
+    <div class="bar-row"><span class="bar-name">GraphRAG Local</span><div class="bar-track"><div class="bar-fill" style="width:48%;background:#ffd166">중상</div></div><span class="bar-val">중상</span></div>
+    <div class="bar-row"><span class="bar-name">GraphRAG Global</span><div class="bar-track"><div class="bar-fill" style="width:96%;background:#ff6b6b">~700×</div></div><span class="bar-val">고</span></div>
+  </div>
+  <p style="font-size:12.5px;color:var(--txt3);margin-top:8px">* 개념적 상대 비교(질의·코퍼스에 따라 변동). LazyGraphRAG는 인덱싱이 벡터 RAG 수준(full의 0.1%)이면서 global 쿼리는 full 대비 약 700× 저렴하다는 MSR 보고에 기반.</p>
+
+  <h3>정확도 — GraphRAG-Bench (ICLR'26) 요약</h3>
+  <div class="legend"><span><i class="dot" style="background:#5b8cff"></i>평균 정확도(상대)</span></div>
+  <div style="margin-top:14px">
+    <div class="bar-row"><span class="bar-name">RAPTOR</span><div class="bar-track"><div class="bar-fill" style="width:90%;background:#5b8cff">72+</div></div><span class="bar-val">상위</span></div>
+    <div class="bar-row"><span class="bar-name">HippoRAG</span><div class="bar-track"><div class="bar-fill" style="width:88%;background:#5b8cff">72+</div></div><span class="bar-val">상위</span></div>
+    <div class="bar-row"><span class="bar-name">기타 GraphRAG</span><div class="bar-track"><div class="bar-fill" style="width:68%;background:#5b8cff"> </div></div><span class="bar-val">중상</span></div>
+    <div class="bar-row"><span class="bar-name">BM25 / TF-IDF</span><div class="bar-track"><div class="bar-fill" style="width:40%;background:#647089"> </div></div><span class="bar-val">기준</span></div>
+  </div>
+  <p style="font-size:12.5px;color:var(--txt3);margin-top:8px">* 계층적·고밀도 그래프 구조(RAPTOR 트리, HippoRAG)가 도메인 추론에서 강세. 대부분의 GraphRAG가 전통 RAG 베이스라인을 상회하나, 단순 사실 검색에선 격차가 좁다.</p>
+
+  <h3>핵심 한계와 완화책</h3>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th>한계</th><th>원인</th><th>완화책</th></tr>
+    <tr><td>인덱싱 비용 폭증</td><td>청크·엔티티마다 LLM 요약 호출</td><td>LazyGraphRAG(요약 지연), 저가 모델, KET-RAG 다중 granularity 인덱싱</td></tr>
+    <tr><td>증분 업데이트 불가</td><td>MS GraphRAG는 전체 재구축 필요</td><td>LightRAG/HippoRAG(증분 KG), 시간그래프(Graphiti)로 append</td></tr>
+    <tr><td>임베딩 드리프트</td><td>부분 재임베딩 시 신·구 벡터 불일치</td><td>일괄 재임베딩 또는 그래프 구조에 의존(임베딩 의존 ↓)</td></tr>
+    <tr><td>노이즈 그래프</td><td>LLM 추출의 중복 엔티티·오관계</td><td>엔티티 해소 + triple reflection(DEG-RAG), SHACL 검증</td></tr>
+    <tr><td>쿼리 토큰 과다</td><td>커뮤니티 요약 전부 읽음(global)</td><td>DRIFT/라우팅, PathRAG 경로 가지치기, top community 제한</td></tr>
+  </table>
+  </div>
+</section>
+
+<!-- ============ 10. 의사결정 ============ -->
+<section id="decision">
+  <h2 class="sec"><span class="num">10</span>아키텍처 의사결정 가이드</h2>
+  <p class="sec-sub">"Graph RAG를 써야 하나?"에 대한 실무 결정 트리. 핵심 변수는 <strong>질의 복잡도 · 코퍼스 변동성 · 신뢰성 요구 · 예산</strong>이다.</p>
+
+  <figure>
+    <svg viewBox="0 0 900 470" role="img" aria-label="아키텍처 의사결정 트리">
+      <defs><marker id="dm" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#647089"/></marker></defs>
+      <!-- root -->
+      <rect x="340" y="20" width="220" height="48" rx="10" fill="#5b8cff" opacity="0.16" stroke="#5b8cff"/>
+      <text x="450" y="40" text-anchor="middle" class="svg-label" fill="#9db8ff">질의가 멀티홉/관계/전역인가?</text>
+      <text x="450" y="58" text-anchor="middle" class="svg-sub" fill="#aab6cc">(아니면 단순 사실 검색)</text>
+
+      <!-- no branch -->
+      <line x1="340" y1="44" x2="180" y2="110" stroke="#647089" marker-end="url(#dm)"/>
+      <text x="240" y="86" class="svg-sub" fill="#ff6b6b">아니오</text>
+      <rect x="60" y="110" width="220" height="60" rx="10" fill="#3ddc97" opacity="0.12" stroke="#3ddc97"/>
+      <text x="170" y="135" text-anchor="middle" class="svg-label" fill="#3ddc97">Vector RAG</text>
+      <text x="170" y="155" text-anchor="middle" class="svg-sub" fill="#aab6cc">가장 싸고 충분. 그래프 불필요</text>
+
+      <!-- yes branch -->
+      <line x1="560" y1="44" x2="640" y2="110" stroke="#647089" marker-end="url(#dm)"/>
+      <text x="615" y="86" class="svg-sub" fill="#3ddc97">예</text>
+      <rect x="520" y="110" width="240" height="48" rx="10" fill="#34d9c4" opacity="0.14" stroke="#34d9c4"/>
+      <text x="640" y="130" text-anchor="middle" class="svg-label" fill="#7ee9da">코퍼스가 자주 바뀌나?</text>
+      <text x="640" y="148" text-anchor="middle" class="svg-sub" fill="#aab6cc">증분 업데이트 필요?</text>
+
+      <!-- changes yes -->
+      <line x1="560" y1="158" x2="430" y2="210" stroke="#647089" marker-end="url(#dm)"/>
+      <text x="470" y="186" class="svg-sub" fill="#3ddc97">자주</text>
+      <rect x="300" y="210" width="240" height="60" rx="10" fill="#b78cff" opacity="0.12" stroke="#b78cff"/>
+      <text x="420" y="235" text-anchor="middle" class="svg-label" fill="#cbb0ff">LightRAG / HippoRAG 2</text>
+      <text x="420" y="255" text-anchor="middle" class="svg-sub" fill="#aab6cc">증분 KG · 멀티홉 강세</text>
+
+      <!-- changes no -->
+      <line x1="700" y1="158" x2="760" y2="210" stroke="#647089" marker-end="url(#dm)"/>
+      <text x="745" y="186" class="svg-sub" fill="#ff9d5c">드묾</text>
+      <rect x="600" y="210" width="270" height="60" rx="10" fill="#ff9d5c" opacity="0.12" stroke="#ff9d5c"/>
+      <text x="735" y="235" text-anchor="middle" class="svg-label" fill="#ffc09a">MS GraphRAG / LazyGraphRAG</text>
+      <text x="735" y="255" text-anchor="middle" class="svg-sub" fill="#aab6cc">전역 요약 강함(비용 주의)</text>
+
+      <!-- reliability question -->
+      <line x1="420" y1="270" x2="420" y2="320" stroke="#647089" marker-end="url(#dm)"/>
+      <rect x="280" y="320" width="320" height="48" rx="10" fill="#5b8cff" opacity="0.14" stroke="#5b8cff"/>
+      <text x="440" y="340" text-anchor="middle" class="svg-label" fill="#9db8ff">규제/검증 가능성이 중요한가?</text>
+      <text x="440" y="358" text-anchor="middle" class="svg-sub" fill="#aab6cc">사실 정합성·감사 추적</text>
+
+      <line x1="440" y1="368" x2="440" y2="408" stroke="#647089" marker-end="url(#dm)"/>
+      <text x="455" y="392" class="svg-sub" fill="#3ddc97">예</text>
+      <rect x="250" y="408" width="380" height="48" rx="10" fill="#3ddc97" opacity="0.12" stroke="#3ddc97"/>
+      <text x="440" y="428" text-anchor="middle" class="svg-label" fill="#3ddc97">+ 온톨로지(OWL) + SHACL 검증 레이어</text>
+      <text x="440" y="446" text-anchor="middle" class="svg-sub" fill="#aab6cc">RDF triplestore · reasoner로 일관성 보장</text>
+
+      <!-- agent note -->
+      <line x1="760" y1="270" x2="760" y2="320" stroke="#647089" marker-end="url(#dm)"/>
+      <rect x="640" y="320" width="240" height="90" rx="10" fill="#ff9d5c" opacity="0.10" stroke="#ff9d5c"/>
+      <text x="760" y="344" text-anchor="middle" class="svg-label" fill="#ffc09a">에이전트 메모리?</text>
+      <text x="760" y="366" text-anchor="middle" class="svg-sub" fill="#aab6cc">Graphiti/Zep 시간그래프</text>
+      <text x="760" y="384" text-anchor="middle" class="svg-sub" fill="#aab6cc">+ MCP 도구로 read/write</text>
+      <text x="760" y="402" text-anchor="middle" class="svg-sub" fill="#aab6cc">bi-temporal fact</text>
+    </svg>
+    <figcaption>그림 10. 의사결정 트리 — 단순 사실은 벡터, 복잡 질의는 변동성·신뢰성·에이전트 요구에 따라 분기</figcaption>
+  </figure>
+
+  <div class="note">
+    <div class="t">한 줄 휴리스틱</div>
+    <strong>"검색 결과가 사람이 읽고 끝"이면 RAG 품질만, "에이전트가 그 위에서 추론·행동"이면 그래프 구조 + 메모리가 ROI를 낸다.</strong> 그래프의 가치는 질의 복잡도와 멀티스텝성에 비례한다.
+  </div>
+</section>
+
+<!-- ============ 11. 레퍼런스 스택 ============ -->
+<section id="refarch">
+  <h2 class="sec"><span class="num">11</span>레퍼런스 스택 — 에이전트 엔지니어를 위한 권장 조합</h2>
+  <p class="sec-sub">위 모든 결정을 종합한, 2026년 기준 "무난한 시작점" 두 가지. 작게 시작해 필요할 때 레이어를 더한다.</p>
+
+  <div class="grid g2">
+    <div class="card">
+      <h4 style="color:#7ee9da">A. 실용형 (빠른 출시·비용 우선)</h4>
+      <ul style="font-size:13.5px">
+        <li><b>저장소:</b> Qdrant(벡터) + Neo4j(그래프), ID 교차참조</li>
+        <li><b>인덱싱:</b> LightRAG 또는 LazyGraphRAG (증분/저비용)</li>
+        <li><b>검색:</b> 라우터로 벡터/그래프/요약 하이브리드</li>
+        <li><b>오케스트레이션:</b> LangGraph (상태·reflection 루프)</li>
+        <li><b>메모리:</b> Graphiti(시간그래프) — 필요 시</li>
+        <li><b>노출:</b> 검색·기록을 MCP 서버로</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="color:#ffc09a">B. 신뢰형 (규제·정합성 우선)</h4>
+      <ul style="font-size:13.5px">
+        <li><b>모델링:</b> OWL 온톨로지 + RDFS 스키마</li>
+        <li><b>저장소:</b> RDF Triplestore(GraphDB) + 벡터 DB</li>
+        <li><b>구축:</b> EDC 파이프라인(스키마 기반), Wikidata 정렬</li>
+        <li><b>검증:</b> SHACL 형태 검증 + OWL Reasoner 일관성</li>
+        <li><b>품질:</b> 엔티티 해소 + triple reflection</li>
+        <li><b>질의:</b> SPARQL + GraphRAG 하이브리드</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note tip">
+    <div class="t">점진적 도입 로드맵</div>
+    1) 벡터 RAG로 베이스라인 → 2) 실패 질의(멀티홉/전역) 분석 → 3) 해당 질의에만 그래프 경로 추가(하이브리드) → 4) 에이전트가 쓰기 시작하면 시간그래프 메모리 → 5) 신뢰성 요구가 생기면 온톨로지·SHACL 게이트. <strong>처음부터 full GraphRAG로 시작하지 말 것</strong> — 비용이 가장 흔한 실패 원인이다.
+  </div>
+</section>
+
+<!-- ============ 출처 ============ -->
+<section id="refs">
+  <h2 class="sec"><span class="num">★</span>출처 &amp; 더 읽기</h2>
+  <p class="sec-sub">본 문서는 아래 논문·문서·오픈소스 자료(2024–2026)를 바탕으로 작성되었습니다.</p>
+
+  <h4>서베이 &amp; 핵심 논문</h4>
+  <ul class="ref-list">
+    <li><span class="tag">survey</span><a href="https://arxiv.org/abs/2408.08921">Graph Retrieval-Augmented Generation: A Survey (arXiv:2408.08921)</a></li>
+    <li><span class="tag">survey</span><a href="https://arxiv.org/html/2501.13958v1">A Survey of Graph RAG for Customized LLMs (arXiv:2501.13958)</a></li>
+    <li><span class="tag">bench</span><a href="https://arxiv.org/abs/2506.05690">When to use Graphs in RAG — GraphRAG-Bench 분석 (arXiv:2506.05690, ICLR'26)</a></li>
+    <li><span class="tag">bench</span><a href="https://arxiv.org/html/2506.02404v2">GraphRAG-Bench: Challenging Domain-Specific Reasoning (arXiv:2506.02404)</a> · <a href="https://graphrag-bench.github.io/">사이트</a></li>
+    <li><span class="tag">algo</span><a href="https://arxiv.org/abs/2405.14831">HippoRAG: Neurobiologically Inspired Long-Term Memory (arXiv:2405.14831, NeurIPS'24)</a></li>
+    <li><span class="tag">algo</span><a href="https://arxiv.org/abs/2502.14802">From RAG to Memory — HippoRAG 2 (arXiv:2502.14802, ICML'25)</a></li>
+    <li><span class="tag">memory</span><a href="https://arxiv.org/abs/2501.13956">Zep: A Temporal Knowledge Graph Architecture for Agent Memory (arXiv:2501.13956)</a></li>
+    <li><span class="tag">kgc</span><a href="https://arxiv.org/html/2510.20345v1">LLM-empowered Knowledge Graph Construction: A Survey (arXiv:2510.20345)</a></li>
+    <li><span class="tag">kgc</span><a href="https://arxiv.org/html/2412.20942v1">Ontology-grounded Automatic KG Construction under Wikidata schema (arXiv:2412.20942)</a></li>
+    <li><span class="tag">quality</span><a href="https://arxiv.org/html/2510.14271v1">Less is More: Denoising Knowledge Graphs for RAG (arXiv:2510.14271)</a></li>
+    <li><span class="tag">cost</span><a href="https://arxiv.org/html/2502.09304v2">KET-RAG: Cost-Efficient Multi-Granular Indexing for Graph-RAG (arXiv:2502.09304)</a></li>
+    <li><span class="tag">agentic</span><a href="https://arxiv.org/pdf/2508.19855">Youtu-GraphRAG: Vertically Unified Agents for Graph RAG (arXiv:2508.19855)</a></li>
+  </ul>
+
+  <h4>Microsoft Research &amp; 공식 문서</h4>
+  <ul class="ref-list">
+    <li><span class="tag">docs</span><a href="https://microsoft.github.io/graphrag/">Microsoft GraphRAG 공식 문서</a></li>
+    <li><span class="tag">blog</span><a href="https://www.microsoft.com/en-us/research/blog/lazygraphrag-setting-a-new-standard-for-quality-and-cost/">LazyGraphRAG: setting a new standard for quality and cost (MSR)</a></li>
+    <li><span class="tag">concept</span><a href="https://www.mintlify.com/microsoft/graphrag/concepts/community-detection">GraphRAG — Community detection (Leiden)</a></li>
+  </ul>
+
+  <h4>온톨로지 / 시맨틱 웹</h4>
+  <ul class="ref-list">
+    <li><span class="tag">owl/shacl</span><a href="https://dl.acm.org/doi/full/10.1145/3731443.3771340">Lessons Learned from Combined Development of OWL and SHACL (KCAP'25)</a></li>
+    <li><span class="tag">llm-onto</span><a href="https://arxiv.org/html/2602.01276v1">LLM-Driven Ontology Construction for Enterprise Knowledge Graphs</a></li>
+    <li><span class="tag">medical</span><a href="https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2025.1546179/full">LLMs for intelligent RDF KG construction (Frontiers, 2025)</a></li>
+  </ul>
+
+  <h4>오픈소스 &amp; 에이전트 통합</h4>
+  <ul class="ref-list">
+    <li><span class="tag">oss</span><a href="https://github.com/HKUDS/LightRAG">HKUDS/LightRAG</a> · <a href="https://github.com/osu-nlp-group/hipporag">OSU-NLP-Group/HippoRAG</a> · <a href="https://github.com/getzep/graphiti">getzep/graphiti</a></li>
+    <li><span class="tag">oss</span><a href="https://github.com/DEEP-PolyU/Awesome-GraphRAG">Awesome-GraphRAG (큐레이션 목록)</a> · <a href="https://github.com/GraphRAG-Bench/GraphRAG-Benchmark">GraphRAG-Benchmark</a></li>
+    <li><span class="tag">oss</span><a href="https://github.com/stevereiner/flexible-graphrag">flexible-graphrag (다중 DB·온톨로지·MCP 통합)</a></li>
+    <li><span class="tag">mcp</span><a href="https://neo4j.com/blog/genai/what-is-model-context-protocol-mcp/">What Is Model Context Protocol (MCP)? — Neo4j</a> · <a href="https://neo4j.com/developer/genai-ecosystem/model-context-protocol-mcp/">MCP 통합 가이드</a></li>
+    <li><span class="tag">hybrid</span><a href="https://qdrant.tech/documentation/examples/graphrag-qdrant-neo4j/">GraphRAG with Qdrant and Neo4j</a> · <a href="https://qdrant.tech/blog/case-study-lettria-v2/">Lettria 사례(+20% 정확도)</a></li>
+    <li><span class="tag">memory</span><a href="https://www.falkordb.com/blog/mcp-knowledge-graph-graphiti-falkordb/">Knowledge Graph MCP: Graphiti + FalkorDB</a> · <a href="https://mem0.ai/blog/what-is-ai-agent-memory">mem0 — AI Agent Memory</a></li>
+  </ul>
+
+  <footer>
+    <p>이 문서는 웹 검색 기반 조사를 종합한 기술 레퍼런스입니다. 수치(비용·벤치마크)는 출처 보고값이며 모델 가격·코퍼스·구현에 따라 달라질 수 있으니, 도입 전 자체 PoC로 검증하시길 권합니다. 작성: 2026-05-23.</p>
+  </footer>
+</section>
+
+</main>
+</div>
+</body>
+</html>

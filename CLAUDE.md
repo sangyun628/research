@@ -15,6 +15,66 @@
 - 각 문서는 적절한 키워드나 기술 단위로 디렉토리를 만들어서 분류한다.
 - 아키텍처, 데이터 흐름, 시스템 구조 등 시각적 다이어그램은 반드시 Mermaid 문법으로 작성한다.
 
+### 폴더 구조 및 정리 규칙
+
+**원칙: `category/topic/files` 의 3-depth 를 넘기지 않는다.**
+
+```
+research/
+├── <category>/        # depth 1 — 큰 분류 (ai-agents · databases · ...)
+│   └── <topic>/       # depth 2 — 개별 프로젝트 / 주제
+│       └── *.md       # depth 3 — 실제 컨텐츠 (최대 깊이)
+```
+
+- **카테고리 (depth 1)** 는 다음 12개 안에서 고른다. 새 카테고리 신설은 *3개 이상의 토픽*이 모일 때만:
+  - `ai-agents/` — 에이전트 프레임워크·메모리·구체 구현
+  - `ai-coding-tools/` — 코딩 에이전트·IDE (Claude Code, OpenCode, Warp …)
+  - `ai-infrastructure/` — RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어
+  - `databases/` — 그래프·벡터·멀티모델 DB
+  - `data-platforms/` — ETL·분산 데이터 통합
+  - `kubernetes/` — K8s 운영·진단·관측
+  - `algorithms/` · `libraries/` · `finance/` · `trends/` · `scripts/` · `_repos/`
+
+- **토픽 (depth 2)** 명명:
+  - 프로젝트 이름은 그대로(`agentmemory/`, `lat-md/`, `mirage/`)
+  - 횡단 비교는 `<theme>-comparison/` (예: `memory-comparison/`)
+  - 단일 카테고리 안에서만 의미 있는 그룹은 `<theme>/` (예: `agent-loops/`, `agentic-rag/`)
+
+- **금지: depth 4 이상**
+  - ❌ `ai-agents/frameworks/agno/agno-analysis.md` (4 depth)
+  - ✅ `ai-agents/agno/agno-analysis.md` (3 depth)
+  - 카테고리 안에 하위 카테고리(`frameworks/`, `memory/`)를 두지 말 것 — 토픽을 바로 둔다
+
+- **단일 파일 토픽**: 토픽에 문서가 1~2개뿐이면 `topic/` 폴더 + 파일 1~2개 형태가 가장 단순. README.md 없이도 OK
+- **다문서 토픽**: 3개 이상 문서가 모이면 `topic/README.md`를 1차 진입점으로 만든다
+
+**주기적 정리 체크리스트 (분석 작업 마무리 시 또는 PR 직전 점검)**
+
+1. `find . -maxdepth 5 -type f -name "*.md" -not -path "*/_repos/*"` 로 depth 4 파일이 없는지 확인. 있으면 토픽을 한 단계 끌어올린다.
+2. 카테고리 폴더에 *서브카테고리*(`frameworks/`, `memory/` 같은 중간 계층)가 새로 생기지 않았는지 확인 — 발견 즉시 토픽 직접 배치로 평탄화
+3. 중복 카테고리(`ai-tools/` vs `ai-coding-tools/`, top-level `opencode/` vs `ai-coding-tools/opencode/`)가 새로 생겼는지 확인 — 발견 시 즉시 병합
+4. `README.md` 의 모든 링크가 살아 있는지 확인 (`grep -oE "\(([a-z][^)]+\.md)\)" README.md` 로 추출 후 `test -f`)
+5. 1-아이템 카테고리가 3개 이상이면 그중 둘은 인접 카테고리로 흡수 검토
+6. 토픽 이름에 공백·대문자 우선 금지 (kebab-case)
+
+**파일 이동 시 절차**
+- 반드시 `git mv` 로 이동 (history 보존)
+- `README.md` 인덱스 동일 PR에서 갱신
+- 옮긴 파일을 *다른 문서가 참조*하면 그 링크도 같은 PR에서 갱신
+- 빈 폴더는 `rmdir` 로 정리 (git은 빈 디렉터리 추적 안 함)
+
+**현재 카테고리 매핑 (참조용)**
+
+| 분류 | 위치 |
+|---|---|
+| 에이전트 메모리 비교 | `ai-agents/memory-comparison/` (8개 시스템 횡단 분석) |
+| 에이전트 메모리 개별 구현 | `ai-agents/<project>/` (agentmemory, openchronicle, openviking, supermemory) |
+| 코딩 에이전트 | `ai-coding-tools/<tool>/` (claude-code, opencode, warp) |
+| 텍스트→SQL | `ai-infrastructure/` (db-gpt, wren-ai) |
+| Graph RAG / 온톨로지 | `ai-infrastructure/graph-rag-ontology/` |
+| 그래프 DB 비교 | `databases/graphdb/` |
+| 관측·모니터링 | `kubernetes/` (Prometheus·VM 등 포함) |
+
 ### Mermaid 다이어그램 작성·검증
 
 GitHub의 Mermaid 렌더러는 파싱에 엄격해서 라벨 안의 특수문자가 자주 깨진다. 다음 규칙을 따르고, **푸시 전 반드시 검증**한다.
