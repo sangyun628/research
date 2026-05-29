@@ -63,6 +63,7 @@ RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어.
 | LangExtract | [분석](ai-infrastructure/langextract/langextract-analysis.md) | Google LLM 텍스트 추출 라이브러리 |
 | LightRAG | [분석](ai-infrastructure/lightrag/analysis.md) | 경량 RAG |
 | RAG-Anything | [분석](ai-infrastructure/rag-anything/analysis.md) | 멀티모달 RAG |
+| RAGFlow | [분석](ai-infrastructure/ragflow/analysis.md) | 심층 문서 이해 기반 RAG·에이전트 엔진 (InfiniFlow) |
 | WebMCP | [분석](ai-infrastructure/webmcp/webmcp-analysis.md) | W3C 웹 표준 기반 AI 도구 노출 |
 | Wren AI | [분석](ai-infrastructure/wren-ai/analysis.md) | Wren AI 텍스트→SQL |
 
