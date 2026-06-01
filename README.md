@@ -58,6 +58,7 @@ RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어.
 |-----------|------|------|
 | Agentic RAG | [리서치](ai-infrastructure/agentic-rag/agentic-rag-research.md) · [LlamaIndex 가이드](ai-infrastructure/agentic-rag/llamaindex-developer-guide.md) · [PageIndex](ai-infrastructure/agentic-rag/pageindex.md) | Agentic RAG 연구 |
 | Airweave | [분석](ai-infrastructure/airweave/airweave-analysis.md) | AI 컨텍스트 검색 인프라 |
+| Chunking | [OSS 가이드](ai-infrastructure/chunking/chunking-oss-guide.md) | 청킹 특화 OSS (Chonkie 등) · Bedrock KB 전략 매핑 |
 | DB-GPT | [분석](ai-infrastructure/db-gpt/analysis.md) | DB-GPT (텍스트→SQL) |
 | Graph RAG · 온톨로지 | [기술 레퍼런스](ai-infrastructure/graph-rag-ontology/README.md) | Graph 기반 RAG·온톨로지 심화 |
 | LangExtract | [분석](ai-infrastructure/langextract/langextract-analysis.md) | Google LLM 텍스트 추출 라이브러리 |
