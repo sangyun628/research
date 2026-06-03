@@ -246,6 +246,68 @@ new Agent({
 - **관측 1급**: 토큰·지연·비용을 span으로 캡처, OTel 표준.
 - **제약**: 모노레포 ~90 패키지로 학습 표면이 넓다. Vercel AI SDK에 종속(LLM 계층 통제권은 AI SDK에). 비교적 신생(2024-10 출시)이라 LangGraph 대비 대규모 프로덕션 레퍼런스는 적음.
 
+### 8.1 프로덕션 Scale-out 아키텍처
+
+**결론: 수평 확장(scale-out)을 전제로 설계됐다 — 단 기본값(in-process)을 분산 백엔드로 교체해야 한다.** 대화·메모리·워크플로우 상태를 전부 외부 스토리지로 밀어내므로 **API 서버 인스턴스 자체는 무상태(stateless)** 이고, 로드밸런서 뒤에 N개를 띄울 수 있다. 멀티 인스턴스를 가능케 하는 이음새(seam)는 셋이다.
+
+| 이음새 | 기본값(단일 프로세스) | 분산 교체 |
+|--------|----------------------|-----------|
+| **스토리지** | in-memory / 파일(`.mastra-storage/`) | Postgres·LibSQL 등 공유 DB |
+| **PubSub(인스턴스 간 조정)** | `EventEmitterPubSub`(in-process) | **`RedisStreamsPubSub`**(`pubsub/redis-streams`) · `GoogleCloudPubSub` |
+| **워커 티어** | API 프로세스에 합쳐짐 | `MASTRA_WORKERS` 로 분리 — Orchestration·Scheduler·BackgroundTask 워커를 별도 인스턴스로 |
+
+대량의 장시간 작업(긴 에이전트 루프·다단계 워크플로우)은 외부 durable 실행 엔진과 연동한다 — **`workflows/inngest`(Inngest)** · **`workflows/temporal`(Temporal)** 가 분산 큐·재시도·동시성 제한·내구 실행을 담당해 워크플로우 실행을 API 서버와 독립적으로 스케일한다. 기본 내장 엔진 + suspend/resume(상태 스냅샷)만으로도 중단된 작업을 어느 인스턴스든 이어받을 수 있다(상태가 DB에 있으므로).
+
+```mermaid
+graph TB
+    LB["Load Balancer"]
+    subgraph API["API 티어 (stateless · 수평 확장)"]
+        A1["API 인스턴스 1 (Hono)"]
+        A2["API 인스턴스 2"]
+        AN["API 인스턴스 N"]
+    end
+    subgraph WK["워커 티어 (MASTRA_WORKERS 로 분리)"]
+        ORCH["Orchestration · BackgroundTask 워커"]
+        SCH["Scheduler 워커 (단일화 — 중복 실행 방지)"]
+    end
+    subgraph SHARED["공유 백엔드"]
+        DB[("Postgres · LibSQL — 대화 · 스냅샷")]
+        VEC[("Vector store — 시맨틱 recall")]
+        PS[("Redis Streams — PubSub 조정")]
+        WFB[("Inngest · Temporal — 분산 워크플로우")]
+        LLM["LLM API (Model Router)"]
+    end
+
+    LB --> A1
+    LB --> A2
+    LB --> AN
+    A1 --> DB
+    A2 --> DB
+    AN --> DB
+    A1 --> VEC
+    A1 --> PS
+    A1 --> LLM
+    PS --> ORCH
+    ORCH --> DB
+    SCH --> DB
+    A1 -. "장시간 작업 위임" .-> WFB
+    WFB --> ORCH
+```
+
+서버리스(Vercel·Cloudflare deployer)는 요청당 자동 확장되며, 긴 에이전트 루프는 suspend/resume(또는 Inngest)로 함수 타임아웃을 회피한다.
+
+**실제 병목은 Mastra가 아니라 공유 자원**인 경우가 많다:
+
+| 자원 | 고려사항 |
+|------|----------|
+| **DB(Postgres)** | 커넥션 풀·PgBouncer·읽기 복제 — 모든 인스턴스가 공유하는 1차 병목 |
+| **벡터 스토어** | 고동시성이면 pgvector보다 매니지드(Pinecone·Turbopuffer) 고려 |
+| **LLM 프로바이더** | rate limit·동시성이 실제 처리량 천장 — Model Router 폴백/게이트웨이 활용 |
+| **SSE 스트리밍** | 활성 채팅 1개당 커넥션 1개 → 인스턴스 수로 사이징 |
+| **PubSub·스케줄러** | 분산 pubsub 필수 + 스케줄러 단일화로 크론 중복 실행 방지 |
+
+> 요약: stateless API 티어 + Redis Streams 분산 PubSub + 워커 티어 분리 + Inngest/Temporal 워크플로우 백엔드 + 외부 DB/벡터 — 이 조합이면 수많은 동시 사용자의 에이전트 대화·다중 작업을 수평 확장으로 수용할 수 있다. *기본값(in-memory·EventEmitter)은 단일 프로세스용*이라는 점만 프로덕션에서 반드시 교체한다.
+
 ---
 
 ## 9. 라이선스 분석 — 프로덕션 사용 가능한가? ✅ (조건부)
