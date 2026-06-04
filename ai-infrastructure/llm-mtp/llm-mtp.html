@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Multi-Token Prediction (MTP) — 인터랙티브 기술 보고서</title>
+<style>
+  :root{
+    --bg:#0b0f17; --bg2:#121826; --bg3:#1a2334; --panel:#141b29;
+    --line:#243047; --line2:#2f3e59;
+    --txt:#e7edf6; --txt2:#aab6cc; --txt3:#7e8aa3;
+    --accent:#5b8cff; --accent2:#34d9c4; --accent3:#b78cff; --accent4:#ff9d5c;
+    --green:#3ddc97; --red:#ff6b6b; --yellow:#ffd166;
+    --code:#0a0e16; --radius:14px; --maxw:1180px;
+    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Pretendard","Apple SD Gothic Neo",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:radial-gradient(1200px 700px at 80% -10%,#15213a 0%,var(--bg) 55%);
+    color:var(--txt);font-family:var(--sans);line-height:1.75;font-size:16px;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  code{font-family:var(--mono);background:var(--code);padding:.12em .4em;border-radius:6px;font-size:.86em;color:#cfe0ff;border:1px solid var(--line)}
+  .wrap{display:grid;grid-template-columns:262px minmax(0,1fr);max-width:var(--maxw);margin:0 auto}
+  nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:26px 16px 60px;border-right:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(18,24,38,.6),rgba(11,15,23,.2))}
+  nav.toc .brand{font-weight:800;font-size:15px;letter-spacing:.02em;margin-bottom:4px}
+  nav.toc .brand small{display:block;color:var(--txt3);font-weight:500;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase}
+  nav.toc a{display:block;color:var(--txt2);font-size:13.4px;padding:6px 10px;border-radius:8px;border-left:2px solid transparent;margin:1px 0}
+  nav.toc a:hover{background:var(--bg3);color:var(--txt);text-decoration:none}
+  nav.toc a.active{background:var(--bg3);color:#fff;border-left-color:var(--accent)}
+  main{padding:0 40px 130px;min-width:0}
+  header.hero{padding:60px 0 34px;border-bottom:1px solid var(--line)}
+  header.hero .kic{display:inline-flex;gap:8px;align-items:center;font-size:12px;color:var(--accent2);
+    background:rgba(52,217,196,.08);border:1px solid rgba(52,217,196,.25);padding:5px 12px;border-radius:99px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+  header.hero h1{font-size:42px;line-height:1.12;margin:20px 0 6px;letter-spacing:-.02em;font-weight:800}
+  header.hero h1 .grad{background:linear-gradient(92deg,var(--accent),var(--accent2) 60%,var(--accent3));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  header.hero p.sub{font-size:18px;color:var(--txt2);margin:8px 0 0;max-width:760px}
+  .stats{display:flex;flex-wrap:wrap;gap:14px;margin-top:26px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 18px;min-width:150px}
+  .stat b{display:block;font-size:24px;font-weight:800;color:var(--accent2)}
+  .stat span{font-size:12.5px;color:var(--txt3)}
+  section{padding:46px 0 6px;border-bottom:1px solid rgba(36,48,71,.5)}
+  section h2{font-size:27px;margin:0 0 6px;letter-spacing:-.01em;font-weight:800}
+  section h2 .n{color:var(--accent);font-size:16px;font-weight:700;margin-right:10px;font-family:var(--mono)}
+  section h3{font-size:19px;margin:30px 0 8px;color:#fff;font-weight:700}
+  p{color:var(--txt2)} p strong, li strong{color:var(--txt);font-weight:700}
+  ul,ol{color:var(--txt2)} li{margin:5px 0}
+  .lead{font-size:17.5px;color:var(--txt)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin:18px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .callout{border-left:3px solid var(--accent);background:rgba(91,140,255,.07);padding:13px 18px;border-radius:0 12px 12px 0;margin:16px 0}
+  .callout.k{border-left-color:var(--yellow);background:rgba(255,209,102,.07)}
+  .callout.g{border-left-color:var(--green);background:rgba(61,220,151,.07)}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;letter-spacing:.04em}
+  .tag.train{background:rgba(183,140,255,.15);color:#c9b0ff;border:1px solid rgba(183,140,255,.35)}
+  .tag.infer{background:rgba(52,217,196,.13);color:#7fe9da;border:1px solid rgba(52,217,196,.32)}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+  th{color:var(--txt3);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  td{color:var(--txt2)} td b{color:var(--txt)}
+  tr:hover td{background:rgba(91,140,255,.04)}
+  /* Interactive widgets */
+  .widget{background:linear-gradient(180deg,var(--bg2),var(--panel));border:1px solid var(--line2);border-radius:var(--radius);padding:22px;margin:22px 0}
+  .widget .wt{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);font-weight:800;margin-bottom:4px}
+  .btn{cursor:pointer;font-family:var(--sans);font-weight:700;font-size:14px;border:1px solid var(--line2);background:var(--bg3);color:var(--txt);padding:9px 18px;border-radius:10px;transition:.15s}
+  .btn:hover{background:var(--accent);border-color:var(--accent);color:#06122c}
+  .btn.sm{padding:6px 13px;font-size:13px}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .lane{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+  .lane .box{background:var(--code);border:1px solid var(--line);border-radius:12px;padding:14px;min-height:150px}
+  .lane .box h4{margin:0 0 4px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+  .lane .box .meta{font-size:11.5px;color:var(--txt3);font-family:var(--mono)}
+  .toks{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;min-height:60px;align-content:flex-start}
+  .tok{font-family:var(--mono);font-size:13px;padding:4px 9px;border-radius:7px;background:var(--bg3);border:1px solid var(--line);color:var(--txt3);opacity:.25;transform:translateY(3px);transition:.25s}
+  .tok.on{opacity:1;transform:none;color:#eaf1ff;border-color:var(--accent);background:rgba(91,140,255,.16)}
+  .tok.draft{border-color:var(--accent3);background:rgba(183,140,255,.16);color:#dcc9ff}
+  .tok.acc{border-color:var(--green);background:rgba(61,220,151,.16);color:#bff5de}
+  .tok.rej{border-color:var(--red);background:rgba(255,107,107,.12);color:#ffc7c7;text-decoration:line-through;opacity:.7}
+  .counters{display:flex;gap:18px;margin-top:12px;flex-wrap:wrap}
+  .counter b{font-size:22px;color:var(--accent2);font-weight:800;font-family:var(--mono)}
+  .counter span{font-size:11.5px;color:var(--txt3);display:block}
+  /* Tabs */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+  .tab{cursor:pointer;font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:10px 10px 0 0;border:1px solid var(--line);border-bottom:none;background:var(--bg2);color:var(--txt3)}
+  .tab.active{background:var(--panel);color:#fff;border-color:var(--line2)}
+  .tabpane{display:none;background:var(--panel);border:1px solid var(--line2);border-radius:0 12px 12px 12px;padding:20px}
+  .tabpane.active{display:block}
+  /* arch diagram */
+  .arch{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0;font-size:12.5px;font-family:var(--mono)}
+  .node{padding:8px 12px;border-radius:9px;border:1px solid var(--line2);background:var(--bg3);color:var(--txt)}
+  .node.trunk{background:rgba(91,140,255,.14);border-color:var(--accent)}
+  .node.head{background:rgba(52,217,196,.12);border-color:var(--accent2);color:#bdf3ea}
+  .node.mod{background:rgba(183,140,255,.13);border-color:var(--accent3);color:#dcc9ff}
+  .arrow{color:var(--txt3)}
+  /* slider */
+  .sl{display:flex;align-items:center;gap:14px;margin:10px 0}
+  .sl label{min-width:170px;font-size:13.5px;color:var(--txt2)}
+  input[type=range]{flex:1;accent-color:var(--accent)}
+  .sl output{font-family:var(--mono);font-weight:700;color:var(--accent2);min-width:54px;text-align:right}
+  .bigout{font-family:var(--mono);font-size:34px;font-weight:800;color:var(--accent2)}
+  .pill{font-size:11px;color:var(--txt3)}
+  footer{padding:40px 0 0;color:var(--txt3);font-size:13px}
+  footer a{color:var(--txt2)}
+  @media(max-width:880px){.wrap{grid-template-columns:1fr}nav.toc{display:none}main{padding:0 18px 80px}.grid2,.lane{grid-template-columns:1fr}header.hero h1{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" id="toc">
+  <div class="brand">LLM <span style="color:var(--accent2)">MTP</span><small>Multi-Token Prediction</small></div>
+  <a href="#intro">한 줄 요약</a>
+  <a href="#bg">1 · 배경지식: 토큰 생성</a>
+  <a href="#what">2 · MTP란 무엇인가</a>
+  <a href="#demo1">▶ 데모: NTP vs MTP</a>
+  <a href="#how">3 · 어떻게 동작하나</a>
+  <a href="#infer">4 · 추론 가속 (speculative)</a>
+  <a href="#demo2">▶ 데모: draft·verify</a>
+  <a href="#calc">▶ 계산기: 가속비</a>
+  <a href="#compare">5 · 비교: Medusa·EAGLE</a>
+  <a href="#proscons">6 · 장단점·언제 쓰나</a>
+  <a href="#eco">7 · 생태계</a>
+  <a href="#sum">8 · 핵심 정리</a>
+</nav>
+
+<main>
+<header class="hero" id="intro">
+  <span class="kic">◆ Interactive Tech Report</span>
+  <h1>LLM <span class="grad">Multi-Token Prediction</span><br>다중 토큰 예측, 쉽게 이해하기</h1>
+  <p class="sub">LLM은 원래 "다음 한 토큰"만 예측한다. MTP는 <b>"앞으로 올 여러 토큰을 한 번에"</b> 예측하게 만드는 기법으로 —
+  <span class="tag train">학습</span> 더 똑똑하게, <span class="tag infer">추론</span> 더 빠르게 만든다.</p>
+  <div class="stats">
+    <div class="stat"><b>~3×</b><span>이론적 추론 가속 (Meta MTP)</span></div>
+    <div class="stat"><b>1.8×</b><span>실측 throughput (DeepSeek-V3)</span></div>
+    <div class="stat"><b>+12~17%</b><span>코드 벤치(HumanEval/MBPP)</span></div>
+    <div class="stat"><b>~85%</b><span>2번째 토큰 채택률(acceptance)</span></div>
+  </div>
+</header>
+
+<section id="bg">
+  <h2><span class="n">01</span>배경지식 — LLM은 어떻게 글자를 만드나</h2>
+  <p class="lead">MTP를 이해하려면 먼저 "보통 LLM이 어떻게 생성하는지"를 알아야 한다.</p>
+  <h3>① 토큰(token)과 자기회귀(autoregressive) 생성</h3>
+  <p>LLM은 글을 <b>토큰</b>(단어 조각) 단위로 다룬다. 생성은 <b>한 번의 forward pass(모델 연산 1회)당 토큰 1개</b>를 뽑는 식으로 진행된다.
+  지금까지의 토큰 <code>t₁…tₙ</code>을 입력해 <code>tₙ₊₁</code>의 확률분포를 구하고, 하나를 골라 뒤에 붙이고, 다시 전체를 넣어 다음을 구한다. 이 "다음 토큰 맞히기"가 <b>Next-Token Prediction(NTP)</b>이다.</p>
+  <div class="callout k"><strong>핵심 병목:</strong> 토큰 10개를 만들려면 forward pass를 10번 해야 한다. 그런데 디코딩은 <b>메모리 대역폭에 묶인(memory-bound)</b> 작업이라 —
+  거대한 모델 가중치를 GPU 메모리에서 읽어오는 시간이 대부분이고, 정작 <b>연산 유닛은 놀고 있다.</b> "1회 연산에 1토큰"은 GPU를 충분히 못 쓰는 셈.</p>
+  <h3>② 학습은 사실 "병렬"인데, 생성만 "순차"다</h3>
+  <p><b>학습(training)</b> 때는 teacher forcing으로 문장 전체의 모든 위치를 한 번에 예측한다(정답을 알고 있으니까). 반면 <b>생성(inference)</b>은 정답이 없어 한 토큰씩 순차로 갈 수밖에 없다.
+  → "학습의 병렬성을 생성에서도 어떻게든 살릴 수 없을까?"가 MTP·speculative decoding의 출발점이다.</p>
+</section>
+
+<section id="what">
+  <h2><span class="n">02</span>MTP란 무엇인가</h2>
+  <p class="lead"><b>Multi-Token Prediction(MTP)</b> = 각 위치에서 다음 1개가 아니라 <b>다음 n개의 토큰을 동시에 예측</b>하도록 모델을 만드는 것.</p>
+  <p>구현은 보통 <b>공유 트렁크(Transformer 본체) + 여러 개의 출력 헤드</b> 형태다. 트렁크가 만든 하나의 hidden state에서, 헤드 1은 <code>tₙ₊₁</code>, 헤드 2는 <code>tₙ₊₂</code> … 식으로 각자 미래 토큰을 예측한다.</p>
+  <div class="grid2">
+    <div class="card"><span class="tag train">학습 이득</span>
+      <h3 style="margin-top:8px">① 더 똑똑해진다</h3>
+      <p>미래 여러 토큰을 맞히도록 강제하면 — (1) <b>학습 신호가 촘촘</b>해져 데이터 효율↑, (2) 모델이 <b>앞을 내다보고(pre-plan)</b> 내부 표현을 만들게 되어 멀리 보는 능력↑.
+      특히 <b>코드·수학</b>처럼 "다음 몇 개를 미리 계획"해야 하는 과제에서 이득이 크다 (HumanEval/MBPP +12~17%).</p>
+    </div>
+    <div class="card"><span class="tag infer">추론 이득</span>
+      <h3 style="margin-top:8px">② 더 빨라진다</h3>
+      <p>추가 헤드들이 미래 토큰을 미리 "초안(draft)"으로 내놓으면, 본 모델이 그걸 <b>한 번에 검증</b>해 맞는 만큼 받아들인다(self-speculative decoding).
+      → forward pass 1회로 <b>여러 토큰</b>을 확정 → 최대 ~3× 가속. <b>출력 품질은 그대로(lossless).</b></p>
+    </div>
+  </div>
+  <div class="callout g"><strong>한 줄로:</strong> MTP는 "다음 한 글자만 보던 모델에게 <b>앞을 몇 글자 더 내다보게</b> 가르치는 것" — 그 부수효과로 <b>더 잘 쓰고, 더 빨리 쓴다.</b></div>
+</section>
+
+<section id="demo1">
+  <h2><span class="n">▶</span>인터랙티브 데모 — NTP vs MTP, 같은 문장을 누가 빨리 쓰나</h2>
+  <p>왼쪽은 보통 모델(한 번에 1토큰), 오른쪽은 MTP(한 번에 4토큰 제안 후 검증). <b>같은 문장</b>을 만드는 데 <b>forward pass(연산 횟수)</b>가 얼마나 차이 나는지 보세요.</p>
+  <div class="widget">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="btn" id="d1play">▶ 생성 시작</button>
+      <button class="btn sm" id="d1reset">↺ 리셋</button>
+      <span class="pill" id="d1note">두 방식이 만들어내는 결과 문장은 완전히 동일합니다.</span>
+    </div>
+    <div class="lane">
+      <div class="box"><h4>Next-Token Prediction <span class="meta" id="d1la">표준</span></h4>
+        <div class="toks" id="d1lt"></div></div>
+      <div class="box"><h4>Multi-Token Prediction <span class="meta" id="d1ra">MTP · k=4</span></h4>
+        <div class="toks" id="d1rt"></div></div>
+    </div>
+    <div class="counters">
+      <div class="counter"><b id="d1lp">0</b><span>NTP forward pass</span></div>
+      <div class="counter"><b id="d1rp">0</b><span>MTP forward pass</span></div>
+      <div class="counter"><b id="d1sp">—</b><span>속도 차이</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <h2><span class="n">03</span>어떻게 동작하나 — 아키텍처 3가지</h2>
+  <p>같은 "다중 토큰 예측"이라도 구현이 다르다. 탭으로 비교해 보세요.</p>
+  <div class="tabs">
+    <div class="tab active" data-t="meta">Meta MTP (병렬 헤드)</div>
+    <div class="tab" data-t="ds">DeepSeek-V3 (순차 모듈)</div>
+    <div class="tab" data-t="med">Medusa / EAGLE</div>
+  </div>
+  <div class="tabpane active" data-p="meta">
+    <h3>병렬 독립 헤드 (Gloeckle et al., Meta 2024)</h3>
+    <div class="arch">
+      <span class="node trunk">공유 Transformer 트렁크</span><span class="arrow">→ hidden h</span>
+      <span class="node head">Head 1 → tₙ₊₁</span><span class="node head">Head 2 → tₙ₊₂</span>
+      <span class="node head">Head 3 → tₙ₊₃</span><span class="node head">Head 4 → tₙ₊₄</span>
+    </div>
+    <p>하나의 hidden state <code>h</code>에서 <b>n개(보통 4) 헤드가 병렬</b>로 각 미래 토큰을 예측. 학습 손실 = 4개 위치 cross-entropy의 합.
+    추론 때는 헤드를 버리고 일반 모델로 써도 되고(학습 이득만 챙김), 헤드를 draft로 써서 self-speculative 가속도 가능.</p>
+    <p class="pill">메모리 절약 트릭: 헤드별 손실/그래디언트를 순차로 계산해 logit 텐서가 동시에 메모리에 안 쌓이게 한다.</p>
+  </div>
+  <div class="tabpane" data-p="ds">
+    <h3>순차 MTP 모듈 (DeepSeek-V3, 2024)</h3>
+    <div class="arch">
+      <span class="node trunk">메인 모델 → tₙ₊₁</span><span class="arrow">⊕ 임베딩</span>
+      <span class="node mod">MTP 모듈(Transformer 블록 1개) → tₙ₊₂</span>
+    </div>
+    <p>DeepSeek-V3는 <b>인과 사슬(causal chain)을 유지</b>한다. 메인이 <code>tₙ₊₁</code>을 예측하고, 그 결과를 다시 입력에 합쳐 <b>MTP 모듈(자체 Transformer 블록 + 공유 임베딩/출력헤드 + projection)</b>이 <code>tₙ₊₂</code>를 예측. 깊이 D=1(즉 2토큰 지평).</p>
+    <ul>
+      <li>671B 모델에 약 <b>+14B</b> 파라미터(대부분 학습 전용).</li>
+      <li>주 목적은 <b>학습 신호 강화</b> — 본 추론 시 MTP 모듈을 버려도 본체 성능이 향상돼 있음.</li>
+      <li>원하면 그 모듈을 그대로 <b>speculative decoding의 draft</b>로 재활용 → 2번째 토큰 채택률 ~85% → throughput ~1.8×.</li>
+    </ul>
+  </div>
+  <div class="tabpane" data-p="med">
+    <h3>사후 부착형 draft 헤드 (Medusa / EAGLE)</h3>
+    <p>이미 학습된 모델에 <b>가속 전용 draft 모듈만 추가</b>로 붙이는 계열. (모델 자체를 MTP로 사전학습하지 않아도 됨)</p>
+    <div class="arch">
+      <span class="node trunk">동결된 본 모델 hidden</span><span class="arrow">→</span>
+      <span class="node head">Medusa: 여러 MLP 헤드(병렬)</span>
+      <span class="node mod">EAGLE: feature 수준 자기회귀 draft</span>
+    </div>
+    <ul>
+      <li><b>Medusa</b>: 마지막 hidden에 MLP 헤드 여러 개를 얹어 미래 토큰들을 <b>병렬</b>로 초안 + 트리 어텐션으로 여러 후보 동시 검증.</li>
+      <li><b>EAGLE</b>: hidden(feature) + 직전 토큰을 함께 써서 <b>자기회귀적으로</b> 초안 → draft 정확도↑(현재 SOTA, vLLM·SGLang·TensorRT-LLM 채택). 단 k토큰에 k번 순차 패스가 필요(P-EAGLE이 병렬화 시도).</li>
+    </ul>
+  </div>
+</section>
+
+<section id="infer">
+  <h2><span class="n">04</span>추론 가속의 핵심 — Self-Speculative Decoding</h2>
+  <p class="lead">MTP가 "빠른" 진짜 이유. 그리고 왜 <b>품질이 안 떨어지는지</b>(lossless).</p>
+  <h3>일반 speculative decoding</h3>
+  <p>원래 speculative decoding은 <b>작고 빠른 별도 draft 모델</b>이 토큰 k개를 싸게 제안 → <b>크고 느린 target 모델</b>이 그 k개를 <b>한 번의 forward pass로 병렬 검증</b> → 맞은 접두부(prefix)까지 채택하고 틀린 지점부터 다시. 검증은 수학적으로 <b>target 분포를 그대로 보존</b>(rejection sampling)하므로 결과 품질이 동일하다.</p>
+  <div class="callout"><strong>MTP의 한 끗:</strong> 별도 draft 모델이 필요 없다. <b>모델 자신의 MTP 헤드/모듈이 draft 역할</b>을 한다(self-speculative). → 두 모델 정렬 문제·운영 부담 없음.</div>
+  <h3>채택(acceptance) 규칙 — 왜 lossless인가</h3>
+  <p>draft 토큰을 받아들일지는 난수 <code>U~[0,1)</code>를 뽑아 <code>P_target / P_draft ≥ U</code>이면 채택, 아니면 거절하고 그 자리에서 target 분포로 보정 샘플링. 이 규칙 덕분에 <b>최종 출력 분포 = 원래 모델 분포</b>가 수학적으로 보장된다.</p>
+</section>
+
+<section id="demo2">
+  <h2><span class="n">▶</span>인터랙티브 데모 — draft → verify → accept 한 스텝씩</h2>
+  <p>MTP가 4개 토큰을 <b>초안(보라)</b>으로 제안하면, 본 모델이 검증해 맞는 접두부는 <b>채택(초록)</b>, 처음 틀린 곳부터는 <b>거절(빨강)</b>한다. "다음 스텝"을 눌러 한 사이클씩 진행해 보세요.</p>
+  <div class="widget">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="btn" id="d2step">다음 스텝 ▶</button>
+      <button class="btn sm" id="d2reset">↺ 리셋</button>
+      <span class="pill" id="d2msg">시작하려면 "다음 스텝"을 누르세요.</span>
+    </div>
+    <div class="box" style="margin-top:14px;background:var(--code);border:1px solid var(--line);border-radius:12px;padding:14px">
+      <div class="meta" style="font-size:11.5px;color:var(--txt3);font-family:var(--mono);margin-bottom:6px">확정된 문장 + 이번 사이클 draft</div>
+      <div class="toks" id="d2toks" style="min-height:80px"></div>
+    </div>
+    <div class="counters">
+      <div class="counter"><b id="d2cycle">0</b><span>검증 사이클(=forward pass)</span></div>
+      <div class="counter"><b id="d2tok">0</b><span>확정된 토큰</span></div>
+      <div class="counter"><b id="d2avg">—</b><span>사이클당 평균 토큰</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="calc">
+  <h2><span class="n">▶</span>인터랙티브 계산기 — 채택률이 속도를 얼마나 바꾸나</h2>
+  <p>이상적 가속비는 대략 <code>(1 − αᵏ⁺¹)/(1 − α)</code> (α=토큰당 채택 확률, k=초안 길이). 슬라이더를 움직여 직관을 얻어 보세요.
+  <span class="pill">※ 오버헤드를 무시한 이론적 상한 — 실제는 draft·verify 비용 때문에 더 낮습니다(DeepSeek 실측 ~1.8×).</span></p>
+  <div class="widget">
+    <div class="sl"><label>토큰당 채택률 α</label><input type="range" id="cAlpha" min="0" max="98" value="85"><output id="cAlphaV">0.85</output></div>
+    <div class="sl"><label>초안 길이 k (draft tokens)</label><input type="range" id="cK" min="1" max="8" value="4"><output id="cKV">4</output></div>
+    <div style="display:flex;align-items:baseline;gap:14px;margin-top:14px;flex-wrap:wrap">
+      <div><span class="bigout" id="cSpeed">3.4×</span> <span class="pill">이론적 가속 상한</span></div>
+      <div><span class="bigout" style="color:var(--accent3);font-size:26px" id="cTok">3.4</span> <span class="pill">검증 1회당 확정 토큰 수</span></div>
+    </div>
+    <p class="pill" id="cExpl" style="margin-top:10px"></p>
+  </div>
+</section>
+
+<section id="compare">
+  <h2><span class="n">05</span>비교 — MTP 계열 한눈에</h2>
+  <table>
+    <thead><tr><th>기법</th><th>draft 출처</th><th>학습 필요</th><th>품질</th><th>전형적 가속</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td><b>표준 spec. decoding</b></td><td>별도 작은 draft 모델</td><td>없음(별도 모델 준비)</td><td>lossless</td><td>2~3×</td><td>두 모델 정렬·운영 부담</td></tr>
+      <tr><td><b>MTP (Meta/DeepSeek)</b></td><td>모델 자신의 헤드/모듈</td><td><b>사전학습에 포함</b></td><td>lossless + <b>본체 품질↑</b></td><td>~1.8~3×</td><td>학습+추론 둘 다 이득</td></tr>
+      <tr><td><b>Medusa</b></td><td>사후 부착 MLP 헤드(병렬)</td><td>가벼운 파인튜닝</td><td>lossless</td><td>~2~3×</td><td>트리 어텐션, 간단</td></tr>
+      <tr><td><b>EAGLE / EAGLE-2,3</b></td><td>feature 자기회귀 draft</td><td>가벼운 학습</td><td>lossless</td><td>2~3×+</td><td>현 SOTA, 주류 서빙엔진 채택</td></tr>
+    </tbody>
+  </table>
+  <div class="callout"><strong>정리:</strong> Medusa·EAGLE는 <b>"추론만"</b> 빠르게 하는 사후 부착형이고, MTP(Meta/DeepSeek)는 <b>사전학습 목표 자체</b>를 바꿔 <b>"모델 품질 + 추론 속도"</b>를 함께 얻는다. 셋 다 출력은 lossless(원본 분포 보존).</div>
+</section>
+
+<section id="proscons">
+  <h2><span class="n">06</span>장단점 · 언제 쓰나</h2>
+  <div class="grid2">
+    <div class="card"><h3 style="margin-top:0;color:var(--green)">장점</h3>
+      <ul>
+        <li><b>이중 이득</b>: 학습 신호 강화(품질) + self-speculative(속도).</li>
+        <li><b>Lossless</b>: 검증 규칙이 원본 분포를 보존 → 정확도 손실 없음.</li>
+        <li><b>별도 draft 모델 불필요</b>: 운영·정렬 부담 감소.</li>
+        <li><b>코드·수학·구조화 출력</b>에서 특히 효과적(look-ahead 과제).</li>
+      </ul></div>
+    <div class="card"><h3 style="margin-top:0;color:var(--red)">단점·주의</h3>
+      <ul>
+        <li><b>학습 비용/복잡도↑</b>: 추가 헤드·모듈, 손실 설계.</li>
+        <li><b>가속은 채택률에 좌우</b>: 도메인이 어렵거나 다양하면 α↓ → 이득↓.</li>
+        <li><b>배치 크기 영향</b>: 대형 배치(이미 compute-bound)에선 가속 효과가 작아질 수 있음.</li>
+        <li><b>품질 이득은 도메인별</b>: 일반 자연어보다 코드·수학에서 크다.</li>
+      </ul></div>
+  </div>
+  <div class="callout k"><strong>언제 유용한가:</strong> ① 단일/저배치 <b>저지연 서빙</b>(챗봇·코딩 어시스턴트)에서 토큰 지연을 줄이고 싶을 때, ② 새 모델을 <b>사전학습</b>하며 코드/추론 품질과 추론 효율을 동시에 노릴 때. 반대로 이미 처리량 포화(대배치 오프라인)면 가속 이득은 제한적.</div>
+</section>
+
+<section id="eco">
+  <h2><span class="n">07</span>생태계 — 어디서 쓰나</h2>
+  <ul>
+    <li><b>DeepSeek-V3 / R1</b>: 사전학습에 MTP 목표 채택, 추론 시 speculative decoding으로 재활용.</li>
+    <li><b>Meta (Gloeckle et al. 2024)</b>: "Better &amp; Faster LLMs via Multi-token Prediction" — n=4 헤드, 코드 강세 + 3× 추론.</li>
+    <li><b>서빙 엔진</b>: <b>vLLM · SGLang · TensorRT-LLM</b>이 MTP/EAGLE/Medusa 기반 speculative decoding을 1급 기능으로 지원.</li>
+    <li><b>후속 연구</b>: FastMTP, P-EAGLE, self-distillation MTP, 확률회로 기반 MTP 등 — draft 정확도·병렬성 개선이 활발.</li>
+  </ul>
+  <div class="callout g"><strong>큰 그림:</strong> MTP는 "next-token 한 칸"이라는 LLM의 오래된 기본 가정을 흔든 흐름의 중심에 있다. 학습 목표(품질)와 추론 메커니즘(속도)을 동시에 건드린다는 점에서, 단순 최적화를 넘어 <b>LLM 설계 패러다임의 한 갈래</b>로 자리잡는 중.</div>
+</section>
+
+<section id="sum" style="border-bottom:none">
+  <h2><span class="n">08</span>핵심 정리</h2>
+  <div class="card">
+    <ol style="font-size:15.5px;line-height:1.9">
+      <li>보통 LLM = <b>다음 1토큰</b> 예측 → 생성이 <b>forward pass 1회당 1토큰</b>이라 느리다(메모리 바운드).</li>
+      <li><b>MTP</b> = <b>다음 n토큰을 동시에</b> 예측하도록 학습(공유 트렁크 + 다중 헤드/모듈).</li>
+      <li><span class="tag train">학습</span> 신호가 촘촘 + 앞을 내다봄 → <b>품질↑</b>(코드/수학 특히).</li>
+      <li><span class="tag infer">추론</span> 자기 헤드가 draft → 본 모델이 한 번에 검증·채택(<b>self-speculative</b>) → <b>속도↑, 품질 동일(lossless)</b>.</li>
+      <li>가속비는 <b>채택률 α</b>에 좌우. DeepSeek-V3 실측 ~1.8×, 이론 상한 ~3×.</li>
+      <li>친척: <b>Medusa</b>(병렬 MLP 헤드), <b>EAGLE</b>(feature 자기회귀, 현 SOTA) — 사후 부착형 가속.</li>
+    </ol>
+  </div>
+  <footer>
+    <p><strong>출처</strong>:
+    <a href="https://arxiv.org/abs/2404.19737" target="_blank">Gloeckle et al., "Better &amp; Faster LLMs via Multi-token Prediction" (Meta, 2024)</a> ·
+    <a href="https://arxiv.org/abs/2412.19437" target="_blank">DeepSeek-V3 Technical Report</a> ·
+    <a href="https://sebastianraschka.com/llm-architecture-gallery/mtp/" target="_blank">S. Raschka — MTP</a> ·
+    <a href="https://arxiv.org/abs/2401.10774" target="_blank">Medusa</a> ·
+    <a href="https://arxiv.org/abs/2401.15077" target="_blank">EAGLE</a> ·
+    <a href="https://arxiv.org/abs/2211.17192" target="_blank">Leviathan et al., Speculative Decoding</a></p>
+    <p>인터랙티브 기술 보고서 · 교육용 정리. 수치는 원논문/리포트 기준 근사값.</p>
+  </footer>
+</section>
+</main>
+</div>
+
+<script>
+(function(){
+  // ---------- scroll-spy TOC ----------
+  var links=[].slice.call(document.querySelectorAll('nav.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));}).filter(Boolean);
+  function spy(){
+    var y=window.scrollY+120,cur=secs[0];
+    for(var i=0;i<secs.length;i++){ if(secs[i].offsetTop<=y) cur=secs[i]; }
+    links.forEach(function(a){ a.classList.toggle('active', a.getAttribute('href')==='#'+cur.id); });
+  }
+  window.addEventListener('scroll',spy,{passive:true}); spy();
+
+  // ---------- tabs ----------
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.addEventListener('click',function(){
+      document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
+      document.querySelectorAll('.tabpane').forEach(function(x){x.classList.remove('active');});
+      t.classList.add('active');
+      document.querySelector('.tabpane[data-p="'+t.dataset.t+'"]').classList.add('active');
+    });
+  });
+
+  // ---------- Demo 1: NTP vs MTP ----------
+  var SENT=["AX는","분산","에이전트","런타임","이며","상태를","이벤트","로그로","보존","한다"];
+  var ACCEPT=[3,1,4,2]; // MTP가 사이클마다 채택하는 토큰 수(시뮬레이션)
+  function mkToks(host){host.innerHTML='';return SENT.map(function(w){var s=document.createElement('span');s.className='tok';s.textContent=w;host.appendChild(s);return s;});}
+  var d1L,d1R,d1timer;
+  function d1build(){d1L=mkToks(document.getElementById('d1lt'));d1R=mkToks(document.getElementById('d1rt'));
+    document.getElementById('d1lp').textContent='0';document.getElementById('d1rp').textContent='0';document.getElementById('d1sp').textContent='—';}
+  function d1run(){
+    var li=0,ri=0,lp=0,rp=0,ai=0;
+    document.getElementById('d1play').disabled=true;
+    d1timer=setInterval(function(){
+      var done=true;
+      if(li<SENT.length){ d1L[li].classList.add('on'); li++; lp++; document.getElementById('d1lp').textContent=lp; done=false; }
+      if(ri<SENT.length){ var n=ACCEPT[ai%ACCEPT.length]; ai++; for(var j=0;j<n&&ri<SENT.length;j++){ d1R[ri].classList.add('on'); ri++; } rp++; document.getElementById('d1rp').textContent=rp; done=false; }
+      if(lp>0&&rp>0) document.getElementById('d1sp').textContent=(lp/rp).toFixed(1)+'×';
+      if(done){ clearInterval(d1timer); document.getElementById('d1play').disabled=false; }
+    },520);
+  }
+  document.getElementById('d1play').addEventListener('click',function(){clearInterval(d1timer);d1build();d1run();});
+  document.getElementById('d1reset').addEventListener('click',function(){clearInterval(d1timer);d1build();document.getElementById('d1play').disabled=false;});
+  d1build();
+
+  // ---------- Demo 2: draft / verify / accept ----------
+  var D2SENT="모델 은 다음 여러 토큰 을 미리 제안 하고 한 번 에 검증 한다 그래서 더 빠르 다".split(" ");
+  var D2ACC=[3,2,4,1,3,2]; // 사이클별 채택 수(나머지는 거절)
+  var d2pos=0,d2cycle=0,d2host=document.getElementById('d2toks');
+  function d2render(draftFrom,draftLen,accLen){
+    d2host.innerHTML='';
+    for(var i=0;i<D2SENT.length;i++){
+      var s=document.createElement('span');s.className='tok';s.textContent=D2SENT[i];
+      if(i<d2pos){s.classList.add('on');}
+      else if(draftFrom!==undefined && i>=draftFrom && i<draftFrom+draftLen){
+        if(i<draftFrom+accLen){s.classList.add('draft','acc');} else {s.classList.add('draft','rej');}
+      }
+      d2host.appendChild(s);
+    }
+  }
+  function d2reset(){d2pos=0;d2cycle=0;d2render();document.getElementById('d2cycle').textContent='0';document.getElementById('d2tok').textContent='0';document.getElementById('d2avg').textContent='—';document.getElementById('d2msg').textContent='시작하려면 "다음 스텝"을 누르세요.';document.getElementById('d2step').disabled=false;}
+  function d2next(){
+    if(d2pos>=D2SENT.length){return;}
+    var k=4, draftFrom=d2pos, draftLen=Math.min(k,D2SENT.length-d2pos);
+    var acc=Math.min(D2ACC[d2cycle%D2ACC.length],draftLen);
+    // 마지막엔 남은 토큰 모두 채택 처리
+    if(D2SENT.length-d2pos<=k) acc=draftLen;
+    d2render(draftFrom,draftLen,acc);
+    document.getElementById('d2msg').textContent='사이클 '+(d2cycle+1)+': 초안 '+draftLen+'개 제안 → '+acc+'개 채택, '+(draftLen-acc)+'개 거절';
+    // 다음 호출에서 확정 반영
+    setTimeout(function(){
+      d2pos+=Math.max(1,acc); d2cycle++;
+      document.getElementById('d2cycle').textContent=d2cycle;
+      document.getElementById('d2tok').textContent=d2pos;
+      document.getElementById('d2avg').textContent=(d2pos/d2cycle).toFixed(2);
+      d2render();
+      if(d2pos>=D2SENT.length){document.getElementById('d2msg').textContent='완료! 사이클 '+d2cycle+'번으로 '+D2SENT.length+'토큰 생성 (사이클당 평균 '+(d2pos/d2cycle).toFixed(2)+'토큰).';document.getElementById('d2step').disabled=true;}
+    },650);
+  }
+  document.getElementById('d2step').addEventListener('click',d2next);
+  document.getElementById('d2reset').addEventListener('click',d2reset);
+  d2reset();
+
+  // ---------- Calculator ----------
+  function calc(){
+    var a=(+document.getElementById('cAlpha').value)/100;
+    var k=+document.getElementById('cK').value;
+    document.getElementById('cAlphaV').textContent=a.toFixed(2);
+    document.getElementById('cKV').textContent=k;
+    var exp = a>=0.999 ? (k+1) : (1-Math.pow(a,k+1))/(1-a); // 검증 1회당 기대 토큰
+    document.getElementById('cTok').textContent=exp.toFixed(2);
+    document.getElementById('cSpeed').textContent=exp.toFixed(1)+'×';
+    var msg;
+    if(a<0.5) msg='채택률이 낮으면(초안이 자주 틀림) 초안을 길게 잡아도 거의 버려져서 가속이 작습니다.';
+    else if(a<0.8) msg='적당한 채택률. 초안 길이 k를 키울수록 이득이 붙지만 수확체감합니다.';
+    else msg='높은 채택률(코드·정형 텍스트 등)에서는 한 번 검증으로 여러 토큰을 확정 → 큰 가속.';
+    document.getElementById('cExpl').textContent='α='+a.toFixed(2)+', k='+k+' → 검증 1회당 평균 '+exp.toFixed(2)+'토큰 확정. '+msg;
+  }
+  document.getElementById('cAlpha').addEventListener('input',calc);
+  document.getElementById('cK').addEventListener('input',calc);
+  calc();
+})();
+</script>
+</body>
+</html>
