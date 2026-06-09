@@ -21,16 +21,16 @@
 
 ## 2. 분석 대상 그래프DB 요약
 
-| DB | 언어 | 모델 | 쿼리 언어 | 라이선스 | 스토리지 |
-|----|------|------|----------|---------|---------|
-| **Neo4j** | Java | Property Graph | Cypher / GQL | GPLv3 (CE) | 네이티브 (Block Format) |
-| **ArangoDB** | C++ | Multi-model (Graph+Doc+KV) | AQL | Apache 2.0 (CE) / BSL 1.1 (EE) | RocksDB |
-| **JanusGraph** | Java | Property Graph | Gremlin | Apache 2.0 | Cassandra/HBase/BerkeleyDB |
-| **Dgraph** | Go | Graph (RDF 기반) | DQL / GraphQL | Apache 2.0 | Badger (자체 KV) |
-| **FalkorDB** | C | Property Graph | OpenCypher | Server Side PL | Redis 기반 + GraphBLAS |
-| **ArcadeDB** | Java | Multi-model (Graph+Doc+KV+Vector+TS) | SQL/Cypher/Gremlin/GraphQL | Apache 2.0 |  네이티브 (페이지 기반) |
-| **Memgraph** | C++ | Property Graph | OpenCypher | BSL 1.1 | In-memory + RocksDB |
-| **Apache HugeGraph** | Java | Property Graph | Gremlin / Cypher | Apache 2.0 | Cassandra/RocksDB/ScyllaDB |
+| DB                   | 언어   | 모델                                   | 쿼리 언어                      | 라이선스                           | 스토리지                       |
+| -------------------- | ---- | ------------------------------------ | -------------------------- | ------------------------------ | -------------------------- |
+| **Neo4j**            | Java | Property Graph                       | Cypher / GQL               | GPLv3 (CE)                     | 네이티브 (Block Format)        |
+| **ArangoDB**         | C++  | Multi-model (Graph+Doc+KV)           | AQL                        | Apache 2.0 (CE) / BSL 1.1 (EE) | RocksDB                    |
+| **JanusGraph**       | Java | Property Graph                       | Gremlin                    | Apache 2.0                     | Cassandra/HBase/BerkeleyDB |
+| **Dgraph**           | Go   | Graph (RDF 기반)                       | DQL / GraphQL              | Apache 2.0                     | Badger (자체 KV)             |
+| **FalkorDB**         | C    | Property Graph                       | OpenCypher                 | Server Side PL                 | Redis 기반 + GraphBLAS       |
+| **ArcadeDB**         | Java | Multi-model (Graph+Doc+KV+Vector+TS) | SQL/Cypher/Gremlin/GraphQL | Apache 2.0                     | 네이티브 (페이지 기반)              |
+| **Memgraph**         | C++  | Property Graph                       | OpenCypher                 | BSL 1.1                        | In-memory + RocksDB        |
+| **Apache HugeGraph** | Java | Property Graph                       | Gremlin / Cypher           | Apache 2.0                     | Cassandra/RocksDB/ScyllaDB |
 
 ---
 

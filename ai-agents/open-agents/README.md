@@ -1121,7 +1121,7 @@ export type { Sandbox, SandboxHooks, ExecResult, SnapshotResult } from "./interf
 ## 부록 A — 디렉토리 지도
 
 ```
-_repos/open-agents/
+.repos/open-agents/
 ├── apps/web/                           # Next.js 앱
 │   ├── app/
 │   │   ├── api/

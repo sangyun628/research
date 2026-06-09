@@ -749,4 +749,4 @@ graph LR
 | Query Module ABI | `include/mg_procedure.h`, `src/query/procedure/` |
 | 확장 예제 | `query_modules/example.cpp`, `query_modules/schema.cpp` |
 
-> 본 분석은 `_repos/memgraph/` 의 소스코드 스냅샷(저작권 헤더 2025~2026년)을 기반으로 작성되었다. 버전에 따라 일부 파일 경로나 플래그 기본값은 달라질 수 있다.
+> 본 분석은 `.repos/memgraph/` 의 소스코드 스냅샷(저작권 헤더 2025~2026년)을 기반으로 작성되었다. 버전에 따라 일부 파일 경로나 플래그 기본값은 달라질 수 있다.

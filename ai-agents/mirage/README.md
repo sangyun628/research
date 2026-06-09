@@ -5,7 +5,7 @@
 > **라이선스**: Apache-2.0
 > **언어**: Python 3.12+ / TypeScript 모노레포 (`mirage-ai` on PyPI, `@struktoai/mirage-*` on npm)
 > **공식 문서**: [docs.mirage.strukto.ai](https://docs.mirage.strukto.ai)
-> **참고**: AgentCrunch 기사, OSSInsight 통계, 로컬 클론 `_repos/mirage/`
+> **참고**: AgentCrunch 기사, OSSInsight 통계, 로컬 클론 `.repos/mirage/`
 
 ---
 

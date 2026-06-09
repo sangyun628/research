@@ -6,7 +6,7 @@
 > **언어**: TypeScript ESM (Node ≥ 20)
 > **배포**: npm `@agentmemory/agentmemory`, CLI 단일 명령
 > **위치**: iii-engine 기반(`iii-sdk@0.11.2`) 영속 메모리 워커
-> **참고**: 코드 클론(`_repos/agentmemory/`), Karpathy LLM Wiki 패턴 확장 디자인 노트
+> **참고**: 코드 클론(`.repos/agentmemory/`), Karpathy LLM Wiki 패턴 확장 디자인 노트
 
 ---
 

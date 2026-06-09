@@ -22,17 +22,8 @@
 /webmcp-source/
 /OpenSpace/
 /OpenHarness/
+# Hidden scratch directory for cloned upstream repos used during analysis.
+/.repos/
+# Legacy clone directory name; keep ignored if it still appears locally.
 /_repos/
 ai-agents/deer-flow/_repo/
-_repos/opencode
-_repos/PageIndex
-_repos/open-agents
-_repos/OpenMythos
-_repos/pi-autoresearch
-_repos/ag-ui
-_repos/hermes-agent
-_repos/osi
-/_repos/FinceptTerminal/
-/_repos/lat.md/
-/_repos/mirage/
-/_repos/agentmemory/

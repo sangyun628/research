@@ -1,4 +1,4 @@
-# CLAUDE.md - 프로젝트 규칙
+# AGENTS.md - 프로젝트 규칙
 
 ## 사용자 컨텍스트
 - 소프트웨어 엔지니어/개발자 관점에서 기술과 오픈소스를 학습·분석하는 프로젝트
@@ -28,7 +28,7 @@ research/
 
 - **카테고리 (depth 1)** 는 다음 12개 안에서 고른다. 새 카테고리 신설은 *3개 이상의 토픽*이 모일 때만:
   - `ai-agents/` — 에이전트 프레임워크·메모리·구체 구현
-  - `ai-coding-tools/` — 코딩 에이전트·IDE (Claude Code, OpenCode, Warp …)
+  - `ai-coding-tools/` — 코딩 에이전트·IDE (Codex, OpenCode, Warp …)
   - `ai-infrastructure/` — RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어
   - `databases/` — 그래프·벡터·멀티모델 DB
   - `data-platforms/` — ETL·분산 데이터 통합
@@ -69,7 +69,7 @@ research/
 |---|---|
 | 에이전트 메모리 비교 | `ai-agents/memory-comparison/` (8개 시스템 횡단 분석) |
 | 에이전트 메모리 개별 구현 | `ai-agents/<project>/` (agentmemory, openchronicle, openviking, supermemory) |
-| 코딩 에이전트 | `ai-coding-tools/<tool>/` (claude-code, opencode, warp) |
+| 코딩 에이전트 | `ai-coding-tools/<tool>/` (Codex, opencode, warp) |
 | 텍스트→SQL | `ai-infrastructure/` (db-gpt, wren-ai) |
 | Graph RAG / 온톨로지 | `ai-infrastructure/graph-rag-ontology/` |
 | 그래프 DB 비교 | `databases/graphdb/` |

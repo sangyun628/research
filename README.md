@@ -62,12 +62,13 @@ RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어.
 | Airweave | [분석](ai-infrastructure/airweave/airweave-analysis.md) | AI 컨텍스트 검색 인프라 |
 | Chunking | [OSS 가이드](ai-infrastructure/chunking/chunking-oss-guide.md) | 청킹 특화 OSS (Chonkie 등) · Bedrock KB 전략 매핑 |
 | DB-GPT | [분석](ai-infrastructure/db-gpt/analysis.md) | DB-GPT (텍스트→SQL) |
-| Graph RAG · 온톨로지 | [기술 레퍼런스](ai-infrastructure/graph-rag-ontology/README.md) | Graph 기반 RAG·온톨로지 심화 |
+| Graph RAG · 온톨로지 | [기술 레퍼런스](ai-infrastructure/graph-rag-ontology/README.md) · [Agentic Ontology](ai-infrastructure/graph-rag-ontology/agentic-ontology.md) | Graph 기반 RAG·온톨로지 심화 |
+| RAG · GraphRAG 확장 | [2026 landscape](ai-infrastructure/rag-graphrag-expansion/2026-landscape.md) | 최신 RAG·GraphRAG 기술과 OSS 확장 조사 |
 | LangExtract | [분석](ai-infrastructure/langextract/langextract-analysis.md) | Google LLM 텍스트 추출 라이브러리 |
 | LightRAG | [분석](ai-infrastructure/lightrag/analysis.md) | 경량 RAG |
 | LLM MTP | [인터랙티브 보고서(HTML)](ai-infrastructure/llm-mtp/llm-mtp.html) | Multi-Token Prediction 다중 토큰 예측 기술 정리 |
 | RAG-Anything | [분석](ai-infrastructure/rag-anything/analysis.md) | 멀티모달 RAG |
-| RAGFlow | [분석](ai-infrastructure/ragflow/analysis.md) | 심층 문서 이해 기반 RAG·에이전트 엔진 (InfiniFlow) |
+| RAGFlow | [분석](ai-infrastructure/ragflow/analysis.md) · [인프라·셋업](ai-infrastructure/ragflow/infrastructure-setup.md) | 심층 문서 이해 기반 RAG·에이전트 엔진 (InfiniFlow) |
 | WebMCP | [분석](ai-infrastructure/webmcp/webmcp-analysis.md) | W3C 웹 표준 기반 AI 도구 노출 |
 | Wren AI | [분석](ai-infrastructure/wren-ai/analysis.md) | Wren AI 텍스트→SQL |
 
@@ -79,8 +80,9 @@ RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어.
 
 | 프로젝트 | 문서 | 설명 |
 |-----------|------|------|
-| Graph DB 모음 | [CozoDB](databases/graphdb/CozoDB_Analysis.md) · [Kuzu](databases/graphdb/Kuzu_Analysis.md) · [FalkorDB](databases/graphdb/FalkorDB_Analysis.md) · [FalkorDBLite](databases/graphdb/FalkorDBLite_Analysis.md) · [Dgraph](databases/graphdb/Dgraph_Analysis.md) · [JanusGraph](databases/graphdb/JanusGraph_Analysis.md) · [HugeGraph](databases/graphdb/HugeGraph_Analysis.md) · [Memgraph](databases/graphdb/Memgraph_Analysis.md) | 그래프 DB 분석 |
-| Graph DB 비교 | [임베드 3종 비교](databases/graphdb/CozoDB_vs_Kuzu_vs_FalkorDBLite.md) · [전체 비교](databases/graphdb/OpenSource_GraphDB_Comparison.md) · [K8s 오픈소스](databases/graphdb/K8s_OpenSource_Graph_Technologies.md) | 그래프 DB 비교 |
+| ArangoDB | [코드 레벨 분석](databases/arangodb/arangodb-code-analysis.md) | C++ 기반 multi-model graph DB |
+| Graph DB 모음 | [CozoDB](databases/graphdb/CozoDB_Analysis.md) · [Kuzu](databases/graphdb/Kuzu_Analysis.md) · [FalkorDB](databases/graphdb/FalkorDB_Analysis.md) · [FalkorDBLite](databases/graphdb/FalkorDBLite_Analysis.md) · [Dgraph](databases/graphdb/Dgraph_Analysis.md) · [JanusGraph](databases/graphdb/JanusGraph_Analysis.md) · [HugeGraph](databases/graphdb/HugeGraph_Analysis.md) · [Memgraph](databases/graphdb/Memgraph_Analysis.md) · [Memgraph 2026 라이선스](databases/graphdb/memgraph-2026-license-analysis.md) | 그래프 DB 분석 |
+| Graph DB 비교 | [오픈소스 후보 2026](databases/graphdb/open-source-graphdb-landscape-2026.md) · [임베드 3종 비교](databases/graphdb/CozoDB_vs_Kuzu_vs_FalkorDBLite.md) · [전체 비교](databases/graphdb/OpenSource_GraphDB_Comparison.md) · [K8s 오픈소스](databases/graphdb/K8s_OpenSource_Graph_Technologies.md) · [FalkorDB vs TigerGraph 서비스 채택](databases/graphdb/FalkorDB_vs_TigerGraph_Service_Use.md) | 그래프 DB 비교 |
 | kg-gen | [분석](databases/graphdb/kg-gen-analysis-report.md) | 지식 그래프 생성 |
 | StarRocks | [Debug Skills 분석](databases/starrocks-debug-skills/starrocks-debug-skills-analysis.md) | StarRocks 디버깅 스킬 모음 |
 | SurrealDB | [멀티모델 내부구조](databases/surrealdb/multi-model-internals.md) | Rust 기반 멀티 모델 DB |
@@ -146,5 +148,5 @@ libraries/             # 라이브러리 단편
 finance/               # 도메인-금융
 trends/                # 트렌드 정리
 scripts/               # 검증·자동화 스크립트
-_repos/                # 분석용 외부 repo 클론 (gitignored)
+.repos/                # 분석용 외부 repo 클론 (gitignored, hidden)
 ```

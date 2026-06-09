@@ -5,7 +5,7 @@
 > **라이선스**: MIT
 > **npm**: [`lat.md`](https://www.npmjs.com/package/lat.md)
 > **언어**: TypeScript 96.3% (ESM, Node.js 22+)
-> **참고 문헌**: [PyTorch KR 소개글](https://discuss.pytorch.kr/t/lat-md-agent-lattice-ai/10095), `_repos/lat.md/` 로컬 클론
+> **참고 문헌**: [PyTorch KR 소개글](https://discuss.pytorch.kr/t/lat-md-agent-lattice-ai/10095), `.repos/lat.md/` 로컬 클론
 
 ---
 

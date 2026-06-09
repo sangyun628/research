@@ -228,13 +228,13 @@ MCP/OpenAPI/tool calling은 action을 노출하는 인터페이스가 될 수 �
 
 위 12개 외에, "Palantir Ontology 대체/유사"를 직접 표방하며 2025~2026에 부상한 플랫폼들.
 
-| 프로젝트 | 라이선스/형태 | 핵심 역할 | Palantir식 대응 |
-|---|---|---|---|
-| Fluree | 오픈소스 (RDF·JSON-LD·OWL·SHACL) | 시맨틱 레이어 + GraphRAG, SPARQL/REST/MCP | 객체·관계·provenance + agent-facing query |
-| Dashjoin / d.AP | 오픈소스 (RDF/OWL, low-code) | linked-data graph + 데이터 통합·앱 빌드 | Foundry형 ontology+integration+app |
-| RelationalAI | 상용 (OSI 공동 창립) | knowledge graph 위 relational reasoning | logic/rule reasoning 레이어 |
-| Stardog | 상용 (EKG + Voicebox) | enterprise knowledge graph + agentic 답변 엔진 | 온톨로지 + semantic layer + agent |
-| Timbr | 상용 (SQL 온톨로지) | SQL 기반 ontology semantic layer | 객체·관계를 SQL로 노출 |
+| 프로젝트            | 라이선스/형태                      | 핵심 역할                                      | Palantir식 대응                          |
+| --------------- | ---------------------------- | ------------------------------------------ | ------------------------------------- |
+| Fluree          | 오픈소스 (RDF·JSON-LD·OWL·SHACL) | 시맨틱 레이어 + GraphRAG, SPARQL/REST/MCP        | 객체·관계·provenance + agent-facing query |
+| Dashjoin / d.AP | 오픈소스 (RDF/OWL, low-code)     | linked-data graph + 데이터 통합·앱 빌드            | Foundry형 ontology+integration+app     |
+| RelationalAI    | 상용 (OSI 공동 창립)               | knowledge graph 위 relational reasoning     | logic/rule reasoning 레이어              |
+| Stardog         | 상용 (EKG + Voicebox)          | enterprise knowledge graph + agentic 답변 엔진 | 온톨로지 + semantic layer + agent         |
+| Timbr           | 상용 (SQL 온톨로지)                | SQL 기반 ontology semantic layer             | 객체·관계를 SQL로 노출                        |
 
 > 주의: Fluree·Dashjoin은 오픈소스지만 이번 라운드에서 소스 단위 분석은 하지 않았다(landscape 수준). 깊은 분석이 필요하면 별도 round에서 clone 후 진행한다.
 
@@ -250,7 +250,7 @@ MCP/OpenAPI/tool calling은 action을 노출하는 인터페이스가 될 수 �
 
 ### Graphiti
 
-- Local source: `_repos/graphiti`, commit `9f2b63d`
+- Local source: `.repos/graphiti`, commit `9f2b63d`
 - 역할: AI agent를 위한 temporal context graph engine
 - 핵심 개념: entities, facts/relationships, episodes, custom types
 - 기술 포인트:
@@ -269,7 +269,7 @@ MCP/OpenAPI/tool calling은 action을 노출하는 인터페이스가 될 수 �
 
 ### Cognee
 
-- Local source: `_repos/cognee`, commit `cfb0aa4`
+- Local source: `.repos/cognee`, commit `cfb0aa4`
 - 역할: agent memory control plane
 - 핵심 개념: remember, recall, forget, improve
 - 기술 포인트:
@@ -285,7 +285,7 @@ MCP/OpenAPI/tool calling은 action을 노출하는 인터페이스가 될 수 �
 
 ### TrustGraph
 
-- Local source: `_repos/trustgraph`, commit `97453d9`
+- Local source: `.repos/trustgraph`, commit `97453d9`
 - 역할: semantic deployment platform for agents
 - 핵심 개념: context graph, OntologyRAG, Context Core
 - 기술 포인트:
@@ -302,8 +302,8 @@ MCP/OpenAPI/tool calling은 action을 노출하는 인터페이스가 될 수 �
 
 ### OpenSPG / KAG
 
-- Local source: `_repos/openspg`, commit `ceeb3ef`
-- Local source: `_repos/kag`, commit `fdab15b`
+- Local source: `.repos/openspg`, commit `ceeb3ef`
+- Local source: `.repos/kag`, commit `fdab15b`
 - 역할: 산업용 knowledge graph와 LLM reasoning 결합
 - 핵심 개념: SPG-Schema, SPG-Builder, SPG-Reasoner, KGDSL, KNext, kg-builder, kg-solver
 - 기술 포인트:
@@ -323,7 +323,7 @@ MCP/OpenAPI/tool calling은 action을 노출하는 인터페이스가 될 수 �
 
 ### TypeDB
 
-- Local source: `_repos/typedb`, commit `c8e2e2e`
+- Local source: `.repos/typedb`, commit `c8e2e2e`
 - 역할: strong type system 기반 knowledge database
 - 핵심 개념: entity, relation, attribute, inheritance, interface, TypeQL
 - 기술 포인트:
@@ -339,7 +339,7 @@ MCP/OpenAPI/tool calling은 action을 노출하는 인터페이스가 될 수 �
 
 ### TerminusDB
 
-- Local source: `_repos/terminusdb`, commit `f1b101b`
+- Local source: `.repos/terminusdb`, commit `f1b101b`
 - 역할: versioned document + knowledge graph database
 - 핵심 개념: git-for-data, JSON/JSON-LD document, schema constraints, WOQL/Datalog, GraphQL
 - 기술 포인트:
@@ -355,7 +355,7 @@ MCP/OpenAPI/tool calling은 action을 노출하는 인터페이스가 될 수 �
 
 ### LinkML
 
-- Local source: `_repos/linkml`, commit `b74eefd`
+- Local source: `.repos/linkml`, commit `b74eefd`
 - 역할: portable schema/ontology modeling language
 - 핵심 개념: YAML model, class, slot, enum, generator
 - 기술 포인트:
@@ -370,7 +370,7 @@ MCP/OpenAPI/tool calling은 action을 노출하는 인터페이스가 될 수 �
 
 ### DataHub
 
-- Local source: `_repos/datahub`, commit `5dc7ca13`
+- Local source: `.repos/datahub`, commit `5dc7ca13`
 - 역할: metadata graph and AI data catalog
 - 핵심 개념: dataset, schema, glossary, ownership, lineage, assertions, domains, MCP
 - 기술 포인트:
@@ -387,7 +387,7 @@ MCP/OpenAPI/tool calling은 action을 노출하는 인터페이스가 될 수 �
 
 ### OpenMetadata
 
-- Local source: `_repos/openmetadata`, commit `c913cd5d`
+- Local source: `.repos/openmetadata`, commit `c913cd5d`
 - 역할: open semantic context platform
 - 핵심 개념: metadata KG, glossary, classification, metrics, domains, data products, MCP
 - 기술 포인트:
@@ -403,8 +403,8 @@ MCP/OpenAPI/tool calling은 action을 노출하는 인터페이스가 될 수 �
 
 ### Cube Core / MetricFlow
 
-- Local source: `_repos/cube`, commit `590146f`
-- Local source: `_repos/metricflow`, commit `86d1538`
+- Local source: `.repos/cube`, commit `590146f`
+- Local source: `.repos/metricflow`, commit `86d1538`
 - 역할: business metric semantic layer
 - 핵심 개념: metric, dimension, measure, join, access rule, SQL planning
 - 기술 포인트:

@@ -371,17 +371,17 @@ $$) AS (a agtype, b agtype);
 
 ### 1.6 그래프 데이터베이스 비교표
 
-| 데이터베이스 | 라이선스 | 쿼리 언어 | 분산 지원 | K8s 성숙도 | 특화 분야 |
-|-------------|----------|-----------|-----------|------------|-----------|
-| **JanusGraph** | Apache 2.0 | Gremlin | O (완전) | ★★★★☆ | 대규모 분산 그래프 |
-| **NebulaGraph** | Apache 2.0 | nGQL | O (완전) | ★★★★★ | 고성능 분산 처리 |
-| **Dgraph** | Apache 2.0 | GraphQL/DQL | O (완전) | ★★★★☆ | GraphQL 네이티브 |
-| **Memgraph** | BSL 1.1 | Cypher | O (HA) | ★★★★☆ | 실시간 분석 |
-| **FalkorDB** | SSPLv1 | Cypher | O (Redis) | ★★★☆☆ | GraphRAG/GenAI |
-| **ArangoDB** | BSL 1.1 | AQL | O (완전) | ★★★★☆ | 멀티모델 |
-| **ArcadeDB** | Apache 2.0 | 다중 | O (완전) | ★★★☆☆ | 멀티모델/벡터 |
-| **Apache AGE** | Apache 2.0 | Cypher+SQL | O (PG) | ★★★☆☆ | PostgreSQL 통합 |
-| **TypeDB** | AGPL-3.0 | TypeQL | O (클러스터) | ★★★☆☆ | 지식 표현/추론 |
+| 데이터베이스          | 라이선스       | 쿼리 언어       | 분산 지원     | K8s 성숙도 | 특화 분야          |
+| --------------- | ---------- | ----------- | --------- | ------- | -------------- |
+| **JanusGraph**  | Apache 2.0 | Gremlin     | O (완전)    | ★★★★☆   | 대규모 분산 그래프     |
+| **NebulaGraph** | Apache 2.0 | nGQL        | O (완전)    | ★★★★★   | 고성능 분산 처리      |
+| **Dgraph**      | Apache 2.0 | GraphQL/DQL | O (완전)    | ★★★★☆   | GraphQL 네이티브   |
+| **Memgraph**    | BSL 1.1    | Cypher      | O (HA)    | ★★★★☆   | 실시간 분석         |
+| **FalkorDB**    | SSPLv1     | Cypher      | O (Redis) | ★★★☆☆   | GraphRAG/GenAI |
+| **ArangoDB**    | BSL 1.1    | AQL         | O (완전)    | ★★★★☆   | 멀티모델           |
+| **ArcadeDB**    | Apache 2.0 | 다중          | O (완전)    | ★★★☆☆   | 멀티모델/벡터        |
+| **Apache AGE**  | Apache 2.0 | Cypher+SQL  | O (PG)    | ★★★☆☆   | PostgreSQL 통합  |
+| **TypeDB**      | AGPL-3.0   | TypeQL      | O (클러스터)  | ★★★☆☆   | 지식 표현/추론       |
 
 ---
 
