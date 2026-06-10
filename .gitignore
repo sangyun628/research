@@ -27,3 +27,4 @@
 # Legacy clone directory name; keep ignored if it still appears locally.
 /_repos/
 ai-agents/deer-flow/_repo/
+.obsidian/

@@ -402,15 +402,15 @@ ArangoDB의 확장 포인트는 plugin marketplace 같은 구조가 아니라 �
 
 ## 경쟁 및 비교
 
-| 시스템 | 핵심 모델 | Query | Storage | ArangoDB 대비 |
-|---|---|---|---|---|
-| Neo4j | native property graph | Cypher | native graph store | graph query ecosystem은 강하지만 document/search/vector 통합은 별도 조합 필요 |
-| Memgraph | in-memory first property graph | Cypher | memory plus durability | low-latency graph analytics에 강하나 multi-model document DB는 아님 |
-| Dgraph | distributed graph | GraphQL-like DQL | LSM 기반 분산 저장 | scale-out graph에 집중, ArangoDB보다 document/search/vector 조합 폭은 좁음 |
-| JanusGraph | graph layer | Gremlin | Cassandra/HBase/Bigtable 등 backend | backend 선택 유연, 단일 제품 통합성은 ArangoDB가 높음 |
-| Kuzu | embedded analytical graph | Cypher | columnar graph | local analytics와 embedding에 강함, server DBMS와 multi-model은 약함 |
-| SurrealDB | multi-model | SurrealQL | Rust storage layer | multi-model 경쟁자이나 ArangoDB가 graph traversal와 cluster history가 더 길다 |
-| PostgreSQL plus AGE | relational plus graph extension | SQL and Cypher | relational heap/index | 기존 RDBMS 통합은 좋지만 variable-depth graph 실행은 전용 DB보다 제한적 |
+| 시스템                 | 핵심 모델                           | Query            | Storage                            | ArangoDB 대비                                                        |
+| ------------------- | ------------------------------- | ---------------- | ---------------------------------- | ------------------------------------------------------------------ |
+| Neo4j               | native property graph           | Cypher           | native graph store                 | graph query ecosystem은 강하지만 document/search/vector 통합은 별도 조합 필요    |
+| Memgraph            | in-memory first property graph  | Cypher           | memory plus durability             | low-latency graph analytics에 강하나 multi-model document DB는 아님       |
+| Dgraph              | distributed graph               | GraphQL-like DQL | LSM 기반 분산 저장                       | scale-out graph에 집중, ArangoDB보다 document/search/vector 조합 폭은 좁음    |
+| JanusGraph          | graph layer                     | Gremlin          | Cassandra/HBase/Bigtable 등 backend | backend 선택 유연, 단일 제품 통합성은 ArangoDB가 높음                             |
+| Kuzu                | embedded analytical graph       | Cypher           | columnar graph                     | local analytics와 embedding에 강함, server DBMS와 multi-model은 약함       |
+| SurrealDB           | multi-model                     | SurrealQL        | Rust storage layer                 | multi-model 경쟁자이나 ArangoDB가 graph traversal와 cluster history가 더 길다 |
+| PostgreSQL plus AGE | relational plus graph extension | SQL and Cypher   | relational heap/index              | 기존 RDBMS 통합은 좋지만 variable-depth graph 실행은 전용 DB보다 제한적              |
 
 ArangoDB의 차별점은 native graph claim 자체보다 “AQL 안에서 graph traversal, JSON document query, full-text search, vector search를 같은 execution pipeline에 놓는다”는 점이다. 반대로 graph-only query ergonomics와 graph algorithm specialization만 보면 Neo4j, Memgraph, Kuzu 같은 시스템이 더 단순하고 집중적일 수 있다.
 
