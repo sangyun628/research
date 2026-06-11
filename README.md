@@ -62,9 +62,10 @@ RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어.
 | Airweave | [분석](ai-infrastructure/airweave/airweave-analysis.md) | AI 컨텍스트 검색 인프라 |
 | Chunking | [OSS 가이드](ai-infrastructure/chunking/chunking-oss-guide.md) | 청킹 특화 OSS (Chonkie 등) · Bedrock KB 전략 매핑 |
 | DB-GPT | [분석](ai-infrastructure/db-gpt/analysis.md) | DB-GPT (텍스트→SQL) |
-| Docling | [LightRAG 연동 비교](ai-infrastructure/docling/lightrag-docling-comparison.md) | 문서 파싱·변환 엔진과 RAG 연동 |
+| Docling | [LightRAG 연동 비교](ai-infrastructure/docling/lightrag-docling-comparison.md) · [유즈케이스](ai-infrastructure/docling/use-cases.md) · [LlamaIndex 비교](ai-infrastructure/docling/docling-vs-llamaindex.md) | 문서 파싱·변환 엔진과 RAG 연동 |
 | Graph RAG · 온톨로지 | [기술 레퍼런스](ai-infrastructure/graph-rag-ontology/README.md) · [Agentic Ontology](ai-infrastructure/graph-rag-ontology/agentic-ontology.md) | Graph 기반 RAG·온톨로지 심화 |
 | GraphRAG 비교 | [README](ai-infrastructure/graphrag-comparison/README.md) · [LightRAG vs GraphRAG-SDK](ai-infrastructure/graphrag-comparison/lightrag-vs-graphrag-sdk.md) · [금융 서비스 적합도](ai-infrastructure/graphrag-comparison/finance-service-fit.md) · [하이브리드 OSS landscape](ai-infrastructure/graphrag-comparison/hybrid-graph-vector-rag-oss-landscape.md) | 청킹·임베딩·그래프+벡터 하이브리드 OSS 비교 |
+| LlamaIndex | [유즈케이스](ai-infrastructure/llamaindex/use-cases.md) | RAG·agent 애플리케이션 프레임워크 |
 | RAG · GraphRAG 확장 | [2026 landscape](ai-infrastructure/rag-graphrag-expansion/2026-landscape.md) | 최신 RAG·GraphRAG 기술과 OSS 확장 조사 |
 | RAPTOR | [단점과 적용 리스크](ai-infrastructure/raptor/limitations.md) | Recursive abstractive tree retrieval |
 | LangExtract | [분석](ai-infrastructure/langextract/langextract-analysis.md) | Google LLM 텍스트 추출 라이브러리 |
