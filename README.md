@@ -70,7 +70,7 @@ RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어.
 | RAG · GraphRAG 확장 | [2026 landscape](ai-infrastructure/rag-graphrag-expansion/2026-landscape.md) | 최신 RAG·GraphRAG 기술과 OSS 확장 조사 |
 | RAPTOR | [단점과 적용 리스크](ai-infrastructure/raptor/limitations.md) | Recursive abstractive tree retrieval |
 | LangExtract | [분석](ai-infrastructure/langextract/langextract-analysis.md) | Google LLM 텍스트 추출 라이브러리 |
-| LightRAG | [분석](ai-infrastructure/lightrag/analysis.md) | 경량 RAG |
+| LightRAG | [README](ai-infrastructure/lightrag/README.md) · [논문 분석](ai-infrastructure/lightrag/01-paper-analysis.md) · [아키텍처·코어](ai-infrastructure/lightrag/02-architecture-core.md) · [수집·청킹](ai-infrastructure/lightrag/03-ingestion-chunking.md) · [추출·병합](ai-infrastructure/lightrag/04-extraction-merge.md) · [질의](ai-infrastructure/lightrag/05-query-pipeline.md) · [프롬프트](ai-infrastructure/lightrag/06-prompts-reference.md) · [개요(구)](ai-infrastructure/lightrag/analysis.md) | HKUDS LightRAG 코드 레벨 분석 + 원본 논문 (dual-level retrieval·청킹 4종·전체 프롬프트) |
 | LLM MTP | [인터랙티브 보고서(HTML)](ai-infrastructure/llm-mtp/llm-mtp.html) | Multi-Token Prediction 다중 토큰 예측 기술 정리 |
 | RAG-Anything | [분석](ai-infrastructure/rag-anything/analysis.md) | 멀티모달 RAG |
 | RAGFlow | [분석](ai-infrastructure/ragflow/analysis.md) · [인프라·셋업](ai-infrastructure/ragflow/infrastructure-setup.md) · [LightRAG 비교](ai-infrastructure/ragflow/lightrag-comparison.md) | 심층 문서 이해 기반 RAG·에이전트 엔진 (InfiniFlow) |
