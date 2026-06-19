@@ -24,6 +24,7 @@
 /OpenHarness/
 # Hidden scratch directory for cloned upstream repos used during analysis.
 /.repos/
+/.repos/omnigent/
 # Legacy clone directory name; keep ignored if it still appears locally.
 /_repos/
 ai-agents/deer-flow/_repo/

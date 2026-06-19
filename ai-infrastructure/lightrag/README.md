@@ -18,6 +18,8 @@ LightRAG은 그래프 + 벡터 이중 인덱스 위에 **dual-level retrieval**(
 | 4 | [추출 & 그래프 병합](04-extraction-merge.md) | extract_entities(gleaning 루프), 응답 파싱, merge(가중치 합산·설명 병합·LLM 요약 트리거), 삭제 시 rebuild |
 | 5 | [질의 파이프라인](05-query-pipeline.md) | 6개 질의 모드, 키워드 추출, 4단계 컨텍스트 구축, 토큰 예산 제어, 리랭킹, LLM 캐시 |
 | 6 | [프롬프트 레퍼런스](06-prompts-reference.md) | **전체 프롬프트 원문** (추출·요약·키워드·RAG 응답·멀티모달) |
+| 7 | [분산 플랫폼 재설계 가이드](07-distributed-rearchitecture.md) | 컴포넌트 구조도, 단일 프로세스 결합점 인벤토리, 재사용/교체/보충 맵, 병합 분산화 설계 |
+| 8 | [약점과 보완 기술·OSS 맵](08-weaknesses-and-complements.md) | 실데이터 검증 약점 6종 → 보완 방법·OSS 매핑 (GraphRAG-SDK·Graphiti·nano-graphrag), 자체 플랫폼 우선순위 |
 | — | [기존 개요](analysis.md) | 이전 조사 문서 (high-level 개요) |
 
 ## 한눈에 보는 전체 데이터 흐름
@@ -100,3 +102,5 @@ flowchart TB
 - 28K 줄로 비대해짐 — API 서버·멀티모달·12개 백엔드가 코어와 한 패키지. 코어 로직(operate.py 6K줄)만 발췌 이식이 현실적
 - 커뮤니티 요약 없음(MS GraphRAG 대비) — 추상 질문은 관계 키워드 벡터로 우회하나, 코퍼스 전역 요약 질문엔 한계
 - graph 노드 키가 이름이라 rename = 노드 재생성, 동명이인 구분 불가
+
+
