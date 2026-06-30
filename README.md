@@ -47,7 +47,8 @@
 | 프로젝트 | 문서 | 설명 |
 |-----------|------|------|
 | Claude Code | [아키텍처 분석](ai-coding-tools/claude-code/ARCHITECTURE_ANALYSIS.md) · [핵심 발견](ai-coding-tools/claude-code/KEY_FINDINGS.md) · [메모리 시스템](ai-coding-tools/claude-code/memory-system-analysis.md) · [프롬프트 카탈로그](ai-coding-tools/claude-code/prompts-catalog.md) · [README](ai-coding-tools/claude-code/README.md) | Anthropic 코딩 CLI |
-| OpenCode | [스터디](ai-coding-tools/opencode/STUDY.md) · [분석](ai-coding-tools/opencode/analysis.md) · [도구 시스템](ai-coding-tools/opencode/tools.md) · [메모리 아키텍처](ai-coding-tools/opencode/opencode-memory-architecture.md) · [에이전트 엔진 로드맵](ai-coding-tools/opencode/AGENT_ENGINE_ROADMAP.md) · [Python 구현 spec1](ai-coding-tools/opencode/python-impl-spec1.md) · [spec2](ai-coding-tools/opencode/python-impl-spec2.md) · [통합](ai-coding-tools/opencode/python-impl-total.md) | OSS 코딩 에이전트 |
+| Kelos | [분석](ai-coding-tools/kelos/kelos-analysis.md) | Kubernetes 기반 AI 코딩 에이전트 오케스트레이션 |
+| OpenCode | [README](ai-coding-tools/opencode/README.md) · [스터디](ai-coding-tools/opencode/STUDY.md) · [분석](ai-coding-tools/opencode/analysis.md) · [도구 시스템](ai-coding-tools/opencode/tools.md) · [SQLite 세션 저장소](ai-coding-tools/opencode/sqlite-session-storage.md) · [메모리 아키텍처](ai-coding-tools/opencode/opencode-memory-architecture.md) · [에이전트 엔진 로드맵](ai-coding-tools/opencode/AGENT_ENGINE_ROADMAP.md) · [Python 구현 spec1](ai-coding-tools/opencode/python-impl-spec1.md) · [spec2](ai-coding-tools/opencode/python-impl-spec2.md) · [통합](ai-coding-tools/opencode/python-impl-total.md) | OSS 코딩 에이전트 |
 | Warp | [분석](ai-coding-tools/warp/ANALYSIS.md) | Warp 터미널 LLM·Agent 아키텍처 |
 
 ---
@@ -67,6 +68,7 @@ RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어.
 | Graphiti (Zep) | [README](ai-infrastructure/graphiti/README.md) · [논문·bi-temporal](ai-infrastructure/graphiti/01-paper-and-bitemporal.md) · [아키텍처·모델](ai-infrastructure/graphiti/02-architecture-data-model.md) · [수집](ai-infrastructure/graphiti/03-ingestion-pipeline.md) · [검색](ai-infrastructure/graphiti/04-search-system.md) · [프롬프트](ai-infrastructure/graphiti/05-prompts-reference.md) | Zep Graphiti 코드 레벨 분석 + 논문 (bi-temporal KG·모순 무효화·LightRAG 시간성 약점 보완) |
 | GraphRAG 비교 | [README](ai-infrastructure/graphrag-comparison/README.md) · [LightRAG vs GraphRAG-SDK](ai-infrastructure/graphrag-comparison/lightrag-vs-graphrag-sdk.md) · [금융 서비스 적합도](ai-infrastructure/graphrag-comparison/finance-service-fit.md) · [하이브리드 OSS landscape](ai-infrastructure/graphrag-comparison/hybrid-graph-vector-rag-oss-landscape.md) | 청킹·임베딩·그래프+벡터 하이브리드 OSS 비교 |
 | GraphRAG-SDK | [README](ai-infrastructure/falkordb-graphrag-sdk/README.md) · [아키텍처·코어](ai-infrastructure/falkordb-graphrag-sdk/01-architecture-core.md) · [로딩·청킹](ai-infrastructure/falkordb-graphrag-sdk/02-loading-chunking.md) · [추출·그래프 구축](ai-infrastructure/falkordb-graphrag-sdk/03-extraction-graph-construction.md) · [검색](ai-infrastructure/falkordb-graphrag-sdk/04-retrieval-pipeline.md) · [온톨로지](ai-infrastructure/falkordb-graphrag-sdk/05-ontology-discovery-evolution.md) · [프롬프트](ai-infrastructure/falkordb-graphrag-sdk/06-prompts-reference.md) | FalkorDB GraphRAG-SDK v1.3 코드 레벨 분석 (수집→검색 파이프라인·청킹·전체 프롬프트) |
+| Knowledge Catalog · OKF | [Open Knowledge Format 분석](ai-infrastructure/knowledge-catalog/okf-analysis.md) | Google Cloud Knowledge Catalog와 OKF v0.1 포맷·reference agent·metadata-as-code 도구 분석 |
 | LlamaIndex | [유즈케이스](ai-infrastructure/llamaindex/use-cases.md) | RAG·agent 애플리케이션 프레임워크 |
 | RAG · GraphRAG 확장 | [2026 landscape](ai-infrastructure/rag-graphrag-expansion/2026-landscape.md) | 최신 RAG·GraphRAG 기술과 OSS 확장 조사 |
 | RAPTOR | [단점과 적용 리스크](ai-infrastructure/raptor/limitations.md) | Recursive abstractive tree retrieval |
@@ -94,6 +96,7 @@ RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어.
 | StarRocks | [Debug Skills 분석](databases/starrocks-debug-skills/starrocks-debug-skills-analysis.md) | StarRocks 디버깅 스킬 모음 |
 | SurrealDB | [멀티모델 내부구조](databases/surrealdb/multi-model-internals.md) | Rust 기반 멀티 모델 DB |
 | Vector DB 비교 | [Qdrant · ChromaDB · Milvus · Pinecone · Weaviate](databases/vector-db-comparison/qdrant-chroma-milvus-pinecone-weaviate.md) | 주요 벡터 DB 특징·장단점 비교 |
+| 웹 SQL 도구 | [웹 기반 SQL 실행·시각화 OSS 조사](databases/web-sql-tools/README.md) | CloudBeaver·Metabase·marimo 등 21종 — DB클라이언트·BI·노트북 3계열 비교 |
 | Zvec | [분석](databases/zvec/zvec-analysis.md) · [vs LanceDB](databases/zvec/zvec-vs-lancedb-comparison.md) | Alibaba 벡터 DB |
 
 ---
