@@ -19,11 +19,14 @@
 | agentmemory | [분석](ai-agents/agentmemory/README.md) | iii-engine 기반 영속 메모리 (rohitg00) |
 | DeerFlow | [분석](ai-agents/deer-flow/deer-flow-analysis.md) · [아키텍처](ai-agents/deer-flow/deer-flow-agent-architecture.md) · [메모리](ai-agents/deer-flow/deer-flow-conversation-memory.md) | 대화형 에이전트 워크플로우 |
 | GenericAgent | [심층 분석](ai-agents/generic-agent/GenericAgent_심층분석.md) | 자기진화 LLM 에이전트 |
+| Go Micro (v6) | [코드 레벨 분석](ai-agents/go-micro/go-micro-analysis.md) | Go 마이크로서비스 프레임워크의 "에이전트 하네스" 피벗 — 서비스=에이전트=플로우 통합 런타임 (AX와 비교) |
 | Hermes Agent | [심층 분석](ai-agents/hermes-agent/Hermes-Agent_심층분석.md) | NousResearch 에이전트 |
 | lat.md | [분석](ai-agents/lat-md/README.md) | 마크다운 코드베이스 지식 그래프 (Yury Selivanov) |
 | Memory 비교 | [종합 비교](ai-agents/memory-comparison/에이전트_메모리_시스템_비교분석.md) · [이론 기원](ai-agents/memory-comparison/memory_theory_origins.md) · [Hindsight vs Memobase](ai-agents/memory-comparison/hindsight-vs-memobase.md) | 에이전트 메모리 시스템 횡단 분석 |
-| Memora | [코드 레벨 분석](ai-agents/memora/memora-code-analysis.md) | Microsoft harmonic memory representation 기반 에이전트 장기 메모리 |
+| Memora | [코드 레벨 분석](ai-agents/memora/memora-code-analysis.md) · [논문 기반 기억 흐름](ai-agents/memora/memora-paper-memory-flow.md) | Microsoft harmonic memory representation 기반 에이전트 장기 메모리 |
+| MemPalace | [코드 레벨 분석](ai-agents/mempalace/README.md) | 로컬 우선 원문 보존형 에이전트 메모리 시스템 |
 | └ 개별 분석 | [Agno](ai-agents/memory-comparison/Agno_analysis.md) · [Agno 문화](ai-agents/memory-comparison/Agno_culture_deep_dive.md) · [Cognee](ai-agents/memory-comparison/Cognee_analysis.md) · [Hindsight](ai-agents/memory-comparison/Hindsight_analysis.md) · [mem0](ai-agents/memory-comparison/mem0_analysis.md) · [Memobase](ai-agents/memory-comparison/Memobase_analysis.md) · [memU](ai-agents/memory-comparison/memU_analysis.md) · [Memori](ai-agents/memory-comparison/Memori_analysis.md) · [OpenMemory](ai-agents/memory-comparison/OpenMemory_analysis.md) · [SecondMe](ai-agents/memory-comparison/SecondMe_analysis.md) | 메모리 시스템 비교 코퍼스 |
+| Mantis (Google) | [사용법·아키텍처·활용 분석](ai-agents/mantis/mantis-analysis.md) | Agent Skills 기반 자율 보안 리뷰 하네스 — 위협 모델링·취약점 재현·패치·재공격 파이프라인 |
 | Mastra | [분석](ai-agents/mastra/analysis.md) | TypeScript 풀스택 에이전트 프레임워크 (Apache-2.0 + ee) |
 | Mirage | [분석](ai-agents/mirage/README.md) | Strukto.AI 통합 가상 파일시스템 |
 | Nanobot | [분석](ai-agents/nanobot/nanobot-analysis.md) | 모듈형 에이전트 프레임워크 |
