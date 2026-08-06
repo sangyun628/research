@@ -19,12 +19,15 @@
 | agentmemory | [분석](ai-agents/agentmemory/README.md) | iii-engine 기반 영속 메모리 (rohitg00) |
 | DeerFlow | [분석](ai-agents/deer-flow/deer-flow-analysis.md) · [아키텍처](ai-agents/deer-flow/deer-flow-agent-architecture.md) · [메모리](ai-agents/deer-flow/deer-flow-conversation-memory.md) | 대화형 에이전트 워크플로우 |
 | GenericAgent | [심층 분석](ai-agents/generic-agent/GenericAgent_심층분석.md) | 자기진화 LLM 에이전트 |
+| Go Micro (v6) | [코드 레벨 분석](ai-agents/go-micro/go-micro-analysis.md) | Go 마이크로서비스 프레임워크의 "에이전트 하네스" 피벗 — 서비스=에이전트=플로우 통합 런타임 (AX와 비교) |
 | Hermes Agent | [심층 분석](ai-agents/hermes-agent/Hermes-Agent_심층분석.md) | NousResearch 에이전트 |
 | lat.md | [분석](ai-agents/lat-md/README.md) | 마크다운 코드베이스 지식 그래프 (Yury Selivanov) |
 | Memory 비교 | [종합 비교](ai-agents/memory-comparison/에이전트_메모리_시스템_비교분석.md) · [이론 기원](ai-agents/memory-comparison/memory_theory_origins.md) · [Hindsight vs Memobase](ai-agents/memory-comparison/hindsight-vs-memobase.md) | 에이전트 메모리 시스템 횡단 분석 |
 | Memora | [코드 레벨 분석](ai-agents/memora/memora-code-analysis.md) | Microsoft harmonic memory representation 기반 에이전트 장기 메모리 |
+| MemPalace | [코드 레벨 분석](ai-agents/mempalace/README.md) | 로컬 우선 원문 보존형 에이전트 메모리 시스템 |
 | └ 개별 분석 | [Agno](ai-agents/memory-comparison/Agno_analysis.md) · [Agno 문화](ai-agents/memory-comparison/Agno_culture_deep_dive.md) · [Cognee](ai-agents/memory-comparison/Cognee_analysis.md) · [Hindsight](ai-agents/memory-comparison/Hindsight_analysis.md) · [mem0](ai-agents/memory-comparison/mem0_analysis.md) · [Memobase](ai-agents/memory-comparison/Memobase_analysis.md) · [memU](ai-agents/memory-comparison/memU_analysis.md) · [Memori](ai-agents/memory-comparison/Memori_analysis.md) · [OpenMemory](ai-agents/memory-comparison/OpenMemory_analysis.md) · [SecondMe](ai-agents/memory-comparison/SecondMe_analysis.md) | 메모리 시스템 비교 코퍼스 |
 | Mastra | [분석](ai-agents/mastra/analysis.md) | TypeScript 풀스택 에이전트 프레임워크 (Apache-2.0 + ee) |
+| Mantis (Google) | [사용법·아키텍처·활용 분석](ai-agents/mantis/mantis-analysis.md) | Agent Skills 기반 자율 보안 리뷰 하네스 — 위협 모델링·취약점 재현·패치·재공격 파이프라인 |
 | Mirage | [분석](ai-agents/mirage/README.md) | Strukto.AI 통합 가상 파일시스템 |
 | Nanobot | [분석](ai-agents/nanobot/nanobot-analysis.md) | 모듈형 에이전트 프레임워크 |
 | Open Agents | (디렉터리) | Open Agents 모음 |
@@ -66,6 +69,7 @@ RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어.
 | DB-GPT | [분석](ai-infrastructure/db-gpt/analysis.md) | DB-GPT (텍스트→SQL) |
 | Docling | [LightRAG 연동 비교](ai-infrastructure/docling/lightrag-docling-comparison.md) · [유즈케이스](ai-infrastructure/docling/use-cases.md) · [LlamaIndex 비교](ai-infrastructure/docling/docling-vs-llamaindex.md) | 문서 파싱·변환 엔진과 RAG 연동 |
 | Flint (MS) | [코드 레벨 분석](ai-infrastructure/flint-chart/flint-chart-analysis.md) | AI 에이전트용 시각화 중간 언어(IL)·시맨틱 차트 컴파일러 + MCP 서버 (VL·ECharts·Chart.js) |
+| graph-tool-call | [코드·아키텍처 분석](ai-infrastructure/graph-tool-call/graph-tool-call-analysis.md) | 대규모 도구 카탈로그의 그래프 검색·typed dependency closure·결정론적 Plan-and-Execute |
 | Graph RAG · 온톨로지 | [기술 레퍼런스](ai-infrastructure/graph-rag-ontology/README.md) · [Agentic Ontology](ai-infrastructure/graph-rag-ontology/agentic-ontology.md) | Graph 기반 RAG·온톨로지 심화 |
 | Graphiti (Zep) | [README](ai-infrastructure/graphiti/README.md) · [논문·bi-temporal](ai-infrastructure/graphiti/01-paper-and-bitemporal.md) · [아키텍처·모델](ai-infrastructure/graphiti/02-architecture-data-model.md) · [수집](ai-infrastructure/graphiti/03-ingestion-pipeline.md) · [검색](ai-infrastructure/graphiti/04-search-system.md) · [프롬프트](ai-infrastructure/graphiti/05-prompts-reference.md) | Zep Graphiti 코드 레벨 분석 + 논문 (bi-temporal KG·모순 무효화·LightRAG 시간성 약점 보완) |
 | GraphRAG 비교 | [README](ai-infrastructure/graphrag-comparison/README.md) · [LightRAG vs GraphRAG-SDK](ai-infrastructure/graphrag-comparison/lightrag-vs-graphrag-sdk.md) · [금융 서비스 적합도](ai-infrastructure/graphrag-comparison/finance-service-fit.md) · [하이브리드 OSS landscape](ai-infrastructure/graphrag-comparison/hybrid-graph-vector-rag-oss-landscape.md) | 청킹·임베딩·그래프+벡터 하이브리드 OSS 비교 |

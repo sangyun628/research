@@ -1,0 +1,1773 @@
+                                                                 M EMORA: A Harmonic Memory Representation
+                                                                     Balancing Abstraction and Specificity
+
+
+                                         Menglin Xia * 1 Xuchao Zhang * 1 Shantanu Dixit 1 Paramaguru Harimurugan 1 Rujia Wang 1 Victor Rühle 1
+                                                                    Robert Sim 1 Chetan Bansal 1 Saravan Rajmohan 1
+
+
+                                                                 Abstract                                     capability rooted in how experience is organized, abstracted,
+                                                                                                              and reused. While current agents excel at atomic problem-
+                                              Agent memory systems must accommodate con-
+                                                                                                              solving, they remain effectively stateless, treating recurring
+
+
+
+
+arXiv:2602.03315v2 [cs.AI] 2 Jul 2026
+                                              tinuously growing information while supporting
+                                                                                                              tasks and user intents as isolated events (Yao et al., 2023; Wu
+                                              efficient, context-aware retrieval for downstream
+                                                                                                              et al., 2023). Without a principled mechanism to organize
+                                              tasks. Abstraction is essential for scaling agent
+                                                                                                              accumulated experience, agents are forced to repeatedly
+                                              memory, yet it often comes at the cost of speci-
+                                                                                                              re-derive plans and reproduce redundant reasoning steps,
+                                              ficity, obscuring the fine-grained details required
+                                                                                                              leading to brittle performance and escalating token costs. As
+                                              for effective reasoning. We introduce M EMORA, a
+                                                                                                              agents are increasingly deployed in real-world environments,
+                                              harmonic memory representation that structurally
+                                                                                                              this lack of structured, reusable memory has become the
+                                              balances abstraction and specificity. M EMORA or-
+                                                                                                              critical bottleneck, limiting their ability to support complex,
+                                              ganizes information via its primary abstractions
+                                                                                                              long-horizon workflows (Milam & Gulli, 2025).
+                                              that index concrete memory values and consoli-
+                                              date related updates into unified memory entries,               Scaling agent memory requires resolving a fundamental
+                                              while cue anchors expand retrieval access across                tension between abstraction and specificity. Existing de-
+                                              diverse aspects of the memory and connect related               signs typically collapse into one of two extremes. Many
+                                              memories. Building on this structure, we employ                 approaches favor specificity, either by storing raw interac-
+                                              a retrieval policy that actively exploits these mem-            tions or document fragments (Xu et al., 2025; Lewis et al.,
+                                              ory connections to retrieve relevant information                2021) or by extracting atomic facts from text (Chhikara
+                                              beyond direct semantic similarity. Theoretically,               et al., 2025; Nan et al., 2025). While detailed, these strate-
+                                              we show that standard Retrieval-Augmented Gen-                  gies suffer from fragmentation: raw logs overwhelm the
+                                              eration (RAG) and Knowledge Graph (KG)-based                    agent with unstructured noise, while isolated facts stripped
+                                              memory systems emerge as special cases of our                   of their narrative context often fail to capture dependencies
+                                              framework. Empirically, M EMORA establishes a                   inherent in long-horizon tasks. Conversely, others adopt
+                                              new state-of-the-art on the LoCoMo and Long-                    coarse abstractions, compressing experience into high-level
+                                              MemEval benchmarks, demonstrating better re-                    summaries (Zhong et al., 2023; Li et al., 2025). While effi-
+                                              trieval relevance and reasoning effectiveness as                cient, this approach strips away task-critical nuances (e.g.,
+                                              memory scales.                                                  specific constraints, edge cases, or numeric details), ren-
+                                                                                                              dering the memory insufficient for precise execution. This
+                                                                                                              representational gap cripples retrieval: because memory
+                                        1. Introduction                                                       lacks a structured link between high-level concepts and low-
+                                                                                                              level details, agents cannot effectively navigate their own
+                                        Large language models (LLMs) have substantially advanced              history. They are left choosing between retrieving a deluge
+                                        the capabilities of autonomous agents in planning, tool use,          of irrelevant facts or a vague summary that lacks action-
+                                        and multi-step reasoning (Wang et al., 2024; Guo et al.,              able utility, ultimately failing to support robust long-horizon
+                                        2024). However, intelligence is not just the ability to reason        reasoning.
+                                        in the moment; it is the ability to learn and adapt over time–a
+                                                                                                              To address these limitations, we introduce M EMORA, a
+                                          *
+                                           Equal contribution 1 M365 Research, Microsoft. Correspon-          harmonic memory architecture that structurally balances
+                                        dence to: Menglin Xia <mollyxia@microsoft.com>, Xuchao                abstraction and specificity. M EMORA organizes experience
+                                        Zhang <xuchaozhang@microsoft.com>.
+                                                                                                              through a dual-layered representation that acts as naviga-
+                                        Proceedings of the 43 rd International Conference on Machine          tional scaffolding over concrete content. At the core is the
+                                        Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026          primary abstraction, which defines the canonical identity of
+                                        by the author(s).
+
+                                                                                                          1
+                            M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+  Data            Segmentation                                                             Memory Construction
+
+                         Segment                                            Memory Entry                                           Implicit Memory Graph
+   Chat
+                                                                   Primary       1:1       Memory
+                         Segment
+   Doc                                                            Abstraction               Value                                                 M2
+                                                                                                                            M1
+                                              Episodic                                       n:m                                       Cue
+                         Segment
+   Log                                        Memory                                 Cue         …        Cue
+                                                                                                                                                            Cue
+                                              (Memory
+                           ……                 Context)                                                                           Cue           Cue
+   Table                                                                    Memory Entry
+                         Segment
+                                                                                     …                                                                      M4
+   Code                                                                                                                                M3
+   ……                    Segment                                            Memory Entry
+
+
+
+
+                Policy-Driven Memory Retrieval                                  Group-Relative Policy Update                                 Retrieved Memory
+
+            State 𝒔𝒕                                                    Sample a group of G trajectories                                       Episodic Memory
+
+      Working Set 𝑾𝒕                   Action Policy     RE-QUERY          𝒂𝟏     𝒂𝟐        𝒂𝟑       𝒂𝟒         reward 𝑟1                         M1        M2
+           Frontier 𝓕𝒕                  𝝅𝜽 (𝒂𝒕 |𝒔𝒕 )     EXPAND            𝒂𝟏     𝒂𝟐        𝒂𝟑                  reward 𝑟2
+                                                                                       …                           …                           Episodic Memory
+           Budget 𝒃𝒕                                     STOP
+                                                                           𝒂𝟏     𝒂𝟐        𝒂𝟑       𝒂𝟒         reward 𝑟𝐺
+                                   Update State                                                                                              M3        M4        M5
+                                                                                                 Group-relative Advantage 𝐴
+
+                                         Figure 1. Overview of the M EMORA harmonic memory architecture.
+
+
+a memory entry — capturing what the memory is fundamen-                                information beyond immediate semantic similarity, effec-
+tally about. Each memory entry is composed of a primary                                tively capturing multi-hop dependencies that static retrieval
+abstraction paired with a memory value, where the value                                methods often miss.
+stores the specific memorized information. The primary ab-
+                                                                                       Empirically, M EMORA establishes state-of-the-art perfor-
+straction acts as a coherent container, enabling M EMORA to
+                                                                                       mance on the LoCoMo and LongMemEval benchmarks
+incorporate emerging concepts as new entries while aggre-
+                                                                                       (86.3% and 87.4% respectively), outperforming both strong
+gating related updates into a unified record, thereby prevent-
+                                                                                       memory baselines and full-context inference. Its ability to
+ing conceptually related information from fragmenting into
+                                                                                       consistently outperform full-context inference demonstrates
+disjoint memory entries. For example, the evolving timeline
+                                                                                       that memory retrieval guided by appropriate abstraction is
+of a project can be represented as a single memory entry
+                                                                                       more reliable than brute-force reconstruction for reason-
+under the primary abstraction Project Memora Timeline,
+                                                                                       ing over extensive histories. By balancing abstraction with
+within which milestones, design iterations, experiments,
+                                                                                       specificity, the harmonic organization of M EMORA pro-
+and decisions are incrementally appended. Complementing
+                                                                                       vides a scalable foundation for long-horizon agent intel-
+this, cue anchors are extracted from the memory value to
+                                                                                       ligence, reducing token consumption by up to 98% com-
+serve as contextualized access points. By encoding diverse
+                                                                                       pared to full-context processing. The code is available at
+perspectives and aspects of a memory, these anchors expand
+                                                                                       https://github.com/microsoft/Memora.
+retrieval access and establish a many-to-many connectivity
+across related memory entries. Together, this organization
+allows agents to navigate from concrete contexts to stable                             2. Related Work
+abstractions, supporting implicit relational reasoning and
+                                                                                       Agentic Memory Management Systems Retrieval-
+temporal coherence without the overhead of full-context
+                                                                                       Augmented Generation (RAG) (Lewis et al., 2021;
+processing.
+                                                                                       Borgeaud et al., 2022; Gao et al., 2024) effectively ex-
+Furthermore, we introduce a policy-guided retrieval mech-                              tends the context capabilities of LLMs, but often lacks the
+anism that treats memory access as an active reasoning                                 precision required for long-horizon reasoning for agentic
+process. Retrieval is formulated over a discrete action space                          tasks. Consequently, recent research has shifted toward ac-
+consisting of query refinement, memory expansion, and ter-                             tive memory management. Systems like MemGPT (Packer
+mination. By iteratively selecting these actions, the policy                           et al., 2023) draw inspiration from operating systems, intro-
+retriever refines the retrieved context to uncover relevant                            ducing a virtual context management system that actively
+
+
+                                                                                 2
+                   M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+swaps information between “active” context and archival             We provide a formal analysis demonstrating that M EMORA
+storage. Similarly, MemOS (Chhikara et al., 2025), Memory           serves as a unified and strictly more expressive framework
+OS (Kang et al., 2025) and MIRIX (Wang & Chen, 2025)                for memory retrieval. Traditional RAG and KG-based re-
+propose architecture-level solutions for managing memory            trieval emerge as special cases under restricted configura-
+lifecycles. Other approaches focus on the mechanism of              tions, while M EMORA supports richer mixed-key retrieval
+interaction: LangMem1 treats memory as an external tool             behaviors and principled efficiency improvements through
+that agents explicitly call to update, while learning-based         abstraction-first scoping and structured traversal. More de-
+approaches like Mem-R1 (Yan et al., 2026) attempt to train          tails including the proof can be found in Appendix D.
+models to manage their own memory policies autonomously.
+                                                                    3. Method
+Structured Memory Representations Parallel to man-
+agement strategies, significant research has focused on how         We propose M EMORA, a harmonic memory representation
+memory is represented and structured to improve orga-               designed to balance abstraction with specificity. We begin
+nization and retrieval. Early attempts like MemoryBank              by formalizing the problem setting, followed by a detailed
+(Zhong et al., 2023) utilized summarization to condense             description of the proposed method.
+past events, while A-Mem (Xu et al., 2025) grouped mem-
+ories into clusters. Mem0 (Chhikara et al., 2025) takes             3.1. Problem Formulation
+a different approach, prioritizing the lifecycle of factual         We formulate memory management as the maintenance of a
+memories with explicit mechanisms to add, update, and               structured store derived from a continuous, heterogeneous
+delete extracted facts. Nemori (Nan et al., 2025) attempts          data stream.
+to combine episodic and semantic memory types to mirror
+human cognitive processes. However, without a cohesive              Let D = {d1 , . . . , dN } denote a growing corpus of docu-
+structure, these isolated facts often become fragmented,            ments, logs, code, tables, or agentic interaction traces.
+leading to significant information loss during updates. Con-        Our objective is to learn a memory construction function
+currently, graph-based representations, such as HippoRAG
+(Gutierrez et al., 2024), GraphRAG (Edge et al., 2025),                                    Fm : D → M,
+Zep (Rasmussen et al., 2025), and Mem0-graph (Chhikara
+et al., 2025), have emerged to capture relationships between        that maps raw data to a structured memory set M, and a
+entities and support global reasoning. While graphs im-             retrieval function
+prove connectivity, they introduce distinct trade-offs: rigid
+schemas often abstract away critical details, while maintain-
+ing dense graph structures at scale can introduce significant                     Q(q, M) → Mq ,        Mq ⊆ M,
+retrieval noise. In addition, despite the structural innova-
+tions, the underlying representations often remain brittle,         that, given a query q, selects a compact subset of relevant
+struggling to balance the specificity required for precision        memory entries Mq to maximize downstream task utility.
+with the abstraction needed for scalability.                        The core design challenge is to maximize the relevance of
+                                                                    Mq while minimizing its size (|Mq | ≪ |M|) and retrieval
+Positioning of M EMORA Existing memory systems often                latency, necessitating a representation that supports both
+index and retrieve memories through their content, either           high-level semantic scanning and fine-grained contextual
+as raw embeddings of extracted facts or via graph traversal         lookup.
+over entity nodes. This couples what is stored to how it
+is accessed and forces the specificity–abstraction trade-off        3.2. M EMORA Overview
+discussed above. M EMORA’s central novelty is to decou-
+ple these two concepts: memory content remains rich and             Figure 1 illustrates the overall architecture of M EMORA.
+unfragmented, while a separate structural layer of primary          Raw data from multiple sources are first segmented into
+abstractions and cue anchors carries the navigational signal        semantic units, each associated with episodic context captur-
+used for retrieval. Unlike graph-based methods, M EMORA             ing situational information. These segments are transformed
+also avoids the maintenance overhead of a pre-defined on-           into harmonic memory entries, where each entry consists
+tology: cue anchors are generated per memory and double             of a primary abstraction paired with a memory value and
+as flexible metadata filters (source, timestamp, entity), so        augmented with cue anchors. Primary abstractions provide
+the same memory is reachable through multiple alternative           stable canonical identities that consolidate related and evolv-
+access paths without committing to a fixed schema.                  ing information, while cue anchors induce many-to-many
+                                                                    associations across memory entries. Based on shared cue an-
+   1
+       https://langchain-ai.github.io/langmem/                      chors and abstraction-level relationships, these associations
+
+                                                                3
+                    M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+give rise to an implicit memory graph that encodes relational         3.5. Primary Abstraction
+structure among memory entries without requiring explicit
+                                                                      To prevent memory fragmentation, we introduce primary
+edge construction. At query time, an agent query is jointly
+                                                                      abstraction to organize memory around stable, semantically
+matched against primary abstractions and cue anchors to
+                                                                      meaningful concepts rather than individual observations.
+identify relevant memory entries. Memory reasoning then
+                                                                      A primary abstraction a canonically represents a core con-
+traverses the resulting abstraction- and cue-based associa-
+                                                                      cept or action, capturing what the memory is fundamentally
+tions to retrieve a coherent set of related memory entries
+                                                                      about and serving as the stable organizing unit of memory.
+together with their episodic contexts. This design enables
+                                                                      It allows related information, such as recurring events or
+scalable, context-aware retrieval that supports downstream
+                                                                      evolving entity states, to be consolidated under a single per-
+reasoning, planning, and decision-making without requiring
+                                                                      sistent entry rather than fractured across redundant records.
+full interaction histories to be reconstructed in the context
+window. The retrieval policy can be further optimized us-             The construction of the memory entries along with the pri-
+ing Group-Relative Policy Optimization, which trains the              mary abstraction follows a two-stage process: extraction
+policy by comparing groups of retrieval trajectories and up-          and consolidation. Given a new input segment s, we first
+dating it based on relative advantages, encouraging effective         induce a set of candidate memory entries, each consisting
+multi-step navigation and early stopping behavior.                    of a proposed abstraction and its concrete content:
+                                                                                Fa (s) = {mi }N
+                                                                                              i=1 ,       mi = (ai , vi ),       (1)
+3.3. Segmentation
+Given a data item d ∈ D, we first apply a segmentation                where ai represents the primary abstraction and vi denotes
+function S(d) to decompose the content x into a set of se-            the corresponding memory value, which stores the concrete
+mantically coherent segments {s1 , . . . , sk }. Each segment         details. This step proposes potential new memories prior to
+si serves as the input unit for memory construction. This seg-        verification against the existing store.
+mentation step determines the granularity at which memory             In the consolidation phase, we integrate these candidates
+entries are created and updated, enabling primary abstrac-            into M. For a new candidate memory entry mi , we first
+tions to consolidate related information while preserving             retrieve top-k existing entries most similar to the induced
+contextual specificity. Notably, a single segment may give            abstraction ai :
+rise to multiple memory entries. The implementation of                                                                 
+S depends on the data format: we employ a prompt-based                          R(ai ) = TopKm∈M sim(ai , am ); k ,            (2)
+extraction mechanism for unstructured narratives, but lever-          where sim(·, ·) denotes cosine similarity between the pri-
+age structural hierarchies (such as document headers) for             mary abstraction embeddings. We refine this set by filtering
+formatted files.                                                      out candidates below a similarity threshold γ:
+
+3.4. Episodic Memory
+                                                                              U(ai ) = {m ∈ R(ai ) | sim(ai , am ) ≥ γ}.         (3)
+Episodic memory in M EMORA captures the narrative con-
+text associated with each segment. For every segment si ,             Next, an LLM-based selection function J determines if the
+we construct an episodic memory ei = E(si ) that serves as            new candidate (ai , vi ) refers to the same underlying concept
+a shared narrative grounding for all memory entries derived           as any retrieved entry in U(ai ):
+from that source. Crucially, the representation of ei is flexi-
+                                                                                       m⋆ (ai ) = J ai , U(ai ) .
+                                                                                                                  
+ble: it can take the form of an extracted high-level summary–                                                                    (4)
+capturing participants, intent, and temporal scope–or retain          Here J (·) returns the target memory entry m⋆ (ai ) if a
+the raw segment text itself to preserve exact phrasing and            match is found, or ∅ if the abstraction ai is a novel concept.
+subtle cues. This design allows episodic memory to func-
+tion as a contextual anchor, adapting the balance between             The final memory construction operation follows a create-
+compression and fidelity based on the domain.                         or-update rule:
+                                                                                (
+During memory retrieval and reasoning, episodic memories                         Update(m⋆ (ai ), ai , vi ) , m⋆ (ai ) ̸= ∅,
+play a central role in preserving narrative coherence across             mi =                                                (5)
+                                                                                 Create(ai , vi ) ,           m⋆ (ai ) = ∅.
+retrieved items. Memory entries associated with the same
+episodic memory are grouped together, allowing the agent
+                                                                      When a match m⋆ (ai ) is found, the Update(·) operation
+to recover the broader context surrounding individual facts.
+                                                                      merges the new content vi into the existing memory m⋆ (ai ),
+This episodic grouping supports coherent multi-step reason-
+                                                                      potentially also refining its abstraction to reflect the aggre-
+ing, planning, and decision-making in downstream agent
+                                                                      gated information, yielding an updated abstraction a′i . Other-
+workflows.
+                                                                      wise, Create(·) initializes a new memory entry. This policy
+
+                                                                  4
+                    M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+ensures that each memory entry remains anchored to a sin-           Algorithm 1 Policy-Guided Sequential Retrieval
+gle primary abstraction, while enabling new information             Require: Query q, memory system S, policy πθ , budget B,
+semantically aligned with existing content to be incremen-              max steps T
+tally incorporated. As a result, the system enriches existing        1: Initialize q0 ← q, M0 ← ∅, b0 ← B
+concepts with new details where possible, establishing new           2: Initialize frontier F0 ← InitFrontier(q0 , S)
+abstractions only when necessary.                                    3: for t = 0, 1, . . . , T − 1 do
+                                                                     4:    st ← (qt , Wt , Ft , bt )
+3.6. Cue Anchors                                                     5:    Select at ∼ πθ (· | st )
+While primary abstractions provide stable and compact or-            6:    if at = S TOP or bt ≤ 0 then
+ganization of memory, they are intentionally coarse and do           7:       break
+not capture all task-relevant details needed for flexible re-        8:    end if
+trieval. To address this limitation, M EMORA introduces cue          9:    (∆Wt , ∆Ft , qt+1 ) ← Apply(at , st , S)
+anchors, which serve as lightweight, fine-grained semantic          10:    Wt+1 ← Wt ∪ ∆Wt
+hooks that complement primary abstractions by exposing              11:    Ft+1 ← UpdateFrontier(Ft , ∆Ft )
+additional retrieval paths into memory.                             12:    bt+1 ← bt − Cost(at )
+                                                                    13: end for
+Given a memory entry mi = (ai , vi ) constructed in the pre-        14: Mq ← Wt
+vious step, cue anchors are generated to capture additional         15: return Retrieved memories Mq
+salient signals not explicitly represented by the primary
+abstraction. Formally, cue anchor generation is defined as
+                                                                    4.1. Memory Retrieval Policy Formulation
+                                |C |
+                                  i                                 To operationalize the retrieval process, we define a step-
+           Fc (ai , vi ) = {cij }j=1 ,   cij ∈ Ci ,      (6)
+                                                                    by-step procedure where an agent iteratively observes the
+                                                                    current state and selects actions to refine its memory set.
+where the resulting set Ci contains the cue anchors associ-         The overall process is outlined in Algorithm 1.
+ated with memory entry mi . Each cue anchor represents
+                                                                    Given a query q and a retrieval budget B, the system state
+a salient aspect, attribute, or contextual perspective of the
+                                                                    at step t is defined as
+memory content, formatted as a composite of a main en-
+tity/topic and a key aspect. Unlike primary abstractions,                               st = (qt , Wt , Ft , bt ).              (7)
+which define the canonical identity of a memory entry, cue
+anchors are non-exclusive and form a many-to-many map-              Here, qt is the current query representation, which can be
+ping: a single memory entry may be associated with multi-           refined over time; Wt represents the working set of memory
+ple cue anchors, and the same cue anchor may appear across          entries retrieved so far; Ft is the frontier, representing a
+multiple memory entries.                                            set of candidate memories explicitly linked to items in Wt
+                                                                    but not yet retrieved, allowing the agent to observe what is
+When new cue anchors are generated, we perform an exis-
+                                                                    reachable; and bt is the remaining retrieval budget.
+tence check against the memory store. If an anchor already
+exists, we simply link memory entry to the existing instance;       At each step, the policy πθ (at | st ) selects an action at from
+otherwise, a new anchor is instantiated. Conversely, when           three atomic retrieval-control operations: R EFINE, E XPAND,
+memory entries are removed or merged, the corresponding             and S TOP. R EFINE regenerates or reformulates the query
+cue–memory links are also updated. Any cue anchor that              when the policy determines that the current query is insuffi-
+loses all associations is automatically pruned, ensuring the        cient or misaligned. This allows the agent to pivot its search
+cue anchors remain compact and non-redundant.                       strategy to target alternative information relevant to the fi-
+                                                                    nal answer. E XPAND expands the working set by selecting
+4. Policy-Guided Memory Retrieval                                   relevant memories from the frontier Ft . This action directly
+                                                                    grows the working set with new evidence. S TOP terminates
+Standard retrieval methods, such as semantic search                 the retrieval process when sufficient information has been
+(Karpukhin et al., 2020), often fail to capture the multi-          gathered.
+hop dependencies required for complex reasoning. To ad-
+                                                                    Executing an action at triggers the transition:
+dress this, we formulate memory retrieval in M EMORA as a
+Markov Decision Process (MDP) (Puterman, 2014). Unlike                               Apply(at , st , S) → st+1 .                (8)
+static semantic search, a policy-guided retriever actively
+navigates the memory structure to construct a compact yet           The working set accumulates new retrieved results, and the
+informative memory set Mq under a finite budget.                    frontier is updated to include the neighbors of these newly
+
+                                                                5
+                     M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+retrieved items:                                                      To stabilize training and prevent policy drift, we optionally
+                                                                      regularize the update with a KL constraint relative to a
+           Wt+1 = Wt ∪ ∆Wt ,                                          reference policy πref :
+            Ft+1 = UpdateFrontier(Ft , ∆Ft ).                                                 X
+                                                                        L(θ) = LGR (θ) + β         KL(πθ (· | st ) ∥ πref (· | st )) .
+Simultaneously, the remaining budget is reduced according                                        t
+to the cost of the selected action:                                                                                              (13)
+                                                                      This formulation enables preference-based optimization un-
+                   bt+1 = bt − Cost(at ).                   (9)
+                                                                      der sparse supervision and aligns naturally with the MDP-
+                                                                      based sequential retrieval framework.
+The retrieval process terminates when either the S TOP action
+is selected or the budget is exhausted. The accumulated
+                                                                      5. Experiments
+working set Wt is returned as the final retrieved memory
+context Mq .                                                          We conduct extensive experiments to evaluate the effective-
+                                                                      ness of M EMORA on long-context reasoning tasks.
+4.2. Group-Relative Policy Updates
+                                                                      5.1. Experimental Setup
+The policy πθ can be implemented in various ways, ranging
+from a prompt-guided LLM (zero-shot) to a fully trained               Datasets. We evaluate our method on two long-context and
+retrieval model. While prompt-guided policies based on                multi-session reasoning benchmarks. LoCoMo (Maharana
+off-the-shelf models can be directly applied for memory               et al., 2024) comprises extensive multi-turn dialogues aver-
+retrieval, they often fail to optimally balance retrieval cost        aging 600 turns (∼20k tokens). It challenges models with di-
+against information gain. In this paper, we also explore              verse question-answer pairs spanning single-hop, multi-hop,
+optimizing the retrieval policy via group relative policy             temporal, and open-domain tasks, requiring the synthesis
+updates (Shao et al., 2024).                                          of information across long conversational histories. Long-
+We treat retrieval as a preference learning problem. Given a          MemEval (Wu et al., 2024) is a comprehensive benchmark
+query q, we sample a group of G retrieval trajectories                for evaluating long-term memory robustness. We use the
+                                                                      LongMemEval S split (115k context length), which con-
+                                             (i)   (i)                tains 500 questions derived from user–assistant interactions
+     Tq ≜ {τ (i) }G
+                  i=1 ,       τ (i) = {(st , at )}Tt=0
+                                                    i
+                                                       .   (10)
+                                                                      to test reasoning over extreme context windows.
+using the current policy πθ , optionally mixed with a refer-          Baselines. We compare M EMORA against a diverse set of
+ence policy for exploration.                                          baselines representing current state-of-the-art approaches:
+A trajectory-level judge assigns a scalar score J(τ (i) ) to          (1) Full Context that feed the entire context history into
+each trajectory based on three criteria: (i) correctness of the       the prompt. (2) RAG that chunks context history and re-
+final answer, (ii) information redundancy among retrieved             trieves top-k fragments (chunksize = 500 and k = 3).
+memories, and (iii) retrieval cost.                                   (3) Memory Systems including HippoRAG, Zep, Mem0,
+                                                                      LangMem, and Nemori, which utilize various strategies
+To reduce variance and dependence on absolute scalar re-              for memory management.
+wards, we compute group-relative advantages within each
+query group:                                                          Evaluation Metrics. We report the LLM-as-a-Judge score
+                                                                      as our primary metric, as it best captures the semantic va-
+                                         G                            lidity of the generated answers. To ensure fair comparison,
+                                      1 X       ′
+             Ã(i) = J(τ (i) ) −          J(τ (i ) ).      (11)       we adopt the same evaluation templates from prior work
+                                      G ′                             to assess the correctness of the responses. Full evaluation
+                                        i =1
+                                                                      setup is detailed in Appendix B. We report BLEU and F1
+This normalization yields zero-mean advantages within each            scores as complementary metrics on the LoCoMo dataset
+group, improving robustness to score scaling and judge bias           to measure the verbatim overlap between answers and the
+while encouraging relative improvement among trajectories             ground truth.
+generated for the same query.
+                                                                      Retrieval Configurations. We evaluate M EMORA using
+The retrieval policy is updated to increase the likelihood of         three retrieval mechanisms: (1) Semantic Retriever (S), re-
+actions from trajectories with positive relative advantage:           trieval based on semantic similarity; (2) Policy Retriever (P),
+                    G
+                                                                      retrieval guided by a prompt-based LLM agent; (3) GRPO
+                                                      
+                                              (i)  (i)                Retriever, retrieval guided by a policy trained via GRPO.
+                    X             X
+    LGR (θ) = −           Ã(i)       log πθ at | st .     (12)
+                    i=1           t
+                                                                      To accommodate the training requirements of the GRPO
+
+                                                                  6
+                           M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+Table 1. Performance comparison on the LoCoMo dataset. Results for Zep, LangMem and Nemori are reported from Nan et al. (2025).
+M EMORA (S) and M EMORA (P) denote the results obtained using the semantic retriever and policy retriever, respectively.
+
+                              Multi-hop                           Temporal                         Open-domain                  Single-hop                   Overall
+     Method           BLEU           F1       LLM       BLEU             F1        LLM        BLEU        F1    LLM     BLEU        F1       LLM     BLEU      F1      LLM
+ Full Context         0.356      0.459        0.766      0.506      0.572          0.819      0.204     0.250   0.500   0.557     0.634      0.885   0.487    0.565    0.825
+ RAG                  0.222      0.324        0.557      0.428      0.486          0.548      0.224     0.277   0.458   0.448     0.507      0.710   0.389    0.455    0.633
+ HippoRAG             0.039      0.060        0.390      0.013      0.022          0.224      0.033     0.068   0.510   0.037     0.101      0.587   0.032    0.075    0.471
+ Zep*                 0.204      0.305        0.537      0.200      0.239          0.602      0.193     0.242   0.438   0.400     0.455      0.669   0.309    0.369    0.616
+ Mem0                 0.236      0.326        0.624      0.420      0.489          0.660      0.153     0.206   0.500   0.376     0.433      0.677   0.346    0.411    0.653
+ LangMem*             0.325      0.415        0.710      0.409      0.485          0.508      0.264     0.328   0.590   0.436     0.510      0.845   0.400    0.476    0.734
+ Nemori*              0.319      0.417        0.751      0.502      0.577          0.776      0.193     0.258   0.510   0.515     0.588      0.849   0.456    0.534    0.794
+ M EMORA (S)          0.321      0.417        0.784      0.502      0.624          0.851      0.251     0.318   0.594   0.522     0.597      0.900   0.464    0.552    0.849
+ M EMORA (P)          0.337      0.428        0.787      0.500      0.623          0.866      0.246     0.308   0.594   0.521     0.597      0.918   0.466    0.553    0.863
+
+
+       Table 2. Performance comparison on LongMemEval.                                                superior performance across all four task categories, estab-
+ Question Type           Full Context     Nemori        M EMORA(S)         M EMORA (P)
+                                                                                                      lishing a new state-of-the-art.
+ Context length               115k        3.7-4.8k          2.1k                  2.9k                Notably, M EMORA surpasses the Full Context baseline
+ single-sn-preference       16.7%             86.7%        76.7%              83.3%                   (0.825). We attribute this result to Memora’s ability to
+ single-sn-assistant        98.2%             92.9%        76.8%              78.6%
+ temporal-reasoning         60.2%             72.2%        84.2%              89.5%                   reduce “context noise”. By filtering out irrelevant dialogue
+ multi-session              51.1%             55.6%        73.7%              78.2%                   turns and presenting a crystallized memory structure, M EM -
+ knowledge-update           76.9%             79.5%        96.2%              97.4%
+ single-sn-user             85.7%             90.0%        97.1%              98.6%                   ORA prevents the dilution of the model’s attention mech-
+ Average                    65.6%             74.6%        83.8%              87.4%                   anism, effectively proving that curated context leads to
+                                                                                                      sharper reasoning than complete context. M EMORA also
+                                                                                                      significantly outperforms strong baselines, including RAG
+          Table 3. Component build-up ablation on LoCoMo
+                                                                                                      (0.633), as well as other competitive memory systems such
+ Method                                         Multi   Temp     Open     Single    Overall           as Mem0 (0.653) and Nemori (0.794). This performance
+ M EMORA w/o abstraction (= Mem0)               0.624   0.660    0.500    0.677      0.653            gap validates the utility of our harmonic structure. The Pol-
+ M EMORA (primary abstraction, no update)       0.727   0.801    0.542    0.844      0.795
+ M EMORA (primary abstraction, with update)     0.780   0.813    0.510    0.836      0.801            icy Retriever further amplifies these gains by leveraging cue
+ M EMORA (semantic retriever)                   0.784   0.851    0.594    0.900      0.849            anchors to actively navigate the memory graph, ensuring
+ M EMORA (policy retriever)                     0.787   0.866    0.594    0.918      0.863
+                                                                                                      that contextually linked information is retrieved even when
+                                                                                                      it is not semantically adjacent.
+variant, we employ two evaluation setups. For our main                                                Table 2 presents the performance on the LongMemEval
+results and ablation studies, we evaluate the Semantic and                                            dataset, where our method consistently outperforms strong
+Policy retrievers on the full LoCoMo and LongMemEval                                                  baselines, achieving an accuracy of 87.4%.
+datasets. For the GRPO experiments, we partition the Lo-
+CoMo dataset into train and test splits. We report GRPO                                               5.2.2. A BLATION S TUDIES
+metrics exclusively on the test partition to quantify the spe-                                        To understand the contribution of each component in M EM -
+cific gains from policy optimization.                                                                 ORA , we conduct two complementary ablations. Table 3
+Implementation Details.          All experiments utilize                                              builds the system up from a no-abstraction baseline to the
+GPT-4.1-mini as the LLM backbone for memory cu-                                                       full model, quantifying what each architectural component
+ration, answer generation, as well as prompt-based policy                                             contributes; Table 4 then performs a leave-one-out study
+retrieval. To ensure reproducibility, we fix the generation                                           over the full system, varying retrieval policy, memory types,
+seed to 42 across all runs. Prompts used for memory extrac-                                           and granularity.
+tion are provided in Appendix A.                                                                      Removing the primary-abstraction layer essentially reduces
+                                                                                                      M EMORA to Mem0: both extract factual memories from
+5.2. Results and Analysis                                                                             data, but Mem0 embeds and retrieves the extracted text frag-
+5.2.1. P ERFORMANCE A NALYSIS                                                                         ments directly, whereas M EMORA decouples what is stored
+                                                                                                      (the memory content) from how it is retrieved by indexing
+Table 1 presents the results on the LoCoMo dataset. Our                                               through a structural abstraction layer (primary abstractions
+best-performing configuration, M EMORA with the Policy                                                and cue anchors), allowing more expressiveness in the stored
+Retriever, achieves a score of 0.863, followed by the Se-                                             content and avoiding fragmentation. Even with cue anchors
+mantic Retriever variant at 0.849. M EMORA demonstrates
+
+                                                                                               7
+                           M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+                             Table 4. Ablation studies on retrieval policy and memory granularity the LoCoMo dataset.
+                                                              Multi-hop                   Temporal                 Open-domain                     Single-hop                      Overall
+               Method                   Avg. Tokens   BLEU       F1       LLM     BLEU       F1       LLM     BLEU       F1      LLM       BLEU          F1      LLM      BLEU         F1       LLM
+ Policy Retriever
+ Episodic (Segment) + Factual              8499       0.337     0.428     0.787   0.500     0.623     0.866    0.246    0.308    0.594     0.521     0.597       0.918     0.466    0.553      0.863
+ Episodic (Segment) only                   6624       0.350     0.451     0.780   0.517     0.610     0.847    0.260    0.328    0.625     0.544     0.619       0.903     0.485    0.568      0.851
+ Episodic (Segment) + Factual w/o cue      8425       0.329     0.416     0.773   0.512     0.631     0.857    0.243    0.299    0.594     0.518     0.596       0.905     0.465    0.552      0.851
+ Episodic (Extracted) + Factual            4467       0.328     0.417     0.762   0.521     0.646     0.860    0.245    0.303    0.615     0.475     0.543       0.880     0.443    0.526      0.838
+ Factual only                              1853       0.309     0.398     0.801   0.522     0.646     0.851    0.225    0.277    0.542     0.484     0.551       0.870     0.444    0.526      0.833
+ Semantic Retriever
+ Episodic (Segment) + Factual              7683       0.321     0.417     0.784   0.502     0.624     0.851    0.251    0.318    0.594     0.522     0.597       0.900     0.464    0.552      0.849
+ Episodic (Segment) only                   6042       0.349     0.450     0.773   0.506     0.599     0.832    0.260    0.325    0.615     0.539     0.614       0.899     0.480    0.563      0.844
+ Episodic (Segment) + Factual w/o cue      7628       0.338     0.434     0.780   0.511     0.635     0.854    0.253    0.316    0.604     0.516     0.589       0.900     0.466    0.553      0.850
+ Episodic (Extracted) + Factual            3958       0.315     0.406     0.755   0.523     0.646     0.857    0.224    0.282    0.573     0.477     0.542       0.875     0.441    0.522      0.831
+ Factual only                              1647       0.309     0.402     0.791   0.526     0.647     0.847    0.210    0.265    0.531     0.481     0.546       0.857     0.442    0.523      0.823
+
+
+
+
+and policy retrieval disabled, adding the primary-abstraction                                  Table 5. Latency on the LoCoMo dataset. End-to-end Latency
+                                                                                               refers to the full inference workflow for each query, while Search
+layer alone lifts the overall LLM-as-a-Judge score from                                        Latency measures the memory retrieval steps.
+0.653 to 0.795. Adding update, cue anchors and policy re-
+trieval then provides further gains. This decoupling also                                                                     End-to-end Latency (s)           Search Latency (s)
+
+produces far fewer memory entries (344 for M EMORA vs.                                              Method                    Mean       P50       P95        Mean       P50   P95          Avg Steps
+                                                                                                    Policy Retriever
+651 for Mem0 per conversation on average), which in turn
+                                                                                                    Episodic (S) + Factual    5.697   5.004    10.974         4.609   3.857    9.581          3.45
+improves retrieval efficiency. Direct embedding of mem-                                             Episodic (E) + Factual    5.438   4.703    10.593         4.497   3.719    9.437          3.39
+ory content tends toward two extremes: Mem0 produces                                                Factual only              4.653   3.940     9.388         3.969   3.279    8.495          3.36
+                                                                                                    Semantic Retriever
+fragmented, isolated entries that lose inter-memory coher-
+                                                                                                    Episodic (S) + Factual    1.062   1.016    1.487          0.235   0.221    0.256           1
+ence, while RAG encodes rich content into a single fuzzy                                            Episodic (E) + Factual    0.958   0.908    1.336          0.232   0.221    0.260           1
+vector, preserving expressiveness at the cost of retrieval                                          Factual only              0.733   0.676    1.006          0.220   0.200    0.245           1
+
+precision. M EMORA’s abstraction layer sidesteps both ex-
+tremes by storing expressive, unfragmented content while
+indexing through lightweight abstractions. Appendix E pro-
+vides three case studies illustrating these dynamics.                                             combining the structural clarity of factual details with the
+                                                                                                  richer context of the episodes.
+Comparing the two major retriever backbones in Table 4,
+the policy retriever consistently outperforms the semantic                                     Finally, we note the trade-off between performance and
+retriever. Crucially, this advantage disappears when cue                                       memory size. While the full Episodic (Segment) + Factual
+anchors are removed, rendering the policy retriever com-                                       variant yields the best results, greater context richness in-
+parable to the semantic approach. This highlights that the                                     evitably leads to a larger memory footprint. However, the
+improvement is not merely a consequence of increased com-                                      Factual-only configuration remains a strong “lightweight”
+plexity in the policy network, but rather stems from its                                       alternative, achieving a respectable score of 0.833 while sig-
+capacity to leverage cue anchors for traversing the memory                                     nificantly reducing the context load. This highlights M EM -
+                                                                                               ORA ’s flexibility for either maximum contextual fidelity or
+graph. By following these anchors, the system can navigate
+to relevant non-local contexts that a semantic search would                                    efficiency, depending on resource constraints.
+miss.
+                                                                                                  5.2.3. I NFERENCE L ATENCY A NALYSIS
+We also examine the impact of context granularity. We
+observe a clear performance hierarchy correlated with the                                      Table 5 details the latency metrics. For latency evaluation,
+richness of the episodic context: the variant using raw seg-                                   we report the mean, P50 and P95 wall-clock latencies. These
+ments as episodic memory (Episodic (Segment) + Factual)                                        metrics capture both end-to-end response generation and
+achieves the highest score (0.863), outperforming the ex-                                      retrieval operations across the LoCoMo dataset, accounting
+tracted episodic memory (Episodic (Extracted) + Factual,                                       for real-world API overhead. We report these metrics across
+0.838) and the Factual Only variant (0.833). This trend con-                                   three memory configurations: Episodic (Segment) + Fac-
+firms that while discrete facts provide a solid baseline, the                                  tual, Episodic (Extracted) + Factual, and Factual Only, as
+“connective tissue” found in episodic memory is essential                                      they represent different memory sizes. The policy retriever
+for grounding. Furthermore, factual and episodic memo-                                         incurs higher latency compared to the semantic retriever,
+ries are not redundant but complementary. Adding factual                                       primarily due to the sequential nature of the search process.
+memory to the episodic-only baseline consistently improves                                     On average, the policy retriever requires over three steps
+overall performance, indicating that M EMORA succeeds by                                       per query. Since each step involves a distinct LLM call to
+                                                                                               determine the next action, the search latency naturally scales
+
+                                                                                           8
+                      M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+Table 6. Average memory construction time per conversation on                                           Qwen 2.5 1.5B (GRPO)          Qwen 2.5 1.5B (Base)
+LoCoMo.
+                                                                                  Multi-hop                                   0.698
+                                                                                                                            0.686
+          System                 Time (s)      Performance
+                                                                                   Temporal                                                  0.816
+          Mem0                    1350.9          0.653                                                                                              0.857
+          M EMORA                 1322.0          0.863                                                  0.517
+                                                                                Open-domain
+          M EMORA (offset)         739.9          0.860                                                      0.552
+
+                                                                                  Single-hop                                                                 0.912
+                                                                                                                                                              0.919
+Table 7. Using smaller memory-construction model on LoCoMo.                                                                                    0.829
+                                                                                    Overall
+                                                                                                                                                 0.841
+ Model             Retrieval   Multi   Temp     Open    Single    Overall
+                                                                                               0.4         0.5        0.6        0.7            0.8             0.9
+ gpt-5.4-nano      Semantic    0.713   0.620    0.479     0.867   0.763                                              LLM-as-a-Judge score
+ gpt-4.1-mini      Semantic    0.784   0.851    0.594     0.900   0.849
+ gpt-5.4-nano      Policy      0.773   0.879    0.625     0.893   0.851                              Figure 2. Results for GRPO training.
+ gpt-4.1-mini      Policy      0.787   0.866    0.594     0.918   0.863
+
+
+                                                                                chosen to merge only entries that are clearly redundant
+with the number of iterations.                                                  while preventing over-aggressive consolidation. We pro-
+                                                                                vide an analysis on memory update sensitivity and how
+5.2.4. M EMORY C ONSTRUCTION A NALYSIS                                          memory growth affects update frequency and construction
+                                                                                overhead in Appendix F. We show that consolidation cost
+Construction overhead. Table 6 reports the average mem-                         scales linearly with memory bank size and does not become
+ory construction time per conversation on LoCoMo together                       a bottleneck as the memory store grows.
+with the corresponding overall performance score. Be-
+fore optimization, M EMORA’s construction cost (1322.0s)                        5.2.5. P OLICY T RAINING
+is comparable to Mem0 (1350.9s), but with substantially
+higher answer quality (0.863 vs. 0.653), showing that the                       We further investigate whether the retrieval policy can be
+performance gains thus arise from a better memory repre-                        explicitly optimized using GRPO. We fine-tune a small
+sentation rather than additional compute. We further apply                      backbone model (Qwen-2.5-1.5B) on a 70/30 train/test
+an optimization that predicts index offsets into the source                     split of LoCoMo and evaluate on the held-out 30% test par-
+material rather than generating full memory values, which                       tition. As shown in Figure 2, the GRPO-tuned retriever
+reduces construction time to 739.9s, a 45% speedup with                         achieves an overall LLM-as-a-Judge score of 0.841, consis-
+minimal loss in quality.                                                        tently outperforming the base model baseline (0.829) across
+                                                                                temporal, open-domain, and single-hop tasks. These results
+Robustness to smaller construction LLMs. A natural                              demonstrate that the retrieval policy is learnable and can
+concern is whether M EMORA’s gains depend on a pow-                             be effectively distilled into smaller models, maintaining
+erful LLM at construction time. We replace the default                          competitive performance compared to the instruction-tuned
+gpt-4.1-mini with the less capable gpt-5.4-nano                                 counterpart.
+during memory construction; results are shown in Table 7.
+First, while a weaker construction model does produce
+                                                                                6. Conclusion
+slightly lower-quality memories, even the worst-case (nano
++ semantic, 0.763) M EMORA still substantially outperforms                      In this work, we introduce M EMORA, a harmonic mem-
+baselines that use gpt-4.1-mini for memory construc-                            ory architecture that balances abstraction and specificity for
+tion, including Mem0 (0.653) and RAG (0.633). This in-                          long-term agent memory. By introducing primary abstrac-
+dicates that M EMORA’s advantage stems from its struc-                          tions and cue anchors, M EMORA enables scalable, context-
+tural design rather than reliance on a powerful construction                    aware retrieval without fragmenting knowledge or obscur-
+model. Second, policy-guided retrieval effectively recovers                     ing task-critical detail. A policy-driven retrieval mechanism
+the construction-quality gap: nano + policy (0.851) drops                       further allows agents to actively explore relevant memory
+only 1.4% from mini + policy (0.863) and nearly matches                         beyond direct semantic similarity. We show that existing
+mini + semantic (0.849), showing that one can build memo-                       RAG- and KG-based memory systems arise as special cases
+ries with a much cheaper model and recover quality through                      of our framework. Empirically, Memora achieves state-of-
+policy-guided retrieval.                                                        the-art performance on long-horizon memory benchmarks,
+Memory Update Analysis. M EMORA’s update mecha-                                 consistently outperforming strong baselines and full-context
+nism merges a newly extracted memory into an existing                           inference with both semantic and policy retrieval mecha-
+entry when their primary abstractions exceed a semantic-                        nisms, demonstrating the effectiveness of harmonic memory
+similarity threshold. We use a default threshold of 0.80,                       organization for scalable agent reasoning.
+
+                                                                            9
+                    M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+Impact Statement                                                       Kang, J., Ji, M., Zhao, Z., and Bai, T. Memory os of
+                                                                         ai agent, 2025. URL https://arxiv.org/abs/
+This work advances the field of autonomous agents by                     2506.06326.
+enabling significantly more consistent and reliable long-
+term memory systems. By structurally balancing abstrac-                Karpukhin, V., Oğuz, B., Min, S., Lewis, P., Wu, L., Edunov,
+tion with specificity, M EMORA allows agents to retain and               S., Chen, D., and tau Yih, W. Dense passage retrieval for
+utilize context effectively over long horizons, addressing               open-domain question answering, 2020. URL https:
+a key bottleneck in current architectures. This improve-                 //arxiv.org/abs/2004.04906.
+ment in memory management paves the way for the de-
+velopment of a broader range of complex applications,                  Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin,
+from personalized long-term assistants to collaborative                  V., Goyal, N., Küttler, H., Lewis, M., tau Yih, W.,
+problem-solving system, that require stable and precise                  Rocktäschel, T., Riedel, S., and Kiela, D. Retrieval-
+context retention. To facilitate reproducibility and further             augmented generation for knowledge-intensive nlp tasks,
+innovation within the community, we release our code at                  2021.     URL https://arxiv.org/abs/2005.
+https://github.com/microsoft/Memora.                                     11401.
+
+                                                                       Li, Z., Song, S., Wang, H., Niu, S., Chen, D., Yang, J.,
+References                                                               Xi, C., Lai, H., Zhao, J., Wang, Y., Ren, J., Lin, Z.,
+                                                                         Huo, J., Chen, T., Chen, K., Li, K., Yin, Z., Yu, Q.,
+Borgeaud, S., Mensch, A., Hoffmann, J., Cai, T., Rutherford,
+                                                                         Tang, B., Yang, H., Xu, Z.-Q. J., and Xiong, F. Memos:
+  E., Millican, K., van den Driessche, G., Lespiau, J.-B.,
+                                                                         An operating system for memory-augmented generation
+  Damoc, B., Clark, A., de Las Casas, D., Guy, A., Menick,
+                                                                         (mag) in large language models, 2025. URL https:
+  J., Ring, R., Hennigan, T., Huang, S., Maggiore, L., Jones,
+                                                                         //arxiv.org/abs/2505.22101.
+  C., Cassirer, A., Brock, A., Paganini, M., Irving, G.,
+  Vinyals, O., Osindero, S., Simonyan, K., Rae, J. W., Elsen,          Maharana, A., Lee, D.-H., Tulyakov, S., Bansal, M., Bar-
+  E., and Sifre, L. Improving language models by retrieving             bieri, F., and Fang, Y. Evaluating very long-term
+  from trillions of tokens, 2022. URL https://arxiv.                    conversational memory of llm agents. arXiv preprint
+  org/abs/2112.04426.                                                   arXiv:2402.17753, 2024.
+Chhikara, P., Khant, D., Aryan, S., Singh, T., and Yadav, D.           Milam, K. and Gulli, A. Context engineering: Sessions &
+  Mem0: Building production-ready ai agents with scalable               memory, 2025.
+  long-term memory. arXiv preprint arXiv:2504.19413,
+  2025.                                                                Nan, J., Ma, W., Wu, W., and Chen, Y. Nemori: Self-
+                                                                         organizing agent memory inspired by cognitive science,
+Edge, D., Trinh, H., Cheng, N., Bradley, J., Chao, A.,                   2025.
+  Mody, A., Truitt, S., Metropolitansky, D., Ness, R. O.,
+  and Larson, J. From local to global: A graph rag ap-                 Packer, C., Wooders, S., Lin, K., Fang, V., Patil, S. G.,
+  proach to query-focused summarization, 2025. URL                       Stoica, I., and Gonzalez, J. E. MemGPT: Towards llms
+  https://arxiv.org/abs/2404.16130.                                      as operating systems. arXiv preprint arXiv:2310.08560,
+                                                                         2023.
+Gao, Y., Xiong, Y., Gao, X., Jia, K., Pan, J., Bi, Y., Dai, Y.,
+                                                                       Puterman, M. L. Markov decision processes: discrete
+  Sun, J., Wang, M., and Wang, H. Retrieval-augmented
+                                                                         stochastic dynamic programming. John Wiley & Sons,
+  generation for large language models: A survey, 2024.
+                                                                         2014.
+  URL https://arxiv.org/abs/2312.10997.
+                                                                       Rasmussen, P., Paliychuk, P., Beauvais, T., Ryan, J., and
+Guo, T., Chen, X., Wang, Y., Chang, R., Pei, S., Chawla,
+                                                                         Chalef, D. Zep: a temporal knowledge graph architecture
+  N. V., Wiest, O., and Zhang, X. Large language model
+                                                                         for agent memory. arXiv preprint arXiv:2501.13956,
+  based multi-agents: A survey of progress and chal-
+                                                                         2025.
+  lenges, 2024. URL https://arxiv.org/abs/
+  2402.01680.                                                          Shao, Z., Wang, P., Zhu, Q., Xu, R., Song, J., Bi, X.,
+                                                                         Zhang, H., Zhang, M., Li, Y. K., Wu, Y., and Guo,
+Gutierrez, B. J., Shu, Y., Gu, Y., Yasunaga, M., and Su,                 D. Deepseekmath: Pushing the limits of mathemat-
+ Y. HippoRAG: Neurobiologically inspired long-term                       ical reasoning in open language models, 2024. URL
+  memory for large language models. In The Thirty-eighth                 https://arxiv.org/abs/2402.03300.
+ Annual Conference on Neural Information Processing
+ Systems, 2024. URL https://openreview.net/                            Wang, L., Ma, C., Feng, X., Zhang, Z., Yang, H., Zhang,
+  forum?id=hkujvAPVsg.                                                  J., Chen, Z., Tang, J., Chen, X., Lin, Y., Zhao, W. X.,
+
+                                                                  10
+                    M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+  Wei, Z., and Wen, J. A survey on large language model
+  based autonomous agents. Frontiers of Computer Science,
+  18(6), March 2024. ISSN 2095-2236. doi: 10.1007/
+  s11704-024-40231-1. URL http://dx.doi.org/
+  10.1007/s11704-024-40231-1.
+Wang, Y. and Chen, X. Mirix: Multi-agent memory system
+ for llm-based agents, 2025. URL https://arxiv.
+ org/abs/2507.07957.
+Wu, D., Wang, H., Yu, W., Zhang, Y., Chang, K.-W., and
+ Yu, D. Longmemeval: Benchmarking chat assistants
+ on long-term interactive memory. 2024. URL https:
+ //arxiv.org/abs/2410.10813.
+
+Wu, Q., Bansal, G., Zhang, J., Wu, Y., Li, B., Zhu, E., Jiang,
+ L., Zhang, X., Zhang, S., Liu, J., Awadallah, A. H., White,
+ R. W., Burger, D., and Wang, C. Autogen: Enabling next-
+ gen llm applications via multi-agent conversation, 2023.
+ URL https://arxiv.org/abs/2308.08155.
+
+Xu, W., Liang, Z., Mei, K., Gao, H., Tan, J., and Zhang,
+ Y. A-mem: Agentic memory for llm agents, 2025. URL
+  https://arxiv.org/abs/2502.12110.
+Yan, S., Yang, X., Huang, Z., Nie, E., Ding, Z., Li, Z., Ma,
+  X., Bi, J., Kersting, K., Pan, J. Z., Schütze, H., Tresp, V.,
+  and Ma, Y. Memory-r1: Enhancing large language model
+  agents to manage and utilize memories via reinforcement
+  learning, 2026. URL https://arxiv.org/abs/
+  2508.19828.
+Yao, S., Zhao, J., Yu, D., Du, N., Shafran, I., Narasimhan,
+  K., and Cao, Y. React: Synergizing reasoning and act-
+  ing in language models, 2023. URL https://arxiv.
+  org/abs/2210.03629.
+Zhong, W., Guo, L., Gao, Q., Ye, H., and Wang, Y. Memory-
+  bank: Enhancing large language models with long-term
+  memory, 2023. URL https://arxiv.org/abs/
+  2305.10250.
+
+
+
+
+                                                                   11
+                  M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+A. Prompts for Memory Extraction
+The following prompts were used to extract memories from conversation data:
+
+  You are an expert conversation segmentation specialist. Your goal is to analyze a
+  series of messages in a conversation and segment them into coherent topical episodes.
+  # TASK
+  Read the conversation carefully and identify points where the topic shifts
+  significantly.
+  Group messages discussing a similar subject, event, or theme into a single episode.
+  An episode is defined as a sequence of messages that revolve around a core topic or
+  theme.
+  Your task is to segment the conversation into such episodes.
+  # OUTPUT FORMAT
+  Provide a JSON object with the following structure:
+  {
+    "episodes": [
+    {
+    "topic": "<brief topic description>",
+    "indices": [<list of message indices in this episode>]
+    },
+    ...
+    ]
+  }
+ Where each episode contains:
+ - topic: A brief description (a few words) summarizing the main topic of the episode
+ - indices: A list of 1-based indices of messages that belong to this episode
+  # GUIDELINES
+  1. Segmentation Criteria
+      - Topical shift: Identify when a new subject, event, or theme is introduced.
+      - Transitions: Look for phrases like "By the way", "Changing the subject", or "On
+  another note".
+      - Time gaps: Large time lapses may indicate a new episode.
+      - Setting changes: Changes in speaker, location, or context can signal a new
+  episode.
+      - Topical grouping: Consecutive messages discussing the same topic belong to the
+  same episode.
+  2. Episode Length
+      - Typically 2--8 messages per episode.
+      - Combine messages if they discuss the same topic.
+      - Avoid episodes longer than 8 messages covering multiple sub-topics.
+      - Do not treat a single message as an episode unless it clearly marks a shift.
+      - When in doubt, split into smaller episodes.
+  3. Formatting Rules
+      - Use 1-based indexing for message indices.
+      - Include all messages exactly once (no gaps or overlaps).
+      - Indices in each episode should be consecutive.
+  # EXAMPLE OUTPUT
+  ...
+  # CONVERSATION TO SEGMENT
+  {messages}
+
+                         Figure 3. Prompt for segmenting conversations into coherent episodic units.
+
+
+
+
+                                                             12
+            M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+
+
+
+You are an expert episodic memory generator that creates episodic memory summaries
+from conversation segments.
+# TASK
+Generate an episodic memory with an index and a detailed summary based on the provided
+conversation segment.
+Use the following format:
+EpisodicIndex: [6--8 word summary capturing main topic, entity, or event]
+EpisodicValue: [1--3 sentences descriptive summary of the conversation]
+# GUIDELINES
+1. EpisodicIndex
+    - Create a short index (6--8 words) capturing the main topic or event of the
+episode.
+    - Include specific context (e.g., domain or entity) to avoid vagueness.
+2. EpisodicValue
+    - Generate 1--3 sentence summary capturing:
+      * Main information of the conversation segment (topic, theme, or event).
+      * Relevant participants, referred to by name if available.
+      * Use original wording when possible.
+    - Focus on ‘‘what happened’’ rather than specific granular details.
+    - Make the summary self-contained and understandable without the original
+conversation.
+    - Include visual content if images are present.
+    - Use only information present in the conversation segment; do not add external
+knowledge or infer beyond the content.
+# INPUT
+{content}
+# OUTPUT
+Provide the episodic memory in the format specified above.
+
+                 Figure 4. Prompt for generating episodic memories from conversation segments.
+
+
+
+
+                                                      13
+            M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+
+
+
+You are an expert factual memory extraction assistant.                     Your goal is to extract
+factual memories from a conversation segment.
+# TASK
+Read the input conversation carefully and extract ALL factual memories that could be
+useful for future reference.
+Produce each memory as a key-value pair in the following format:
+MemIndex: memory index for retrieval
+MemValue: memory value with all details supported directly from the given text.
+# GUIDELINES
+1. Content and Scope
+    - Use only information explicitly mentioned in the conversation.
+    - Capture ALL factual information that could be useful. When in doubt, create
+more rather than fewer memories.
+    - Exclude greetings, small talk, or filler.
+    - Split distinct facts into separate entries.
+    - Include details about people, events, intentions, hobbies, preferences, states,
+beliefs, goals, future plans, times, and locations if mentioned.
+    - Include visual content from images as textual context, integrating relevant
+facts naturally.
+2.  Format and Style
+    - MemIndex: Short, human-readable, self-contained, unambiguous phrase. Include
+specific context (e.g., entity or domain) to avoid vagueness.
+    - MemValue: One or two full factual sentences capturing all relevant details.
+      * Use neutral and factual wording.
+      * Use original wording from the conversation when possible.
+      * Replace pronouns with specific names or entities for clarity.
+      * Convert relative times/dates (e.g., ‘‘yesterday’’, ‘‘next week’’) to absolute
+dates based on the conversation timestamp.
+Timestamp of conversation: {timestamp}
+Input Conversation: {content}
+# OUTPUT
+Produce all factual memories in the format specified above.
+
+                   Figure 5. Prompt for extracting factual memories from conversation segments.
+
+
+
+
+You are a memory management assistant. Given a new memory entry and similar existing
+entries, determine whether to update an existing entry or add a new one.
+NEW MEMORY ENTRY:
+Index: {new index}
+Value: {new value}
+EXISTING SIMILAR ENTRIES:
+{candidates info}
+INSTRUCTIONS:
+1. Analyze if the new entry should update any existing entry based on semantic
+similarity and content overlap.
+2. If an update is needed, determine which candidate entry is best to update.
+3. Generate an updated memory value that combines relevant information from both
+entries.
+4. Decide whether the memory index should be updated to better reflect the combined
+information.
+
+           Figure 6. Prompt for deciding whether to update an existing memory entry or create a new one.
+
+
+
+
+                                                        14
+             M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+
+You are a memory-indexing assistant optimized for knowledge retrieval. Your goal is
+to create cue indices that serve as semantic anchors for specific memories.
+# TASK
+For each memory provided, generate 1--3 short, meaningful CUE ANCHORS that can later
+help recall or reason about that memory.
+Provide the cue anchors as a list of strings for each memory.
+# GUIDELINES
+1. Definition: A cue anchor is a concise phrase (2--4 words) that anchors a specific
+topic to a memory.
+    It follows the structure: [Main Entity] + [Key Aspect].
+    - Main Entity: the primary person, domain, or object involved (the ‘‘who’’ or
+‘‘what’’).
+    - Key Aspect: the associated event, preference, action, state, or object.
+    Example patterns:
+    - [Person] [Event/Activity] → ‘‘Jane hiking trip’’, ‘‘Mike vacation’’
+    - [Person] [Hobby/Preference] → ‘‘Michael jazz music’’, ‘‘Sophie vegan diet’’
+    - [Person] [Condition/State] → ‘‘Emma career change’’, ‘‘Liam health problems’’
+    - [Person] [Object/Relation] → ‘‘Alice research paper’’, ‘‘David guitar’’
+    - [Domain] [Attribute/Artifact] → ‘‘Project Orion timeline’’, ‘‘Product X
+features’’
+2. Specificity: Avoid generic single words (e.g., ‘‘summer’’, ‘‘happiness’’,
+‘‘project meeting’’).
+    Every cue anchor must be contextually anchored to a main entity mentioned in the
+memory.
+    Use concrete aspects (e.g., ‘‘Mike mental health problems’’ rather than ‘‘Mike
+feelings’’).
+3. Atomicity: Each cue index should capture a single, indivisible aspect.
+    Do not include timestamps, exact numbers, or multiple descriptors.
+    Prefer generalizable cues (e.g., ‘‘Mike birthday party’’ over ‘‘Mike birthday
+party 2023’’).
+4. Distinct Facets: A memory may have multiple cue indices, each targeting a
+different dimension.
+    Cue indices for the same memory should not overlap in meaning.
+    Avoid near-duplicates (e.g., ‘‘Project Phoenix kickoff’’ vs. ‘‘Project Phoenix
+launch’’).
+5.   Uniqueness: Do not repeat the primary memory index as a cue index.
+6.   Purpose: Cue indices provide additional semantic keys beyond the primary index,
+     enabling recall, reasoning, and linking of related memories.
+# EXAMPLES
+Primary Abstraction: ‘‘Jane’s hiking trip to Appalachian Trail’’
+Memory Value: ‘‘Last summer, Jane went on a week-long hiking trip along the
+Appalachian Trail. She enjoyed the scenic views and challenging trails.’’
+Cue Anchors: [‘‘Jane hiking’’, ‘‘Appalachian Trail views’’, ‘‘Jane summer trip’’]
+Primary Abstraction: ‘‘Mike’s surprise birthday party’’
+Memory Value: ‘‘Mike’s friends organized a surprise birthday party for him at his
+favorite restaurant Bistro Max.’’
+Cue Anchors: [‘‘Mike birthday party’’, ‘‘Mike favorite restaurant’’, ‘‘Mike friends
+gathering’’]
+Primary Abstraction: ‘‘Project Orion launch delay’’
+Memory Value: ‘‘The launch of Project Orion has been delayed due to unforeseen
+technical issues that need to be resolved.’’
+Cue Anchors: [‘‘Project Orion launch’’, ‘‘Project Orion technical issues’’]
+Primary Abstraction: ‘‘Emma went swimming’’
+Memory Value: ‘‘Emma went swimming during her vacation.’’
+Cue Anchors: [‘‘Emma swimming’’]
+# MEMORIES TO PROCESS
+{memories}
+
+               Figure 7. Prompt for generating cue indices as semantic anchors for memory retrieval.
+
+
+
+                                                        15
+                  M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+B. Evaluation Setup
+Following prior work, we adopt the same evaluation protocol for LLM-as-a-judge scoring from prior work. Specifically,
+for LoCoMo, we use ANSWER PROMPT from the official Mem0 GitHub repository https://github.com/mem0ai/
+mem0/blob/main/evaluation/prompts.py for answer generation, and https://github.com/mem0ai/
+mem0/blob/main/evaluation/metrics/llm_judge.py for LLM-as-a-judge scoring.
+For LongMemEval, we use the evaluation prompt provided in the official GitHub repository https://github.com/
+xiaowu0162/LongMemEval/blob/main/src/evaluation/evaluate_qa.py for LLM-as-a-judge scoring.
+To ensure a fair comparison, we employ gpt-4o-mini as the evaluation model across all experiments, consistent with
+prior work. Additionally, we fix the random seed to 42 for reproducibility.
+For latency evaluation, we use a compute instance located in East US (32 cores, 128 GB RAM, 256 GB disk) and query an
+Azure OpenAI endpoint located in Sweden Central.
+
+
+
+
+                                                         16
+                   M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+C. Preference-based Group-Relative Policy Updates.
+C.1. Motivation.
+In sequential memory retrieval, step-level rewards are often noisy or unavailable, while the true objective—such as answer
+quality, grounding, and efficiency—is typically observable only after completing an entire retrieval trajectory. Preference-
+based learning avoids explicit per-step supervision by comparing multiple retrieval trajectories generated for the same query
+and updating the policy to favor higher-quality trajectories.
+
+C.2. Trajectory Generation.
+Given a query q, we sample a group of G retrieval trajectories:
+                                                                       (g)   (g)   T
+                                          {τ (g) }G
+                                                  g=1 ,    τ (g) = {(st , at )}t=0
+                                                                                g
+                                                                                   ,                                     (14)
+
+using the current policy πθ , or a mixture with a reference policy for exploration. Each trajectory produces a retrieved
+memory set W (g) .
+
+C.3. Judge-Based Trajectory Scoring.
+Each trajectory is evaluated by a judge that outputs a scalar score reflecting retrieval quality. The judge may be implemented
+as a lightweight learned model, a frozen LLM-based evaluator, or a deterministic heuristic. The trajectory score is
+decomposed into the following components.
+Groundedness. Groundedness measures whether the final answer or reasoning is supported by the retrieved memories:
+
+                                            Ground(τ ) = J UDGEground (q, W).                                            (15)
+
+This term can be instantiated using LLM-based judgments of evidence support or heuristic measures such as entailment or
+citation coverage.
+Redundancy. Redundancy penalizes repeated or highly overlapping memories:
+                                                     1        X
+                                    Redund(τ ) =                       I[sim(mi , mj ) > δ] .                            (16)
+                                                    |W|2
+                                                           mi ,mj ∈W
+
+
+Cost. Cost accounts for retrieval budget consumption:
+                                                               X
+                                                 Cost(τ ) =         Cost(at ).                                           (17)
+                                                                t
+
+
+C.4. Scalar Trajectory Score.
+The judge aggregates the above components into a single trajectory-level score:
+
+                               J(τ ) = w1 · Ground(τ ) − w2 · Redund(τ ) − w3 · Cost(τ ).                                (18)
+
+This score is defined at the trajectory level and does not require step-wise annotations.
+
+C.5. Group-Relative Advantage.
+Rather than relying on absolute scores, which may be noisy or query-dependent, we compute group-relative advantages
+within each query group:
+                                                                 G
+                                                              1 X        ′
+                                          Ã(g) = J(τ (g) ) −      J(τ (g ) ).                                 (19)
+                                                              G ′
+                                                                     g =1
+
+This normalization yields zero-mean advantages within each group, improving robustness to judge bias and score scaling
+while encouraging relative improvement.
+
+                                                               17
+                   M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+C.6. Policy Update.
+The policy is updated to increase the likelihood of actions from trajectories with positive relative advantage:
+                                                    G                                 
+                                                                              (g)  (g)
+                                                    X             X
+                                      LGR (θ) = −         Ã(g)       log πθ at | st     .                        (20)
+                                                    g=1           t
+
+To prevent policy drift, we optionally add KL regularization with respect to a reference policy πref :
+                                                       X
+                                  L(θ) = LGR (θ) + β       KL(πθ (· | st ) ∥ πref (· | st )) .                    (21)
+                                                           t
+
+
+
+
+                                                               18
+                    M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+D. A Unifying Theory of Structured Memory Retrieval
+D.1. Preliminaries and Notation
+We briefly summarize the minimal notation required for theoretical analysis, relying on the definitions introduced in the
+Method section.
+Let M denote the set of memory entries maintained by the system. Each memory entry is associated with a unique primary
+abstraction and a (possibly empty) set of cue anchors. We denote the primary abstraction space by A and the cue anchor
+space by C.
+The memory structure is characterized by two assignment relations:
+
+                                               α : M → A,             Γ : M → 2C ,
+
+where α(m) assigns each memory entry m to exactly one primary abstraction, and Γ(m) returns the set of cue anchors
+associated with m. These relations induce abstraction–memory and cue–memory associations, which together define the
+indexing structure over M.
+Given a query q, the system scores abstractions and cue anchors using query-dependent scoring functions
+
+                                                    sA (q, a),        sC (q, c),
+
+and selects a bounded set of top-ranked abstractions and cues. Retrieval is then defined structurally as the union of memory
+entries supported by the selected abstractions and cue anchors. This abstraction-and-cue–based retrieval operator constitutes
+the core retrieval mechanism analyzed in this section.
+To support multi-hop and graph-style retrieval, memory entries may additionally be connected through traversal relations
+induced by shared cue anchors or other structural links. Let RL (q) denote the result of applying up to L traversal steps
+starting from the initial retrieval set. Setting L = 0 recovers single-step retrieval, while larger L enables iterative expansion
+analogous to graph neighborhood search.
+
+D.2. Traditional RAG and KG Retrieval as Special Cases
+We show that both traditional RAG and knowledge-graph (KG) retrieval can be expressed as special cases of Memora by
+choosing appropriate key spaces and relations.
+Theorem D.1 (Flat RAG as a Special Case of Memora). Let D be a corpus and let S(·) be a segmentation function that
+produces a set of chunks (segments). Consider a flat RAG retriever that, for any query q, returns
+
+                                          RRAG (q) = TopKs∈Sd∈D S(d) sim(q, s),                                             (22)
+
+where sim is a similarity function over chunk representations. Then there exists a Memora instantiation and a policy π such
+that the retrieval set returned by Algorithm 1 equals RRAG (q) for all queries q.
+
+Proof. Define the Memora memory corpus by taking each chunk s as one memory entry,
+                                             [
+                          M = {m(s) | s ∈        S(d)},     m(s) = (a(s), v(s), µ(s)).                                      (23)
+                                                    d∈D
+
+Let the primary abstraction equal the memory content,
+
+                                                       a(s) = v(s) = s,                                                     (24)
+
+and let the cue-anchor set be empty for every entry,
+
+                                                          C(m(s)) = ∅.                                                      (25)
+
+Consider the restricted action space A = {Q UERYA, S TOP} and define the retrieval primitive Q UERYA to return the top-k
+memory entries ranked by abstraction similarity,
+                                                               
+                        Q UERYA(q) = TopKm(s)∈M sim q, a(s) = TopKs∈Sd∈D S(d) sim(q, s).                             (26)
+
+                                                                 19
+                     M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+Let the policy π choose Q UERYA at t = 0 and then S TOP:
+
+                                 π(a0 = Q UERYA | s0 ) = 1,         π(a1 = S TOP | s1 ) = 1.                           (27)
+
+Algorithm 1 therefore terminates after one retrieval step and returns
+
+                                              W1 = Q UERYA(q) = RRAG (q),                                              (28)
+
+which proves the claim.
+
+This theorem shows that flat chunk-based RAG corresponds to a degenerate configuration of Memora in which each segment
+forms a single memory entry, abstractions coincide with raw memory content, cue anchors are unused, and retrieval reduces
+to a single abstraction query step.
+
+D.2.1. K NOWLEDGE G RAPH R ETRIEVAL
+We analyze the relationship between Memora and KG-based retrieval under two settings: (i) implicit KGs, where neighbor-
+hood structure is induced by semantic similarity, and (ii) explicit KGs, where symbolic relations are available. Both can be
+expressed within the Memora framework using cue anchors and traversal actions.
+
+Implicit KG retrieval. We first consider KG-style retrieval without explicit relational edges. Let M be the memory
+corpus and let
+                                                  π:M→V
+associate each memory entry with an entity v ∈ V . Given a query q, an implicit KG retriever selects a seed entity set
+S(q) ⊆ V and retrieves memories attached to entities reachable within L steps under a similarity-induced neighborhood
+relation.
+Formally, define an implicit entity adjacency
+
+                                                v ∼ v ′ ⇐⇒ sim(v, v ′ ) ≥ δ,
+
+and let Nbrimp
+           L (S(q)) denote the L-hop neighborhood under this relation. The retrieval result is
+
+                                      Rimp                         imp
+                                       KG (q) = {m ∈ M | π(m) ∈ NbrL (S(q))}.
+
+Theorem D.2 (Implicit KG Retrieval as a Special Case of Memora). For any implicit KG retriever Rimp
+                                                                                                KG (q), there exists a
+                                                               imp
+Memora instantiation and traversal depth L such that RL (q) = RKG (q) for all queries q.
+
+Proof. Let the cue anchor space be C := V , and associate each memory entry with exactly one cue anchor:
+
+                                              Γ(m) := {π(m)},           ∀m ∈ M.
+
+Let the primary abstraction space be trivial so that abstraction-based retrieval does not affect the result.
+Define cue scoring such that
+                                                 TopKc∈C sC (q, c) = S(q),
+yielding the initial retrieval
+                                            R0 (q) = {m ∈ M | π(m) ∈ S(q)}.
+Define cue–cue traversal in Memora using the same similarity relation:
+
+                                                c ⇝ c′ ⇐⇒ sim(c, c′ ) ≥ δ.
+
+Applying L traversal steps retrieves exactly those memory entries whose associated cues lie in Nbrimp
+                                                                                                  L (S(q)), hence
+
+                                                     RL (q) = Rimp
+                                                               KG (q).
+
+
+
+
+                                                              20
+                     M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+Explicit KG retrieval. We now consider traditional knowledge-graph retrieval with explicit symbolic relations. Let
+G = (V, E) be a knowledge graph, where V denotes entities and E denotes typed relations between entities. Each memory
+entry is attached to a graph element through a mapping
+                                                       π : M → V ∪ E.
+Given a query q, KG retrieval selects a seed set S(q) ⊆ V ∪ E and retrieves memory entries associated with elements in the
+L-hop graph neighborhood:
+                                       Rexp
+                                         KG (q) = {m ∈ M | π(m) ∈ NbrL (S(q))}.
+Theorem D.3 (Explicit KG Retrieval as an Extended Case of Memora). For any explicit KG retriever Rexp
+                                                                                                    KG (q), there exists
+an extended Memora instantiation such that the multi-hop retrieval result RL (q) produced by Memora equals Rexp
+                                                                                                             KG (q) for
+all queries q.
+
+Proof. Consider an extended Memora configuration in which cue anchors explicitly encode KG entities and relations by
+setting
+                                C := V ∪ E,        Γ(m) := {π(m)}, ∀m ∈ M.
+In addition, Memora is augmented with a cue–cue traversal relation that exactly mirrors the KG structure:
+                                                  c ⇝ c′ ⇐⇒ (c, c′ ) ∈ E.
+This extension requires Memora to adopt the same relational assumptions as the underlying KG, namely that edges are
+explicitly defined and traversable.
+Seed selection is performed through cue scoring such that
+                                                  TopKc∈C sC (q, c) = S(q),
+yielding the initial retrieval
+                                             R0 (q) = {m ∈ M | π(m) ∈ S(q)}.
+Since cue–cue traversal coincides exactly with KG edges, applying L traversal steps in Memora recovers the same L-hop
+neighborhood as NbrL (S(q)), and therefore
+                                                 RL (q) = Rexp
+                                                             KG (q).
+
+
+
+
+Interpretation. Explicit KG retrieval corresponds to an extended instantiation of Memora in which cue anchors are
+restricted to symbolic entities and relations, and traversal operations are constrained to follow predefined KG edges. This
+setting recovers classical KG behavior but requires Memora to inherit the same structural assumptions and construction
+costs as the KG. In contrast, the implicit KG case arises naturally within the base Memora design, where cue anchors and
+traversal relations can be learned or induced without explicit symbolic graphs.
+
+D.3. Memora as a Strict Generalization: Expressivity
+The special-case results above establish that flat RAG-style retrieval and KG-style seed-and-expand retrieval can be realized
+within Memora under suitable parameterizations. We next formalize a strictness result showing that Memora can represent
+retrieval behaviors that are not realizable by (i) flat top-k similarity retrieval over raw memory content and (ii) KG retrievers
+with a fixed single-attachment structure, under standard structural constraints.
+Definition D.4 (Retrieval classes). A retrieval function maps a query to a subset of memory entries,
+                                                        R : Q → 2M .
+We consider the following three retrieval classes.
+
+  1. Flat top-k similarity retrieval. There exists a single scoring function s(q, m) such that, for every query q,
+                                             R(q) = TopKk ({ s(q, m) : m ∈ M }) ,
+     and therefore |R(q)| = k.
+
+                                                               21
+                    M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+ 2. KG seed-and-expand retrieval with fixed attachment. There exists a fixed attachment map π : M → V on a fixed
+    graph G = (V, E) such that, for every query q,
+
+                                           R(q) = { m ∈ M : π(m) ∈ NbrL (S(q)) },
+
+     where S(q) ⊆ V is a query-dependent seed set and NbrL (·) denotes the L-hop neighborhood operator.
+ 3. Memora retrieval. The retrieval function is realizable by Memora using primary abstractions α(m) and cue anchors
+    Γ(m), including the gated form
+
+                              R∩ (q) := {m ∈ M : α(m) ∈ Aq } ∩ {m ∈ M : Γ(m) ∩ Cq ̸= ∅},                                 (29)
+
+     where
+                       Aq = TopKKA ({ sA (q, a) : a ∈ A }) ,          Cq = TopKKC ({ sC (q, c) : c ∈ C }) .
+Theorem D.5 (Strictness under mixed-key constraints). There exists a Memora retrieval function R⋆ such that, for any fixed
+k and any fixed L, R⋆ cannot be realized by flat top-k similarity retrieval and cannot be realized by KG seed-and-expand
+retrieval with a fixed single-attachment map.
+
+Proof. We prove the theorem by giving an explicit construction of a retrieval function realizable by Memora but not by
+fixed top-k or fixed-attachment KG retrieval. The construction targets a retrieval behavior defined by the joint enforcement
+of two constraints: a coarse structural restriction induced by a primary abstraction, and a fine-grained selector induced by a
+cue anchor. Memora can realize such mixed-key constraints through intersection across its indexing spaces, whereas flat
+top-k retrievers and KG retrievers with fixed single-attachment are inherently unable to represent this joint selection under
+the stated constraints.
+
+Step 1: Mixed-key target.      Partition the memory corpus using two primary abstractions A = {a(1) , a(2) } and define
+
+                       M(1) := {m ∈ M : α(m) = a(1) },             M(2) := {m ∈ M : α(m) = a(2) }.
+
+Fix a cue anchor c⋆ ∈ C appearing in both groups, and let
+
+                       N (1) := {m ∈ M(1) : c⋆ ∈ Γ(m)},            N (2) := {m ∈ M(2) : c⋆ ∈ Γ(m)}.
+
+Define the target retrieval function
+                                                       R⋆ (q) := N (1) ,
+and assume |N (1) | > k.
+
+Step 2: Realizability within Memora. We show that the target retrieval function R⋆ is realizable by Memora. By
+definition, Memora supports retrieval predicates formed by the intersection of abstraction-level selection and cue-level
+selection. Consider the abstraction set Aq = {a(1) } and the cue set Cq = {c⋆ }. Since Memora allows independent
+query-conditioned selection over the abstraction space A and the cue space C, there exist scoring functions sA and sC and
+finite cutoffs KA , KC such that these sets are selected.
+Substituting these sets into the gated retrieval operator in Eq. (29) yields
+
+                           R∩ (q) = {m ∈ M : α(m) = a(1) } ∩ {m ∈ M : c⋆ ∈ Γ(m)} = R⋆ (q).
+
+Thus R⋆ lies within the class of retrieval functions realizable by Memora.
+
+Step 3: Impossibility for flat top-k similarity retrieval. We show that R⋆ cannot be realized by any flat top-k similarity
+retriever. By definition, any such retriever is induced by a single real-valued scoring function s : Q × M → R and returns
+exactly k memory entries for every query:
+                                                   |R(q)| = k,       ∀q ∈ Q.                                          (30)
+
+In contrast, the target retrieval function R⋆ is defined as
+
+                                                        R⋆ (q) = N (1) ,
+
+                                                              22
+                      M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+where |N (1) | > k by construction. Therefore,
+                                                         |R⋆ (q)| > k.                                                   (31)
+                                                                                                                    ⋆
+Equations (30) and (31) immediately yield a contradiction: no flat top-k retriever can reproduce the output of R for this
+query.
+More fundamentally, flat similarity retrieval induces a total preorder over M via s(q, ·) and selects a prefix of fixed length
+k. Any retrieval predicate whose extension is not expressible as such a fixed prefix—independent of internal structure or
+semantic grouping—lies outside the expressive scope of flat top-k retrieval. Hence R⋆ is not realizable by flat similarity
+ranking.
+
+Step 4: Impossibility for KG retrieval with fixed single-attachment. We now show that R⋆ cannot be realized by
+KG-style seed-and-expand retrieval under a fixed single-attachment map π : M → V .
+For any such retriever, the retrieved set has the form
+
+                                         R(q) = {m ∈ M : π(m) ∈ NbrL (S(q))},                                            (32)
+
+where NbrL (·) denotes L-hop graph neighborhoods. Crucially, membership in R(q) depends only on the attachment π(m)
+and the graph structure, and is therefore invariant to any memory attributes not encoded in π(m).
+In the constructed instance, memories in N (1) and N (2) share the same cue anchor c⋆ but differ in their primary abstractions
+α(m). Since π is fixed and single-valued, it cannot simultaneously encode both abstraction-level information and cue-level
+information without collapsing distinct semantic dimensions. As a result, there exist memories
+
+                                                 m1 ∈ N (1) ,      m2 ∈ N (2)
+
+such that π(m1 ) and π(m2 ) lie in the same or overlapping graph neighborhoods whenever the cue signal c⋆ is reachable.
+Consequently, any seed set S(q) and radius L for which
+
+                                                         m1 ∈ R(q)
+
+necessarily implies
+                                                         m2 ∈ R(q),
+unless the graph or attachment map explicitly encodes the abstraction partition. This contradicts the definition of R⋆ , which
+selects N (1) while excluding N (2) .
+Therefore, under a fixed single-attachment structure, KG neighborhood expansion cannot enforce the joint predicate
+
+                                                 α(m) = a(1) ∧ c⋆ ∈ Γ(m),
+
+and R⋆ is not realizable by KG retrieval.
+
+Remark. The strictness result follows from mixed-key constraints: Memora can jointly enforce coarse structural scope
+through primary abstractions and fine-grained selection through cue anchors, a capability unavailable to flat similarity
+retrieval and KG retrieval with fixed single-attachment under standard assumptions.
+
+
+
+
+                                                              23
+                   M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+Theorem D.6 (Efficiency gain from abstraction-first + cue-anchor ANN retrieval). Assume that memories are partitioned
+into abstractions with expected bucket size B, so that |A| ≈ N/B, and that each abstraction has on average m cue
+anchors, yielding a total of m|A| ≈ mN/B cue anchors indexed for retrieval. Under the variant in which query-time
+retrieval is performed via (1) an ANN lookup over abstractions and (2) an ANN lookup over cue anchors, without explicit
+intra-abstraction enumeration, the expected query-time cost of Memora satisfies
+
+                                                              mN 2
+                                                                 
+                                           THarmo (q) = O log         .
+                                                               B2
+
+In contrast, a flat ANN-based retriever that indexes all N memories incurs TRAG (q) = O(log N ) under the same index-
+family assumptions. Consequently, abstraction-first retrieval yields a multiplicative efficiency improvement of
+                                                                              
+                                                             log N
+                                           Ω                                       .
+                                                   2 log N + log m − 2 log B
+
+
+Proof. We upper bound the query-time cost of Memora by decomposing retrieval into two indexed lookups, and compare
+against a flat ANN baseline.
+
+Stage 1: Abstraction selection. Memora queries an ANN index over abstractions A. Since abstractions partition N
+memories into buckets of expected size B, we have |A| ≈ N/B. Under standard ANN index assumptions, querying an
+index of size |A| incurs expected cost
+                                                           
+                                                              N
+                                           O(log |A|) = O log        .
+                                                              B
+
+Stage 2: Cue-anchor retrieval. Memora then performs an ANN query over the cue-anchor index. If each abstraction has
+on average m cue anchors, then the cue-anchor index size is
+
+                                                                    mN
+                                                     |U| ≈ m|A| ≈      .
+                                                                     B
+Thus the cue-anchor query incurs expected cost
+                                                                         
+                                                                  mN
+                                              O(log |U |) = O log               .
+                                                                   B
+
+By assumption of this variant, retrieved cue anchors provide direct references to associated memories, so there is no
+additional intra-abstraction enumeration term.
+
+Total cost.   Summing the two stages yields
+                                                                  
+                                                      N              mN
+                                   THarmo (q) = O log       + O log
+                                                      B               B
+                                                            
+                                                      N mN
+                                              = O log   ·
+                                                      B     B
+                                                          2
+                                                          
+                                                      mN
+                                              = O log          .
+                                                       B2
+
+Flat ANN baseline. A flat ANN-based retriever performs a single ANN query over N indexed memories, incurring
+expected query time
+                                                    TRAG (q) = O(log N )
+
+under the same index-family assumptions.
+
+                                                              24
+                    M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+Improvement (normalized form). Define the multiplicative efficiency improvement as TRAG (q)/THarmo (q). Substituting
+the bounds gives                                                       !
+                                        TRAG (q)              log N
+                                                   =Ω               2   .
+                                       THarmo (q)          log mNB2
+
+Expanding the denominator,
+                                             mN 2
+                                                    
+                                         log             = 2 log N + log m − 2 log B,
+                                              B2
+so                                                                             
+                                        TRAG (q)                log N
+                                                  =Ω                              .
+                                       THarmo (q)     2 log N + log m − 2 log B
+which proves the stated improvement bound.
+
+Analysis.    Conditions under which the efficiency improvement exceeds unity.
+Let
+                                                               TRAG (q)      log N
+                                        Imp(N, B, m) =                   ≈         2 .
+                                                              THarmo (q)   log mN
+                                                                                B2
+
+A sufficient condition for Imp(N, B, m) > 1 is
+
+                                          mN 2                        mN 2
+                                              
+                            log N > log                  ⇐⇒     N>              ⇐⇒      B 2 > mN.
+                                           B2                          B2
+
+Equivalently, in normalized form,
+                                                                                                                 
+                                                     log m    log B        log B   1                      log m
+              Imp(N, B, m) > 1       whenever     2+       −2       < 1 ⇐⇒       >                     1+             .
+                                                     log N    log N        log N   2                      log N
+
+In particular, if m is constant (or grows subpolynomially) and B = Ω(N 1/2+ϵ ) for any ϵ > 0, then Imp(N, B, m) > 1 for
+sufficiently large N .
+
+Remark. In typical memory systems, B 2 > mN is a strong requirement; when it does not hold, both approaches remain
+logarithmic and the advantage of abstraction-first retrieval should be interpreted primarily as a constant-factor gain due to
+operating over smaller indices (and, in practice, fewer distance computations and better cache locality).
+———————————————-
+
+Implication. Primary abstraction provides a principled search space factorization: the retrieval process first narrows the
+search space using stable, coarse-grained concepts, and then applies cue anchors to recover fine-grained precision within the
+selected regions. Flat RAG is recovered as a degenerate case when B = 1 (each memory forms its own abstraction) or when
+abstraction selection is disabled. KG retrieval is recovered when cue anchors correspond to symbolic graph elements and
+candidate expansion follows graph adjacency, as established in Theorems D.1 and D.3.
+
+D.4. Summary
+The Memora framework defines a general class of structured retrieval mechanisms based on (i) canonical organization via
+primary abstraction and (ii) flexible access via cue anchors, optionally enhanced with multi-hop traversal. We formally
+showed that: (i) traditional RAG is a degenerate special case (identity cues, no abstraction), (ii) KG retrieval is also a special
+case (symbolic cues + graph expansion), and (iii) Memora can represent richer mixed-key retrieval behaviors while enabling
+principled efficiency improvements through abstraction-first scoping.
+
+
+
+
+                                                               25
+                    M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+E. Case Study
+In this section, we present case studies demonstrating how M EMORA achieves superior performance compared to Mem0
+and RAG. To isolate the benefits of our memory structure, we utilize M EMORA with a standard semantic retriever, and
+showcase the factual memories, thereby highlighting how the harmonic representation itself enhances memory management
+and retrieval.
+
+E.1. Case Study 1
+In this example (Table 8), M EMORA demonstrates superior memory retrieval precision. This success is attributed to
+M EMORA’s index-value representation, which decouples the navigation layer from the raw data. While traditional RAG
+often suffers from semantic drift and Mem0 can lose granularity through over-summarization, M EMORA’s indices serve as a
+structured guide to the memory space. This allows the system to pinpoint specific entities while preserving the original
+richness and contextual meaning of the memory items.
+
+                                     Table 8. Case 1 and answers generated from three systems
+
+            Question                     What did Mel and her kids paint in their latest project in July 2023?
+            Reference Answer             A sunset with a palm tree
+            RAG Answer                   ✗ A rainbow flag mural
+            Mem0 Answer                  ✗ A painting similar to their last one
+            M EMORA Answer               ✓ Sunset scene with a palm tree and flowers
+
+
+
+
+                           Table 9. Comparative analysis of top memories retrieved for Case 1. (part 1)
+
+                Method         Retrieved Memories / Contextual Evidence
+
+                 M EMORA       Recent painting by Melanie and kids
+                               Value: Melanie’s latest painting with the kids is a sunset scene featuring a palm tree
+                               and vibrant flowers against a sunset sky.
+                               Cues: ‘Melanie sunset painting’, ‘Palm tree art’, ‘Kids vibrant flowers’
+
+                               Melanie’s work in progress and summer plans
+                               Value: Melanie is currently working on a project and is doing her best to complete it,
+                               her kids are excited about summer break, and they are thinking about going camping
+                               next month.
+                               Cues: ‘Melanie current project’, ‘Kids summer break’, ‘Family camping plans’
+
+                               Melanie’s kids enjoying pottery making
+                               Value: Melanie’s kids loved making pottery and were very excited to get their hands
+                               dirty and create something with clay.
+                               Cues: ‘Kids pottery making’, ‘Clay art activity’
+
+                               Melanie’s recent family painting activity
+                               Value: Melanie and her kids have just finished another painting similar to their last
+                               one.
+                               Cues: ‘Melanie family painting’, ‘Kids collaborative artwork’
+
+                               Melanie’s creative projects with kids
+                               Value: Melanie engages in painting with kids, focusing especially on nature-inspired
+                               themes.
+                               Cues: ‘Melanie nature painting’, ‘Kids art engagement’
+
+
+
+                                                                 26
+                    M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+                         Table 10. Comparative analysis of top memories retrieved for Case 1. (continued)
+
+                  Method     Retrieved Memories / Context
+
+                  Mem0       Melanie and children recently did a painting project last weekend.
+                             Melanie and her kids recently finished another painting similar to their last one.
+                             Melanie and children enjoy painting together, especially nature-inspired art.
+                             Melanie has been painting to keep busy.
+                             Melanie took her kids to a pottery workshop last Friday.
+                             Melanie helped with a painting that highlights the beauty of nature.
+                             Melanie is feeling inspired by autumn and planning a few paintings.
+
+                  RAG        Context Fragment: 1:33 pm on 25 August, 2023 — Caroline: Finding a community
+                             where I’m accepted... Stuff like this mural are really special to me! . . . 1:33 pm on
+                             25 August, 2023 — Melanie: Caroline, glad you found a supportive community!
+                             . . . 1:33 pm on 25 August, 2023 — Caroline: The rainbow flag mural is important
+                             to me as it reflects the courage and strength of the trans community. The eagle
+                             symbolizes freedom and pride... . . . 1:33 pm on 25 August, 2023 — Melanie: I’m in
+                             awe of your courage as a trans person. Have you made any more art lately?
+
+
+
+E.2. Case Study 2
+In this example (Table 11), M EMORA demonstrates a robust capacity for information aggregation, correctly synthesizing
+disparate facts, the initial ownership of a dog and cat, followed by the later addition of a second cat named Bailey, into
+a single, comprehensive response. Unlike baseline methods that often retrieve fragmented memory fragments or lose
+connections, M EMORA effectively links related entities across non-contiguous parts of the dialogue context.
+
+                                Table 11. Case Study 2 and answers generated from three systems
+
+            Question                   What pets does Melanie have?
+            Reference Answer            Two cats and a dog
+            RAG Answer                  ✗ A cat named Oliver and another cat named Bailey
+            Mem0 Answer                 ✗ Luna and Oliver
+            M EMORA Answer              ✓ Dog and two cats (Luna, Oliver, Bailey)
+
+
+E.3. Case Study 3
+In this example (Table 14), a scrutiny of the retrieved evidence reveals that while baseline methods identify the correct
+topical domain, they fail to capture the discriminative details required for an accurate response. The RAG retrieval is too
+broad and lacks relevance; it becomes anchored to a dense, irrelevant dialogue fragment about a “colorful bowl” from a
+separate project, illustrating how raw context windows are easily distracted by high-signal but incorrect semantic clusters.
+Meanwhile, Mem0 produces a set of isolated, low-entropy facts, such as “the kids enjoyed making things with clay”, which,
+while factually true, are too fragmented and generic to support the specific query. By contrast, M EMORA successfully
+preserves the fine-grained entity binding between the “kids’ pottery” and the “dog-face cup.” Its index-value architecture
+prevents the information decay seen in Mem0 and the noise contamination seen in RAG, ensuring that specific attributes
+remain intact within the retrieved memory.
+
+
+
+
+                                                                27
+      M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+              Table 12. Comparison of top retrieved memories for Case Study 2. (part 1)
+
+    Method         Retrieved Memories / Contextual Evidence
+
+    M EMORA        Melanie’s pets and inquiries about pets
+                   Value: Melanie has a dog and a cat as pets. Melanie has two pets named Luna and
+                   Oliver. Melanie asked Caroline if she has any pets during their conversation.
+                   Cues: ‘Melanie pets’, ‘Melanie pet names’, ‘Melanie conversation about pets’
+
+                   Melanie’s agreement on pets
+                   Value: Melanie agrees that pets bring joy and comfort.
+                   Cues: ‘Melanie pets joy’, ‘Melanie pets comfort’
+
+                   Melanie’s pets behavior
+                   Value: Melanie’s pets, Luna and Oliver, are described as sweet and playful and they
+                   really liven up the house.
+                   Cues: ‘Melanie pets behavior’, ‘Luna playful’, ‘Oliver playful’
+
+                   Pets’ effect on Melanie’s family
+                   Value: Melanie states that their dog and cat brighten up their day and always make
+                   them smile.
+                   Cues: ‘Melanie pets family effect’, ‘Melanie pets brighten day’
+
+                   Melanie’s cat Bailey addition
+                   Value: Melanie mentions that they have another cat named Bailey.
+                   Cues: ‘Melanie cat Bailey’
+
+
+             Table 13. Comparison of top retrieved memories for Case Study 2. (continued)
+
+     Method     Retrieved Memories / Context
+
+     Mem0       Melanie has kids.
+                Melanie loves painting animals, especially horses.
+                User knows Melanie.
+                Melanie has been painting to keep busy.
+                Caroline finds joy in having pets.
+                Melanie paints horses.
+                Name is Melanie.
+
+     RAG        Transcript Fragment: 3:31 pm on 23 August, 2023 — Caroline: ...And yup, I
+                do— Oscar, my guinea pig. He’s been great. How are your pets? . . . 3:31 pm on
+                23 August, 2023 — Melanie: Yeah, it’s normal to be both excited and nervous with
+                a big decision. And thanks for asking, they’re good— we got another cat named
+                Bailey too. Here’s a pic of Oliver. Can you show me one of Oscar?...
+
+
+                    Table 14. Case Study 3 and answers generated from three systems.
+
+Question                    What kind of pot did Mel and her kids make with clay?
+Reference Answer            A cup with a dog face on it
+RAG Answer                  ✗ A colorful bowl with various colors and patterns
+Mem0 Answer                 ✗ Black and white designed bowl
+M EMORA Answer              ✓ A cup with a dog face
+
+
+
+                                                      28
+ M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+
+
+
+          Table 15. Comparison of top retrieved memories for Case Study 3. (part 1)
+
+Method       Retrieved Memories / Contextual Evidence
+
+M EMORA      Melanie’s kids enjoying pottery making
+             Value: Melanie’s kids loved making pottery and were very excited to get their hands
+             dirty and create something with clay.
+             Cues: ‘Melanie kids pottery’, ‘Kids clay crafting’
+
+             Melanie’s feelings about clay
+             Value: Melanie finds clay to be incredible and it brings her a lot of joy.
+             Cues: ‘Melanie clay appreciation’, ‘Melanie joy from clay’
+
+             Melanie’s recent activity with kids
+             Value: Melanie took her kids to a park yesterday, where they had fun exploring and
+             playing.
+             Cues: ‘Melanie park visit’, ‘Kids outdoor play’
+
+             Melanie’s kids pottery finished pieces
+             Value: The kids created pottery finished pieces, including a cup with a dog face on it.
+             Cues: ‘Kids pottery artwork’, ‘Pottery cup dog face’
+
+             Melanie’s pottery as a creative and therapeutic outlet
+             Value: Melanie signed up for a pottery class, which she considers therapeutic and
+             allows her to express herself and be creative. Melanie loves that pottery is both
+             a creative outlet and a form of therapy. Melanie uses pottery as a means for self-
+             expression and to find peace.
+             Cues: ‘Melanie pottery therapy’, ‘Pottery creative expression’
+
+
+
+
+         Table 16. Comparison of top retrieved memories for Case Study 3. (continued)
+
+Method      Retrieved Memories / Context
+
+Mem0        The kids enjoyed making things with clay.
+            Melanie took her kids to a pottery workshop last Friday.
+            Melanie recently finished a pottery project.
+            Pottery is a huge part of Melanie’s life and helps her express her emotions.
+            Melanie is proud of her pottery project and had a great experience making it.
+            Enjoyed making pots with kids.
+            The kids loved making something with clay.
+
+RAG         Transcript Fragment: 1:50 pm on 17 August, 2023 — Melanie: FYI, I finished
+            another pottery project— want to see a pic? . . . 1:50 pm on 17 August, 2023 —
+            Caroline: That bowl is awesome, Mel! What gave you the idea for all the colors
+            and patterns? . . . 1:50 pm on 17 August, 2023 — Melanie: Thanks, Caroline! I’m
+            obsessed with those, so I made something to catch the eye...
+
+
+
+
+                                                29
+                    M EMORA: A Harmonic Memory Representation Balancing Abstraction and Specificity
+
+                                Table 17. Sensitivity to the memory update threshold on LoCoMo.
+
+              Threshold        Multi    Temp      Open     Single    Overall     Avg. updates       Update ratio
+              No update        0.727    0.801     0.542    0.844      0.795            0               0.0%
+              0.8 (default)    0.780    0.813     0.510    0.836      0.801            88             21.0%
+              0.6              0.755    0.801     0.552    0.842      0.799           299             68.2%
+
+                              Table 18. Update behavior as memories accumulate (threshold = 0.8).
+
+                           Memories accumulated        Avg. new      Avg. update     Update ratio
+                           0–76                           77.7           16.0            17.1%
+                           77–155                         79.5           22.7            22.2%
+                           156–234                        74.9           21.4            22.2%
+                           235–318                        82.1           23.4            22.2%
+                           319+                           66.4           13.1            16.5%
+
+
+F. Memory Update Analysis
+Threshold sensitivity. M EMORA’s update mechanism merges a newly extracted memory into an existing entry when their
+primary abstractions exceed a semantic-similarity threshold. We use a default threshold of 0.80, chosen to merge only
+entries that are clearly redundant while preventing over-aggressive consolidation.
+To isolate the effect of the update threshold from other design choices, we ablate three settings using semantic retrieval with
+primary abstractions only (no cue anchors or episodic memory); absolute scores are therefore lower than the best results
+reported in Table 1.
+Table 17 shows that the default 0.8 achieves the highest overall LLM-as-a-Judge score. Lowering the threshold to 0.6
+triggers 3.4× more updates with no quality gain, indicating over-consolidation: semantically distinct entries get merged into
+the same memory. Disabling updates entirely reduces overhead but hurts quality, particularly on multi-hop questions (0.727
+vs. 0.780), where consolidation helps resolve redundant or fragmented entries that would otherwise pull the retriever in
+conflicting directions.
+Memory growth and update. A natural concern with similarity-based consolidation is whether the update rate grows
+pathologically as the memory store fills up. On average, each LoCoMo conversation produces 432 candidate memories,
+of which 344 are inserted as new entries and 88 trigger an update (an overall update ratio of 21.0%). To examine scaling
+behavior we bucket each memory-construction event by the number of memories already present at the time of construction;
+Table 18 reports the per-bucket update ratio. The ratio remains in a narrow 16.5–22.2% band across all buckets rather
+than increasing exponentially, indicating that consolidation cost scales linearly with memory size and does not become a
+bottleneck as the memory store grows.
+
+
+
+
+                                                              30
+
