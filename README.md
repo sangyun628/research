@@ -112,7 +112,7 @@ ETL·분산 데이터 통합·플랫폼.
 
 | 프로젝트 | 문서 | 설명 |
 |-----------|------|------|
-| OSI | [적용 참고서](data-platforms/osi/OSI_적용_참고서.md) | OSI 플랫폼 적용 가이드 |
+| Apache Ossie (구 OSI) | [코드 레벨 분석](data-platforms/ossie/apache-ossie-code-analysis.md) · [적용 참고서](data-platforms/ossie/OSI_적용_참고서.md) | 벤더 중립 시맨틱 메타데이터 교환 스펙 (ASF 인큐베이팅) — 스펙·온톨로지층·컨버터 11종 분석 |
 | SeaTunnel | [심층 분석](data-platforms/seatunnel/SeaTunnel_심층분석.md) | Apache SeaTunnel 멀티엔진 분산 데이터 통합 |
 
 ---
