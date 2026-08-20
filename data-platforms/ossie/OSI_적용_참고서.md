@@ -1,10 +1,15 @@
 # OSI (Open Semantic Interchange) 실무 적용 참고서
 
+> ⚠️ **이 문서는 ASF 이관 이전(v0.1.1 · 2026-04-23) 기준이다.**
+> 프로젝트는 2026-07-10 Apache 인큐베이터에 입성하며 **Apache Ossie**로 개명했고,
+> 저장소도 `apache/ossie`로 이전됐다. 현행 스펙(0.2.0.dev0) · 온톨로지 레이어 ·
+> 컨버터 11종 코드 분석은 → **[Apache Ossie 코드 레벨 분석](apache-ossie-code-analysis.md)**
+>
 > 분석 시점: 2026-04-23
 > 대상 spec: **v0.1.1** (저장소 기준 latest, 2025-12-11) — v1.0은 2026-01-27 발표
-> 저장소: https://github.com/open-semantic-interchange/OSI
-> 공식 사이트: https://open-semantic-interchange.org/
-> 라이선스: 코드 Apache 2.0 / 명세·문서 CC BY
+> 저장소: https://github.com/open-semantic-interchange/OSI (현재: https://github.com/apache/ossie)
+> 공식 사이트: https://open-semantic-interchange.org/ (현재: https://ossie.apache.org/)
+> 라이선스: 코드 Apache 2.0 / 명세·문서 CC BY (ASF 이관 후 전부 Apache-2.0)
 
 ---
 
