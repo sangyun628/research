@@ -108,10 +108,11 @@ RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어.
 
 ## Data Platforms
 
-ETL·분산 데이터 통합·플랫폼.
+ETL·분산 데이터 통합·메타데이터 카탈로그·플랫폼.
 
 | 프로젝트 | 문서 | 설명 |
 |-----------|------|------|
+| Gravitino | [심층 분석](data-platforms/gravitino/gravitino-analysis.md) · [vs DataHub vs OpenMetadata](data-platforms/gravitino/gravitino-vs-datahub-openmetadata.md) | Apache Gravitino 연합 메타데이터 레이크 — 카탈로그의 카탈로그, IRC 서버·Fileset/GVFS·모델 카탈로그·Ranger 푸시다운·MCP |
 | OSI | [적용 참고서](data-platforms/osi/OSI_적용_참고서.md) | OSI 플랫폼 적용 가이드 |
 | SeaTunnel | [심층 분석](data-platforms/seatunnel/SeaTunnel_심층분석.md) | Apache SeaTunnel 멀티엔진 분산 데이터 통합 |
 
