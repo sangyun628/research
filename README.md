@@ -112,8 +112,9 @@ ETL·분산 데이터 통합·메타데이터 카탈로그·플랫폼.
 
 | 프로젝트 | 문서 | 설명 |
 |-----------|------|------|
+| 전사 데이터 스택 | [지형도](data-platforms/enterprise-data-stack/landscape.md) | "접근 포인트 통합"을 5개 레이어로 분해 — 카탈로그·정책엔진·연합쿼리·게이트웨이·시맨틱·디스커버리 OSS/상용 조사 + 대기업 레퍼런스 아키텍처·도입 순서 |
 | Gravitino | [심층 분석](data-platforms/gravitino/gravitino-analysis.md) · [vs DataHub vs OpenMetadata](data-platforms/gravitino/gravitino-vs-datahub-openmetadata.md) | Apache Gravitino 연합 메타데이터 레이크 — 카탈로그의 카탈로그, IRC 서버·Fileset/GVFS·모델 카탈로그·Ranger 푸시다운·MCP |
-| OSI | [적용 참고서](data-platforms/osi/OSI_적용_참고서.md) | OSI 플랫폼 적용 가이드 |
+| OSI | [적용 참고서](data-platforms/osi/OSI_적용_참고서.md) | Open Semantic Interchange — 벤더 중립 시맨틱 레이어 교환 표준 |
 | SeaTunnel | [심층 분석](data-platforms/seatunnel/SeaTunnel_심층분석.md) | Apache SeaTunnel 멀티엔진 분산 데이터 통합 |
 
 ---
