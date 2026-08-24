@@ -1,7 +1,7 @@
 # 전사 데이터 통합 스택 지형도 — "접근 포인트를 하나로" 를 실제로 푸는 도구들
 
 > 조사 시점: 2026-08
-> 관련 문서: [Gravitino 심층 분석](../gravitino/gravitino-analysis.md) · [Gravitino vs DataHub vs OpenMetadata](../gravitino/gravitino-vs-datahub-openmetadata.md) · [OSI 적용 참고서](../osi/OSI_적용_참고서.md) · [SeaTunnel 심층 분석](../seatunnel/SeaTunnel_심층분석.md)
+> 관련 문서: [Gravitino 심층 분석](../gravitino/gravitino-analysis.md) · [Gravitino vs DataHub vs OpenMetadata](../gravitino/gravitino-vs-datahub-openmetadata.md) · [Apache Ossie 적용 참고서](../ossie/OSI_적용_참고서.md) · [SeaTunnel 심층 분석](../seatunnel/SeaTunnel_심층분석.md)
 
 ---
 
@@ -41,7 +41,7 @@ graph TB
     subgraph L4["④ 시맨틱 레이어 — 의미 통일"]
         CUBE["Cube"]
         MF["dbt Semantic Layer · MetricFlow"]
-        OSI["OSI 표준 — 벤더 중립 교환 포맷"]
+        OSI["Apache Ossie — 벤더 중립 교환 표준"]
     end
 
     subgraph L3["③ 접속 게이트웨이 — 진입점 하나로"]
@@ -274,11 +274,11 @@ graph TB
 | **Cube** | 오픈소스 시맨틱 레이어 중 가장 널리 채택. API-first, 헤드리스 | **사전집계 캐시 내장** → 고동시성 BI·임베디드 분석에 강함 |
 | **dbt Semantic Layer (MetricFlow)** | dbt 모델 옆 YAML에 메트릭 정의, SQL 자동 생성 | 엔진에 실행을 위임 — **자체 캐시 없음** |
 | **Malloy** | 실험적 분석 언어 | 생태계 작음 |
-| **OSI (Open Semantic Interchange)** | ⭐ **도구가 아니라 표준.** 벤더 중립 YAML 명세 | 2026-01 v1.0. Snowflake·dbt·Databricks·Cube·AtScale 등 50개사 참여. → [상세 문서](../osi/OSI_적용_참고서.md) |
+| **Apache Ossie (구 OSI)** | ⭐ **도구가 아니라 스펙 + 참조 컨버터 모음.** 벤더 중립 YAML 명세 | ASF 인큐베이팅. Snowflake·dbt·Databricks·Cube·AtScale 등 50개사 참여. **적합성 테스트가 아직 없어 "호환" 주장을 검증할 수단이 없다** → [코드 레벨 분석](../ossie/apache-ossie-code-analysis.md) · [적용 참고서](../ossie/OSI_적용_참고서.md) |
 | AtScale (상용) | 엔터프라이즈 시맨틱 레이어 | OLAP 큐브 계보 |
 | Looker LookML (상용) | BI 결합형 | Google |
 
-> **왜 중요해졌나**: LLM 에이전트가 데이터를 다루기 시작하면서, "매출"이 뭔지 기계가 알아야 하는 요구가 생겼다. OSI가 2026년에 급부상한 배경이다. Gravitino가 물리적 위치를 해석한다면, 시맨틱 레이어는 **비즈니스 의미를 해석**한다. 겹치지 않는다.
+> **왜 중요해졌나**: LLM 에이전트가 데이터를 다루기 시작하면서, "매출"이 뭔지 기계가 알아야 하는 요구가 생겼다. OSI(현 Apache Ossie)가 2026년에 급부상한 배경이다. Gravitino가 물리적 위치를 해석한다면, 시맨틱 레이어는 **비즈니스 의미를 해석**한다. 겹치지 않는다.
 
 ---
 
@@ -336,7 +336,7 @@ graph TB
     end
 
     subgraph SEM["의미 평면"]
-        CUBEX["Cube 또는 dbt SL<br/>(OSI 포맷으로 교환)"]
+        CUBEX["Cube 또는 dbt SL<br/>(Apache Ossie 포맷으로 교환)"]
     end
 
     subgraph GATE["접속 게이트웨이"]
@@ -443,7 +443,7 @@ graph TB
 
 **게이트웨이 (③)** — Spark 멀티테넌시 **Kyuubi** / Trino 클러스터 다수 **Trino Gateway**
 
-**시맨틱 (④)** — 캐시 필요 **Cube** / dbt 중심 **dbt SL** / 교환 표준 **OSI**
+**시맨틱 (④)** — 캐시 필요 **Cube** / dbt 중심 **dbt SL** / 교환 표준 **Apache Ossie**
 
 **디스커버리 (⑤)** — 통합 제품 경험 **OpenMetadata** / 커스텀 모델링 **DataHub** / 리니지만 **Marquez**
 
@@ -466,7 +466,7 @@ graph TB
 
 **④ AI가 이 스택을 다시 흔들고 있다.** 세 갈래로 동시에 진행 중이다.
 - 카탈로그에 **MCP 서버**가 붙는다 (Gravitino, OpenMetadata 모두)
-- 시맨틱 레이어가 **LLM grounding 채널**로 재해석된다 (OSI의 AI Context)
+- 시맨틱 레이어가 **LLM grounding 채널**로 재해석된다 (Apache Ossie의 AI Context)
 - Kyuubi에 **LLM 에이전트 엔진**(`kyuubi-data-agent-engine`)이 SQL 엔진과 나란히 생겼다
 
 **⑤ 마지막으로 — 도구를 늘리기 전에 물어야 할 질문.**
@@ -484,7 +484,7 @@ graph TB
 - [Trino Gateway 공식 문서](https://trinodb.github.io/trino-gateway/) · [라우팅 로직](https://trinodb.github.io/trino-gateway/routing-logic/)
 - [Apache Kyuubi](https://kyuubi.apache.org/)
 - [Cube — Best Semantic Layer for AI and BI in 2026](https://cube.dev/articles/best-semantic-layer-for-ai-and-bi-2026)
-- [Open Semantic Interchange](https://open-semantic-interchange.org/)
+- [Apache Ossie (incubating)](https://ossie.apache.org/) — 구 Open Semantic Interchange
 - [Onehouse — Comprehensive Data Catalog Comparison](https://www.onehouse.ai/blog/comprehensive-data-catalog-comparison)
 - [Debezium vs Airbyte — 기술 비교](https://www.automq.com/blog/debezium-vs-airbyte-open-source-data-integration)
 - [Denodo Data Virtualization — 2026 엔터프라이즈 가이드](https://prism-analytics.org/denodo-data-virtualization-the-complete-enterprise-guide-for-2026/)
