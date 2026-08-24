@@ -139,6 +139,8 @@ K8s 운영·관측·진단.
 | 분류 | 문서 | 설명 |
 |---|------|------|
 | Algorithms | [STATIC 분석](algorithms/STATIC_Analysis.md) | HW 가속 제약 디코딩 알고리즘 |
+| Algorithms | [AWS Event Ruler 코드 분석](algorithms/event-ruler/event-ruler-code-analysis.md) · [실시간 룰 라우팅 기술 지도](algorithms/event-ruler/realtime-rule-filtering-routing-landscape.md) | JSON 룰 자동자와 관련 필터링·라우팅 알고리즘 |
+| Algorithms | [Quamina 코드 분석](algorithms/quamina/quamina-code-analysis.md) | Go 기반 JSON multi-pattern matcher — 공유 field·value 자동자와 NFA·DFA 선택 |
 | Libraries · oban-py | [분석](libraries/oban-py/oban-py-analysis.md) | PostgreSQL 기반 백그라운드 작업 프레임워크 |
 | Finance · Fincept Terminal | [분석](finance/fincept-terminal-analysis.md) | 오픈소스 금융 터미널 |
 
