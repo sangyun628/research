@@ -41,6 +41,7 @@
 | Supermemory | [분석](ai-agents/supermemory/README.md) | 범용 AI 메모리 레이어 |
 | TradingAgents | [분석](ai-agents/tradingagents/README.md) · [에이전트·도구·스킬](ai-agents/tradingagents/agent-tools-skills.md) | 멀티 에이전트 트레이딩 |
 | Agent Skills | [아키텍처](ai-agents/skills/agentskills-architecture.md) | Anthropic 에이전트 스킬 스펙 |
+| Agent Behavior | [코드 레벨 분석](ai-agents/agentbehavior/README.md) | Braintrust·Basis의 `BEHAVIOR.md` 표준 — 트래젝토리 프로세스 감독·행동 판정 (Agent Skills의 자매 표준, 런타임 주입 금지) |
 
 ---
 
