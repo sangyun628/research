@@ -53,6 +53,7 @@
 | Claude Code | [아키텍처 분석](ai-coding-tools/claude-code/ARCHITECTURE_ANALYSIS.md) · [핵심 발견](ai-coding-tools/claude-code/KEY_FINDINGS.md) · [메모리 시스템](ai-coding-tools/claude-code/memory-system-analysis.md) · [프롬프트 카탈로그](ai-coding-tools/claude-code/prompts-catalog.md) · [README](ai-coding-tools/claude-code/README.md) | Anthropic 코딩 CLI |
 | Kelos | [분석](ai-coding-tools/kelos/kelos-analysis.md) | Kubernetes 기반 AI 코딩 에이전트 오케스트레이션 |
 | OpenCode | [README](ai-coding-tools/opencode/README.md) · [스터디](ai-coding-tools/opencode/STUDY.md) · [분석](ai-coding-tools/opencode/analysis.md) · [도구 시스템](ai-coding-tools/opencode/tools.md) · [SQLite 세션 저장소](ai-coding-tools/opencode/sqlite-session-storage.md) · [메모리 아키텍처](ai-coding-tools/opencode/opencode-memory-architecture.md) · [에이전트 엔진 로드맵](ai-coding-tools/opencode/AGENT_ENGINE_ROADMAP.md) · [Python 구현 spec1](ai-coding-tools/opencode/python-impl-spec1.md) · [spec2](ai-coding-tools/opencode/python-impl-spec2.md) · [통합](ai-coding-tools/opencode/python-impl-total.md) | OSS 코딩 에이전트 |
+| Prime Agent | [코드 레벨 분석](ai-coding-tools/prime-agent/README.md) · [자가발전 심층 분석](ai-coding-tools/prime-agent/self-improvement.md) | Prime Intellect의 self-improving RLM 하네스 — 단일 IPython 툴·재귀 서브에이전트·Continual Harness |
 | Warp | [분석](ai-coding-tools/warp/ANALYSIS.md) | Warp 터미널 LLM·Agent 아키텍처 |
 
 ---
@@ -156,7 +157,7 @@ K8s 운영·관측·진단.
 
 ```
 ai-agents/             # 에이전트 프레임워크·메모리·구체 구현
-ai-coding-tools/       # 코딩 에이전트(Claude Code, OpenCode, Warp)
+ai-coding-tools/       # 코딩 에이전트(Claude Code, OpenCode, Prime Agent, Warp)
 ai-infrastructure/     # RAG·임베딩·MCP·텍스트→SQL
 databases/             # 그래프·벡터·멀티모델 DB
 data-platforms/        # ETL·분산 데이터 통합
