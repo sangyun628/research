@@ -39,6 +39,7 @@
 | OpenViking | [분석](ai-agents/openviking/README.md) | ByteDance 에이전트 컨텍스트 DB |
 | pi autoresearch | (디렉터리) | pi 자율 리서치 |
 | Supermemory | [분석](ai-agents/supermemory/README.md) | 범용 AI 메모리 레이어 |
+| Tool Search 비교 | [기술 지형도](ai-agents/tool-search-comparison/tool-search-landscape.md) · [프레임워크 코드 분석](ai-agents/tool-search-comparison/framework-code-analysis.md) | 대규모 도구 카탈로그의 지연 로딩·검색·schema constraint 구현 비교 |
 | TradingAgents | [분석](ai-agents/tradingagents/README.md) · [에이전트·도구·스킬](ai-agents/tradingagents/agent-tools-skills.md) | 멀티 에이전트 트레이딩 |
 | Agent Skills | [아키텍처](ai-agents/skills/agentskills-architecture.md) | Anthropic 에이전트 스킬 스펙 |
 
@@ -67,6 +68,7 @@ RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어.
 | Airweave | [분석](ai-infrastructure/airweave/airweave-analysis.md) | AI 컨텍스트 검색 인프라 |
 | Chunking | [OSS 가이드](ai-infrastructure/chunking/chunking-oss-guide.md) | 청킹 특화 OSS (Chonkie 등) · Bedrock KB 전략 매핑 |
 | DB-GPT | [분석](ai-infrastructure/db-gpt/analysis.md) | DB-GPT (텍스트→SQL) |
+| Decision Models 비교 | [README](ai-infrastructure/decision-model-comparison/README.md) · [Kev vs Laya](ai-infrastructure/decision-model-comparison/kev-vs-laya.md) · [Laya 공식 사이트](ai-infrastructure/decision-model-comparison/laya-official-site-analysis.md) · [Jevlike vs OpenJev](ai-infrastructure/decision-model-comparison/jevlike-vs-openjev.md) · [Jevlike vs mmBERT](ai-infrastructure/decision-model-comparison/jevlike-vs-mmbert.md) · [금융 라우팅](ai-infrastructure/decision-model-comparison/financial-playbook-routing.md) · [속도·인프라 비용](ai-infrastructure/decision-model-comparison/performance-and-cost.md) | Qwen LoRA·mmBERT 의사결정 모델·LLM 토큰 점수 비교, CPU 플레이북 라우팅 설계 |
 | Docling | [LightRAG 연동 비교](ai-infrastructure/docling/lightrag-docling-comparison.md) · [유즈케이스](ai-infrastructure/docling/use-cases.md) · [LlamaIndex 비교](ai-infrastructure/docling/docling-vs-llamaindex.md) | 문서 파싱·변환 엔진과 RAG 연동 |
 | Flint (MS) | [코드 레벨 분석](ai-infrastructure/flint-chart/flint-chart-analysis.md) | AI 에이전트용 시각화 중간 언어(IL)·시맨틱 차트 컴파일러 + MCP 서버 (VL·ECharts·Chart.js) |
 | Graph RAG · 온톨로지 | [기술 레퍼런스](ai-infrastructure/graph-rag-ontology/README.md) · [Agentic Ontology](ai-infrastructure/graph-rag-ontology/agentic-ontology.md) | Graph 기반 RAG·온톨로지 심화 |
@@ -74,6 +76,7 @@ RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어.
 | GraphRAG 비교 | [README](ai-infrastructure/graphrag-comparison/README.md) · [LightRAG vs GraphRAG-SDK](ai-infrastructure/graphrag-comparison/lightrag-vs-graphrag-sdk.md) · [금융 서비스 적합도](ai-infrastructure/graphrag-comparison/finance-service-fit.md) · [하이브리드 OSS landscape](ai-infrastructure/graphrag-comparison/hybrid-graph-vector-rag-oss-landscape.md) | 청킹·임베딩·그래프+벡터 하이브리드 OSS 비교 |
 | GraphRAG-SDK | [README](ai-infrastructure/falkordb-graphrag-sdk/README.md) · [아키텍처·코어](ai-infrastructure/falkordb-graphrag-sdk/01-architecture-core.md) · [로딩·청킹](ai-infrastructure/falkordb-graphrag-sdk/02-loading-chunking.md) · [추출·그래프 구축](ai-infrastructure/falkordb-graphrag-sdk/03-extraction-graph-construction.md) · [검색](ai-infrastructure/falkordb-graphrag-sdk/04-retrieval-pipeline.md) · [온톨로지](ai-infrastructure/falkordb-graphrag-sdk/05-ontology-discovery-evolution.md) · [프롬프트](ai-infrastructure/falkordb-graphrag-sdk/06-prompts-reference.md) | FalkorDB GraphRAG-SDK v1.3 코드 레벨 분석 (수집→검색 파이프라인·청킹·전체 프롬프트) |
 | Knowledge Catalog · OKF | [Open Knowledge Format 분석](ai-infrastructure/knowledge-catalog/okf-analysis.md) | Google Cloud Knowledge Catalog와 OKF v0.1 포맷·reference agent·metadata-as-code 도구 분석 |
+| Jevlike | [README](ai-infrastructure/jevlike/README.md) · [로컬 데모](ai-infrastructure/jevlike/local-demo.md) · [소스코드 분석](ai-infrastructure/jevlike/jevlike-analysis.md) · [자체 학습·파인튜닝](ai-infrastructure/jevlike/training-and-finetuning.md) | 가변 후보 선택 모델 — Tiny 자체 학습·동결 HF head·PPO 예제, 브라우저 데모 및 확장 가능성 |
 | LlamaIndex | [유즈케이스](ai-infrastructure/llamaindex/use-cases.md) | RAG·agent 애플리케이션 프레임워크 |
 | RAG · GraphRAG 확장 | [2026 landscape](ai-infrastructure/rag-graphrag-expansion/2026-landscape.md) | 최신 RAG·GraphRAG 기술과 OSS 확장 조사 |
 | RAPTOR | [단점과 적용 리스크](ai-infrastructure/raptor/limitations.md) | Recursive abstractive tree retrieval |
@@ -139,6 +142,8 @@ K8s 운영·관측·진단.
 | 분류 | 문서 | 설명 |
 |---|------|------|
 | Algorithms | [STATIC 분석](algorithms/STATIC_Analysis.md) | HW 가속 제약 디코딩 알고리즘 |
+| Algorithms | [AWS Event Ruler 코드 분석](algorithms/event-ruler/event-ruler-code-analysis.md) · [실시간 룰 라우팅 기술 지도](algorithms/event-ruler/realtime-rule-filtering-routing-landscape.md) | JSON 룰 자동자와 관련 필터링·라우팅 알고리즘 |
+| Algorithms | [Quamina 코드 분석](algorithms/quamina/quamina-code-analysis.md) | Go 기반 JSON multi-pattern matcher — 공유 field·value 자동자와 NFA·DFA 선택 |
 | Libraries · oban-py | [분석](libraries/oban-py/oban-py-analysis.md) | PostgreSQL 기반 백그라운드 작업 프레임워크 |
 | Finance · Fincept Terminal | [분석](finance/fincept-terminal-analysis.md) | 오픈소스 금융 터미널 |
 
