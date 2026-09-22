@@ -1,9 +1,9 @@
 # Quamina 코드 레벨 분석
 
-> 분석 기준일: 2026-08-07  
-> 분석 저장소: [timbray/quamina](https://github.com/timbray/quamina)  
-> 분석 커밋: [`81f5b730131552ccc677fb41c3abc29af249ad83`](https://github.com/timbray/quamina/tree/81f5b730131552ccc677fb41c3abc29af249ad83), 2026-06-26  
-> 최신 정식 릴리스: [`v2.0.2`](https://github.com/timbray/quamina/releases/tag/v2.0.2), 2026-03-16  
+> 분석 기준일: 2026-08-07<br>
+> 분석 저장소: [timbray/quamina](https://github.com/timbray/quamina)<br>
+> 분석 커밋: [`81f5b730131552ccc677fb41c3abc29af249ad83`](https://github.com/timbray/quamina/tree/81f5b730131552ccc677fb41c3abc29af249ad83), 2026-06-26<br>
+> 최신 정식 릴리스: [`v2.0.2`](https://github.com/timbray/quamina/releases/tag/v2.0.2), 2026-03-16<br>
 > 언어·라이선스: Go 1.22 모듈, Apache-2.0
 
 ## 0. 결론부터: Event Ruler와 같은 계열인가

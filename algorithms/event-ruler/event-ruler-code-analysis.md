@@ -1,6 +1,6 @@
 # AWS Event Ruler 코드 레벨 분석
 
-> 분석 기준: `main`의 [`337e8d9`](https://github.com/aws/event-ruler/tree/337e8d99026d3f6687f783535f157be8bf4ebbb7) (2026-07-21), 라이브러리 버전 `2.0.1`  
+> 분석 기준: `main`의 [`337e8d9`](https://github.com/aws/event-ruler/tree/337e8d99026d3f6687f783535f157be8bf4ebbb7) (2026-07-21), 라이브러리 버전 `2.0.1`<br>
 > 확인일: 2026-08-06 · 라이선스: Apache-2.0 · 언어: Java 8+
 
 관련 문서: [실시간 이벤트 룰 필터링·라우팅 기술 지도](realtime-rule-filtering-routing-landscape.md)
