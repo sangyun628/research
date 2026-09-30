@@ -2,12 +2,12 @@
 
 > 조사 기준일: **2026-09-30** · Jev 출시 2026-09-15
 
-**System One 모델**은 텍스트를 생성하지 않고 "상태(state) + 타입이 정해진 질문 → 확률이 붙은 타입 안전한 답"만 돌려주는 의사결정 전용 모델이다. TypeSafe AI가 `Jev`로 이 범주를 열었고, 2주 만에 오픈 구현체 15종 이상과 커뮤니티 벤치마크가 생겼다. 이 문서는 **한 페이지에서 전체를 비교**하고, 세부는 하위 문서로 연결한다.
+**System One 모델**은 텍스트를 생성하지 않고 "상태(state) + 타입이 정해진 질문 → 확률이 붙은 타입 안전한 답"만 돌려주는 의사결정 전용 모델이다. TypeSafe AI가 `Jev`로 이 범주를 열었고, 2주 만에 오픈 구현체 15종 이상과 커뮤니티 벤치마크가 생겼다. 이 문서는 **한 페이지에서 전체를 비교**하고(§4 마스터 비교표·기능 매트릭스), 세부는 하위 문서로 연결한다.
 
 | 문서 | 내용 |
 |---|---|
 | [typesafe-jev.md](typesafe-jev.md) | Jev 본체 심층 분석 — RLCD, 프리미티브, API, 성능, 한계 |
-| [open-implementations.md](open-implementations.md) | 역추론된 아키텍처 계보, 구현체별 심층 비교, 직접 학습 레시피 |
+| [open-implementations.md](open-implementations.md) | 역추론된 아키텍처 계보, 구현체별 심층 비교(8종), 직접 학습 레시피 |
 | [use-cases.md](use-cases.md) | 실제 사용 사례 카탈로그, 독립 검증 결과, 금융 도메인 적용 설계 |
 
 ---
@@ -60,6 +60,8 @@ flowchart TB
   KEV --> JEEVES["Jeeves — PostHog, 9B + thinking + CISPO + diffusion drafter"]
   LL --> AUTOJEV["AutoJev-27B — Qwen3.8-27B full-weight SFT"]
   AUTOJEV --> JEFF["Jeff — firelex, 0.8B·2B 축소판 + 로컬 합성데이터"]
+  LL --> IMAJEV["Imajev — 2B·4B·9B, 멀티모달 + 학습된 abstain"]
+  AH --> DECIDER["decider — Qwen3.5 파인튜닝 패밀리"]
   ENC --> LAYA["Laya — ModernBERT 421M, RLCD 구현"]
   ENC --> VERDICT["openJev-verdict-2.0 — ModernBERT-base 150M"]
   FZ --> SEMIF["SemIf — frozen Qwen3.5-4B, 학습 없음"]
@@ -75,22 +77,81 @@ flowchart TB
 
 ## 4. 전체 비교표
 
-스타 수는 2026-09-30 기준이며 매우 빠르게 변동한다(참고용).
+리더보드 순위·수치는 2026-09-30 기준이며 매우 빠르게 변동한다.
 
-| 프로젝트 | 베이스 · 크기 | 학습 방식 | 확률 판독 | 지연 | 하드웨어 | 라이선스 |
-|---|---|---|---|---|---|---|
-| **Jev** (TypeSafe) | 비공개, "neither small nor an LLM" | RLCD (비공개) | 비공개 (prefill-only 추정) | 70~500ms | API 전용 | closed |
-| **kev** (Jared Palmer) | Qwen3.5 0.8B·4B·9B | LoRA r16 + head, cross-entropy | **pointer head** (`</opt>` ↔ `<decide>`) | 수십 ms(H100)~2s(Mac) | CUDA · MPS | Apache-2.0 |
-| **Jeff** (firelex) | Qwen3.5 0.8B·2B, Gemma4-E2B | **full-weight SFT** 1 epoch + temperature | **옵션 letter logit** (LM 헤드 유지) | **22ms**(RTX PRO 6000) · 28ms(M4 MLX) | CUDA · MLX · CPU | MIT · 가중치 Apache-2.0 |
-| **Jeeves** (PostHog) | Qwen3.5-9B | **SFT + CISPO(RL)**, thinking | pointer head **+ reasoning chain** | 0.3s(no-think) ~ 3.3s(중앙값) | CUDA Hopper(FP8) | MIT |
-| **Laya** | ModernBERT-large 421M · mmBERT 322M | **RLCD (GRPO + proper scoring rule)** | set attention head | **33ms**(T4) | CUDA · CPU · MLX 포트 | Apache-2.0 |
-| **AutoJev-27B** | Qwen3.8-27B | full-weight SFT, 73k 예시 | 옵션 letter logit | 미공개 | GPU ~49GiB | MIT · Apache-2.0 |
-| **SemIf** (구 OpenJev) | Qwen3.5-4B **frozen** | **학습 없음** | native option logit | ~50ms/건 | CUDA · MLX · MPS · llama.cpp · WebGPU · EXL3 | MIT |
-| **NanoJev** | Qwen3-0.6B | decision heads, 18,760문항 | set attention + sigmoid | — | CUDA | — |
-| **JevK5** | 4B · 9B | teacher 2종 증류 | 옵션 logit | **~13ms**(H100) | CUDA | Apache-2.0 |
-| **openJev-verdict-2.0** | ModernBERT-base 150M | 8.8h on GTX 1660 Ti | dual calibration head | 20~25ms | CUDA · WebGPU | Apache-2.0 |
+### 4-1. 마스터 비교표
 
-`/v1/systemone` 호환(TypeSafe SDK를 그대로 붙일 수 있음): kev, Jeff, Jeeves, AutoJev, JevK5, opendecision. Jeeves는 `jeeves_sdk`가 `typesafe-sdk`의 drop-in 대체다.
+"대표 성능"은 프로젝트마다 측정 기준이 다르므로 **셀 안에 기준을 함께 표기**했다. 서로 직접 비교할 수 있는 것은 같은 벤치마크 이름이 적힌 셀끼리다.
+
+| 프로젝트 | 베이스 · 크기 | 학습 방식 | 확률 판독 | 대표 성능 (기준) | 캘리브레이션 | 지연 · 하드웨어 | 라이선스 · API |
+|---|---|---|---|---|---|---|---|
+| **[Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)** (TypeSafe) | 비공개 — "neither small nor an LLM" | **RLCD** (비공개) | 비공개 (prefill-only 추정) | JevBench **63.29 (4위/91)** · MMLU-Pro 84.6% | in-domain ECE 0.024~0.032 / **OOD 0.107** | 70~500ms · API 전용 | closed · **원본 계약** |
+| **[Imajev](https://github.com/mohit67890/imajev)** | Qwen3.5 2B·4B·9B | LoRA r64 + 256-code readout, 멀티모달 72k | option code + **학습된 unknown** | JevBench **67.37 (1위/91)** · Image JevBench 76.39 (1위/49) · ImajevBench 83.9% | DecisionBench ECE 0.069 (직전 0.024) | p50 238~350ms, fast path 11ms · H100 | Apache-2.0 · 호환 |
+| **[Jeeves](https://github.com/PostHog/jeeves)** (PostHog) | Qwen3.5-9B | **SFT + CISPO(RL)**, thinking | pointer head **+ reasoning chain** | test overall **0.889** (Jev 0.857) · JevBench hard **0.865** (Jev 0.730) | ECE **0.037** (Jev 0.049) | 0.3s(no-think) ~ 3.3s · CUDA Hopper(FP8) | MIT · 호환(`jeeves_sdk`) |
+| **[AutoJev-27B](https://github.com/denis-pplx/autojev)** | Qwen3.8-27B | full-weight SFT, 73k 예시 | option-letter logit | **84.60%** vs Jev 82.79% (자체 패널) | ECE **0.0428** · Brier 0.2203 | 미공개 · GPU ~49GiB | MIT · Apache-2.0 · 호환 |
+| **[decider](https://github.com/Mapika/decider)** | Qwen3.5 계열 (2B·4B) | 파인튜닝 (상세 미확인) | 미확인 | JevBench **64.13 (3위/91)** — 속도·비용 축에서 Jev 상회 | 미공개 | 미공개 · CUDA | Apache-2.0 · 미확인 |
+| **[kev](https://github.com/jaredpalmer/kev)** | Qwen3.5 0.8B·4B·9B | LoRA r16 + head, cross-entropy | **pointer head** (`</opt>` ↔ `<decide>`) | 미학습 소스 0.812 / 0.837 **(9B)**, Jev 0.857 | Brier 0.291 / 0.243 (Jev 0.211) | 수십 ms(H100) ~ 2s(Mac) · CUDA·MPS | Apache-2.0 · 호환 |
+| **[Jeff](https://github.com/firelex/jeff)** | Qwen3.5 0.8B·2B, Gemma4-E2B | **full-weight SFT** 1 epoch + temperature | **option-letter logit** (LM 헤드 유지) | 공개벤치 5종 종합 **83.1 (2B)**, Jev 83.0 · FinPhraseBank **96.3** (Jev 77.0) | 미공개 | **22ms**(RTX PRO 6000) · 28ms(M4 MLX) · 463ms(CPU) | MIT · 가중치 Apache-2.0 · 호환 |
+| **[JevK5](https://github.com/allebee/jevk5)** | 4B · 9B | teacher 2종 증류 | option logit | JevBench **62.04** (당시 2위/76, 오픈 1위) · 9B hard 0.775 | 9B hard ECE 0.071 | **~13ms** · H100 | Apache-2.0 · 호환 |
+| **[Laya](https://github.com/NandhaKishorM/laya)** | ModernBERT-large 421M · mmBERT 322M | **RLCD** (GRPO + proper scoring rule) | set attention head | typed-decisions **0.766** (Jev 0.727) · **Banking77 0.425** (Jev 0.870, 고카디널리티 붕괴) | 미공개 | **33ms** · T4 · CPU 193~464ms | Apache-2.0 · 자체 |
+| **[openJev-verdict-2.0](https://github.com/Heman10x-NGU/openJev-verdict-2.0)** | ModernBERT-base 150M | 8.8h (GTX 1660 Ti 1장) | dual calibration head | typed-decisions **77.10%** (Laya 76.60, Jev 72.70) | ECE **0.0144** · Brier 0.0636 | 20~25ms · CUDA·WebGPU | Apache-2.0 · 자체 |
+| **[SemIf](https://github.com/TheoLeeCJ/SemIf)** (구 OpenJev) | Qwen3.5-4B **frozen** | **학습 없음** | native option logit | TypeSafe subset **0.845** (Jev 0.883) · 27B EXL3 0.958 | 보정 후 0.038 (T=1.23) · WANLI 0.069 (T=2.50) | ~50ms/건 · CUDA·MLX·MPS·llama.cpp·WebGPU·EXL3 | MIT · 자체 |
+| **[NanoJev](https://github.com/TianyuCodings/NanoJev)** | Qwen3-0.6B | decision heads, 18,760문항 | set attention + sigmoid | ViZDoom Basic **128/128** (Jev 56/128) · 미로 225 시도 (Jev 2,738) | dev 캘리브레이션 | 미공개 · CUDA | 미표기 · 자체 |
+
+### 4-2. 기능 매트릭스
+
+성능 숫자로는 드러나지 않는 축이다. 실제 도입 제약은 대개 여기서 걸린다.
+
+| | 가중치 공개 | `/v1/systemone` | 다국어 | 이미지 | **abstain** | thinking | CPU·브라우저 | 학습 코드 |
+|---|---|---|---|---|---|---|---|---|
+| Jev | ✗ | ✓ (원본) | △ | 미확인 | ✗ | ✗ | ✗ | ✗ |
+| Imajev | ✓ | ✓ | 미확인 | **✓** | **✓** | ✗ | △ | ✓ |
+| Jeeves | ✓ | ✓ | ✗ | ✗ | ✗ | **✓** | ✗ | ✓ |
+| AutoJev-27B | ✓ | ✓ | 미확인 | ✓ | ✗ | ✗ | ✗ | ✓ |
+| decider | ✓ | 미확인 | 미확인 | ✗ | 미확인 | ✗ | 미확인 | 미확인 |
+| kev | ✓ | ✓ | △ | ✗ | ✗ | ✗ | △ (Mac) | ✓ |
+| Jeff | ✓ | ✓ | **✗ (영어 전용)** | ✗ | ✗ | ✗ | ✓ | ✓ |
+| JevK5 | ✓ | ✓ | 미확인 | ✗ | ✗ | ✗ | ✗ | △ |
+| Laya | ✓ | ✗ | **✓ (100+ 언어)** | ✗ | ✗ | ✗ | ✓ | ✓ |
+| openJev-verdict | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ (WebGPU) | ✓ |
+| SemIf | — (업스트림) | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ (llama.cpp·WebGPU) | — (학습 없음) |
+| NanoJev | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+
+세 가지가 눈에 띈다.
+
+- **abstain("모르겠다")을 학습한 것은 Imajev뿐이다.** 모든 답에 `unknown` 확률을 두고, 그것이 최댓값이면 `abstained: true`를 반환한다. ImajevBench의 "정직한 답이 can't tell"인 21문항 중 18개에서 기권한다. 다른 구현체는 확률분포가 평평해지는 것으로 간접 표현할 뿐이다 — 캘리브레이션이 OOD에서 무너진다는 점을 감안하면 **명시적 기권 출력은 실무적으로 큰 차이**다.
+- **다국어는 Laya가 사실상 유일**하다(mmBERT, 100+ 언어). Jeff는 영어 전용을 명시하고, Jev는 노르웨이어 사례가 하나 있을 뿐 공개 검증 자료가 없다.
+- **thinking은 Jeeves만** 한다. 이 범주의 전제를 깬 유일한 구현체다.
+
+### 4-3. 그 외 구현체 · 주변 생태계
+
+| 프로젝트 | 성격 |
+|---|---|
+| [Cygnet](https://github.com/blockbrain-ai/cygnet-recipe) | frozen Gemma-4-12B-it + one-token option-letter readout을 stock vLLM으로. 학습 없이 JevBench 6위(61.76) |
+| Plumb-4B | JevK5 v0.2 + LoRA 추가 학습. JevBench 2위(65.84) — 오픈 구현체 위에 다시 파인튜닝을 얹은 사례 |
+| [opendecision](https://github.com/konsumer/opendecision) | LM 헤드 제거 + cross-attention head + LoRA, teacher 대비 KL로 temperature 피팅. `output_tokens = 0` by construction |
+| minojev · CUA-S1-FORMS · jevlike-esp32 | 547k~706k 파라미터 초소형. 폼 필드 전용, **ESP32 펌웨어 배포**까지 |
+| [laya-mlx](https://github.com/mizorewww/laya-mlx) | Laya 체크포인트의 Apple Silicon MLX 포트, 중앙값 13.4ms |
+| system-one-on-snapdragon | Laya·decider·Imajev를 Snapdragon X Elite NPU/GPU/CPU에서 실행 |
+| ComfyUI-TypedDecision | ComfyUI 노드로 noul·choice·score 제공 |
+| [system-one-adapter](https://github.com/typesafe-ai/system-one-adapter-python) | **공식 MIT 어댑터** — 같은 인터페이스를 OpenAI·Anthropic 모델로 구현. 벤치마크 baseline용 |
+
+### 4-4. 커뮤니티 리더보드
+
+[JevBench](https://github.com/fstandhartinger/jevbench) v1.4.2.2 — 95개 시스템(91개 랭킹):
+
+| 순위 | 시스템 | 점수 | 비고 |
+|---|---|---|---|
+| 1 | **Imajev-4B** | **67.37** | Intelligence 52.2 · Calibration 80.4 · Speed 90.6 · Cost 59.7. 1,000건당 $0.022 (Jev $0.040) |
+| 2 | Plumb-4B | 65.84 | JevK5 v0.2 + LoRA |
+| 3 | decider-4b v2 | 64.13 | 속도·비용 우위 |
+| **4** | **Jev 1.13.0 (TypeSafe)** | **63.29** | **raw Intelligence에서는 decider-4b v2를 앞선다 (53.1 vs 49.4)** |
+| 5 | JevK5 v0.2.0 | 62.04 | |
+| 6 | Cygnet | 61.76 | 학습 없는 frozen Gemma |
+
+Image JevBench v0.1.3(49개 시스템)과 DecisionBench(56개 모델)도 별도로 운영된다.
+
+**해석 주의**: JevBench 점수는 Intelligence · Calibration · Speed · Cost 4축의 **등가중 조화평균**이다. 값싸고 빠른 로컬 4B가 구조적으로 유리하다. 또 308개 fresh sealed 문항에서는 **JevK5 33.1%, Jev 36.7%** 로 모두 낮아 평가자 스스로 "비정상적으로 어려운 세트"라고 밝혔고, 공개 절반은 학습·선택에 쓸 수 있어 오버피팅 여지도 인정했다. 따라서 "오픈이 Jev를 추월했다"가 아니라 **"등가중 종합 지표에서 로컬 4B가 경쟁력을 갖췄다"**가 정확한 독해다.
 
 ## 5. 성능 — 어디서 이기고 어디서 지는가
 
@@ -129,21 +190,6 @@ Jeeves는 "생성을 포기한다"는 전제를 깨고 **reasoning chain을 생�
 
 `nothink_threshold`는 "no-think 확신도가 임계값 이상이면 생각을 건너뛴다"는 것으로, **우리가 코드에서 구현하던 confidence 게이트가 모델 안으로 들어온 형태**다.
 
-### 5-3. JevBench — 커뮤니티 리더보드에서 Jev는 4위
-
-[JevBench](https://github.com/fstandhartinger/jevbench) v1.4.2.2 기준 95개 시스템(91개 랭킹):
-
-| 순위 | 시스템 | 점수 |
-|---|---|---|
-| 1 | Imajev-4B | 67.37 |
-| 2 | Plumb-4B (JevK5 v0.2 + LoRA) | 65.84 |
-| 3 | decider-4b v2 | 64.13 |
-| **4** | **Jev 1.13.0 (TypeSafe)** | **63.29** |
-| 5 | JevK5 v0.2.0 | 62.04 |
-| 6 | Cygnet (frozen Gemma-4-12B-it) | 61.76 |
-
-**해석 주의**: JevBench 점수는 Intelligence · Calibration · Speed · Cost 4축의 **등가중 조화평균**이다. 값싸고 빠른 로컬 4B가 구조적으로 유리하다. 실제로 Jev는 raw Intelligence에서 decider-4b v2를 앞선다(53.1 vs 49.4). 또 308개 fresh sealed 문항에서는 **JevK5 33.1%, Jev 36.7%** 로 모두 낮아 평가자 스스로 "비정상적으로 어려운 세트"라고 밝혔다. 즉 "오픈이 Jev를 추월했다"가 아니라 **"등가중 종합 지표에서는 로컬 4B가 경쟁력을 갖췄다"**가 정확한 독해다.
-
 ## 6. 캘리브레이션 — 이 범주의 진짜 쟁점
 
 "확률이 정직하다"가 System One의 핵심 주장이므로, 독립 검증이 가장 중요하다.
@@ -173,7 +219,9 @@ flowchart TD
   Q4 -->|"예"| JEV["Jev"]
   Q4 -->|"아니오"| Q3
   Q3 -->|"예"| JEEVES["Jeeves — 9B CUDA, 0.3~3.3초"]
-  Q3 -->|"아니오"| Q5{"한국어 또는 다국어인가?"}
+  Q3 -->|"아니오"| Q7{"이미지 입력 또는 명시적 기권이 필요한가?"}
+  Q7 -->|"예"| IMAJEV["Imajev — 멀티모달 + 학습된 unknown"]
+  Q7 -->|"아니오"| Q5{"한국어 또는 다국어인가?"}
   Q5 -->|"예"| LAYA["Laya-multilingual — mmBERT"]
   Q5 -->|"아니오"| Q6{"내 데이터로 학습할 것인가?"}
   Q6 -->|"예"| JEFFKEV["Jeff 또는 kev — 파인튜닝 경로 검증됨"]
@@ -186,6 +234,8 @@ flowchart TD
 | 어려운 판단, 지연 감수 가능 | **Jeeves** | JevBench hard 0.865 |
 | 하나로 두 경우 모두 | **Jeeves + `nothink_threshold`** | 쉬운 건 0.3s, 어려운 건 생각 |
 | 금융 텍스트 분류·감성 | **Jeff** | Financial PhraseBank 96.3 |
+| 이미지 + 기록을 함께 판단 | **Imajev** · AutoJev-27B | Image JevBench 1위 · base64 이미지 지원 |
+| **"모르겠다"를 명시적으로 받아야 함** | **Imajev** | 유일하게 `unknown`을 학습 — 21개 기권 문항 중 18개 적중 |
 | 한국어·다국어 | **Laya-multilingual** | Jeff는 영어 전용 |
 | 최고 정확도를 로컬에서 | **AutoJev-27B** | 84.6%, Jev(82.8%) 초과 |
 | 학습 없이 오늘 확인 | **SemIf** | 브라우저 WebGPU 데모 |
@@ -210,8 +260,9 @@ flowchart TD
 **엔지니어 관점 인사이트**
 1. **이 범주의 해자는 아키텍처가 아니다.** 4B 프로즌 모델이 학습 없이 0.845(Jev 0.883)에 도달하고, 150M 인코더가 typed-decisions에서 앞선다. 남는 차별점은 **데이터 · 캘리브레이션 품질 · 단가 · 제로샷 범용성**이다.
 2. **System One / System Two의 경계가 인터페이스와 내부 계산으로 분리되기 시작했다.** Jeeves가 증명했듯 계약(타입 출력 + 확률)은 유지하면서 내부에서 생성을 해도 된다. 클라이언트 코드를 바꾸지 않고 22ms ↔ 3.3s 모델을 교체할 수 있다.
-3. **도입 시 첫 작업은 모델 선택이 아니라 골든셋 구축이다.** confidence–정확도 곡선 없이 임계값을 정하는 것은 이 범주에서 가장 흔하고 비싼 실수다.
-4. **2단 구성이 현실적인 기본형이다.** 1차는 초저지연 소형 모델(Jeff·Laya), confidence 미달 시 2차로 thinking 모델(Jeeves) 또는 LLM·사람. 세 계층 모두 같은 API 계약을 쓴다.
+3. **명시적 기권(`unknown`)이 캘리브레이션보다 실용적인 안전장치일 수 있다.** OOD에서 확률이 과신되는 것이 구조적 문제라면, "확률을 믿고 임계값을 거는 것"보다 "모델이 모른다고 말하게 학습시키는 것"이 더 견고하다. 현재 이걸 하는 것은 Imajev뿐이며, 이 범주의 다음 경쟁축이 될 가능성이 높다.
+4. **도입 시 첫 작업은 모델 선택이 아니라 골든셋 구축이다.** confidence–정확도 곡선 없이 임계값을 정하는 것은 이 범주에서 가장 흔하고 비싼 실수다.
+5. **2단 구성이 현실적인 기본형이다.** 1차는 초저지연 소형 모델(Jeff·Laya), confidence 미달 시 2차로 thinking 모델(Jeeves) 또는 LLM·사람. 세 계층 모두 같은 API 계약을 쓴다.
 
 ---
 
@@ -225,7 +276,7 @@ flowchart TD
 - [Jev's Architecture Unmasked](https://archerhume.com/posts/jevs-architecture-unmasked)
 
 **오픈 구현체**
-- [kev](https://github.com/jaredpalmer/kev) · [Jeff](https://github.com/firelex/jeff) · [Jeeves](https://github.com/PostHog/jeeves) · [Laya](https://github.com/NandhaKishorM/laya) · [SemIf](https://github.com/TheoLeeCJ/SemIf) · [NanoJev](https://github.com/TianyuCodings/NanoJev) · [AutoJev-27B](https://github.com/denis-pplx/autojev) · [JevK5](https://github.com/allebee/jevk5) · [openJev-verdict-2.0](https://github.com/Heman10x-NGU/openJev-verdict-2.0) · [opendecision](https://github.com/konsumer/opendecision)
+- [Imajev](https://github.com/mohit67890/imajev) · [kev](https://github.com/jaredpalmer/kev) · [Jeff](https://github.com/firelex/jeff) · [Jeeves](https://github.com/PostHog/jeeves) · [Laya](https://github.com/NandhaKishorM/laya) · [SemIf](https://github.com/TheoLeeCJ/SemIf) · [NanoJev](https://github.com/TianyuCodings/NanoJev) · [AutoJev-27B](https://github.com/denis-pplx/autojev) · [decider](https://github.com/Mapika/decider) · [JevK5](https://github.com/allebee/jevk5) · [openJev-verdict-2.0](https://github.com/Heman10x-NGU/openJev-verdict-2.0) · [opendecision](https://github.com/konsumer/opendecision)
 
 **벤치마크 · 검증**
 - [JevBench v1](https://github.com/fstandhartinger/jevbench) · [jev-ood-calibration](https://github.com/scienthoon/jev-ood-calibration) · [LangChain — Jev as agent evaluator](https://www.langchain.com/blog/jev-agent-evals-langsmith) · [A first look at Jev](https://lindfors.no/blog/a-first-look-at-typesafes-jev/) · [Jev is the fish at the poker table](https://backnotprop.com/blog/jev-poker/)

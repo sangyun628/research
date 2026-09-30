@@ -159,7 +159,37 @@ AutoJev-27B 레시피의 **소형화 포크**다. 핵심 설계(1 forward pass, 
 - 캘리브레이션 PR이 커뮤니티에서 들어왔다: authored raw ECE 0.068 → 0.038(T=1.23), **WANLI 0.208 → 0.069(T=2.50)**.
 - 재현성이 강점: 모델 revision 고정, `prompt_sha256`, row-level 출력, 원시 타이밍, 알려진 실패까지 커밋. BF16 빠른 경로에서 777건 중 5~6건 argmax가 바뀐다는 것도 밝힌다.
 
-### 3-6. 그 외
+### 3-6. Imajev — 멀티모달과 "모르겠다"
+
+[github.com/mohit67890/imajev](https://github.com/mohit67890/imajev) · Apache-2.0 · 가중치 2B·4B·9B 공개
+
+JevBench v1.4.2.2에서 **91개 시스템 중 1위**(67.37), Image JevBench v0.1.3에서 **49개 중 1위**(76.39)다. 두 가지가 차별점이다.
+
+- **이미지 입력**: 사진 + 기록 + 텍스트를 함께 state로 받는다. "사진 대 기록" 및 "사진 두 장" 판단 72k건으로 학습. 텍스트 전용 Jev 요청은 그대로 동작한다.
+- **학습된 기권(`unknown`)**: 모든 답에 `unknown` 확률이 따라오고(근거 부재·모순·범위 이탈), 그것이 최댓값이면 `abstained: true`를 반환한다. ImajevBench에서 "정직한 답이 can't tell"인 21문항 중 **18개에서 기권**하고, 답할 수 있는 258문항 중에서는 9개만 잘못 기권한다.
+
+```python
+a = r.json()["answers"]["queue"]
+# {"choice": "billing", "probabilities": {...}, "confidence": ...,
+#  "unknown_probability": ..., "abstained": false}
+if a["abstained"] or p < 0.85:
+    route_to_human()
+```
+
+- 학습: rank-64 LoRA + 256-code readout. phase-3 어댑터(이전 릴리스가 틀린 결정만 모아 재학습)로 ImajevBench 82.4 → 83.9%, JevBench hard 70.3 → 72.1% 개선. **단 같은 변경으로 DecisionBench ECE가 0.024 → 0.069로 악화**됐다고 스스로 기록한다 — 정확도와 캘리브레이션이 상충할 수 있다는 좋은 사례다.
+- 지연: JevBench hard 문항 p50 238ms(2B) / 350ms(4B) / 316ms(9B), H100 1장. `--fast --merge-lora` 경로에서 텍스트 결정 **11ms**, 이미지 결정 91ms. 9B는 약 19GB 상주.
+- 비용(리더보드 추정): 1,000 결정당 **$0.022** vs Jev $0.040.
+- 권장 크기는 4B("거의 항상"), 2B는 지연·메모리 제약 시(단 기권을 덜 한다), 9B는 지식 중심 텍스트 질문.
+
+### 3-7. decider — 파인튜닝 패밀리
+
+[github.com/Mapika/decider](https://github.com/Mapika/decider) · Apache-2.0
+
+Qwen3.5 기반 System One 스타일 모델 패밀리. JevBench **3위**(64.13)로, 속도·비용 축에서 Jev를 앞선다. 다만 Jev는 raw Intelligence에서 앞선다(53.1 vs 49.4). 아키텍처·학습 상세는 이 조사 시점에 확인하지 못했다.
+
+주목할 점은 **decider 위에 다시 파인튜닝을 얹은 파생물이 리더보드 상위에 있다**는 것이다(Plumb-4B = JevK5 v0.2 + LoRA, 2위). 오픈 체크포인트가 다음 레이어의 베이스가 되는 순환이 이미 돌고 있다.
+
+### 3-8. 그 외
 
 | 프로젝트 | 요약 |
 |---|---|
