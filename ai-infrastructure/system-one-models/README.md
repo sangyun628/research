@@ -16,6 +16,7 @@
 
 - **정체**: LLM과 같은 사전학습 Transformer를 쓰지만, post-training 목표가 "사람이 선호하는 텍스트"(RLHF)나 "검증 가능한 보상"(RLVR)이 아니라 **"캘리브레이션된 확률"(RLCD)** 이다.
 - **인터페이스**: `POST /v1/systemone` — `state` + `questions{choice|score|noul}` → `answers{값 + probabilities + confidence}`. 타입 에러가 구조적으로 불가능.
+- **운영 한도**(공식): rate limit **100K tok/s · 40 req/s**, 컨텍스트 요청당 **64k**(state + 가장 긴 질문은 32k), 입력 $0.042/MTok·출력 무료, **영어가 주 학습 언어**. 종단 지연은 측정 환경에 따라 **0.14s ~ 1.9s(P95)** 로 갈린다 — [상세](typesafe-jev.md#7-3-지연latency과-처리량throughput)
 - **효용**: 코드 안의 `if`문 자리에 "의미 판단"을 꽂는다. 답의 공간을 미리 열거할 수 있고, 호출량이 많고, 지연이 중요한 자리에서만 이긴다.
 - **현재 상태**: Jev는 closed-weight 호스팅 API(early access). 반면 **인터페이스는 사실상 표준이 되어** 오픈 구현체·SDK 10개 언어·게이트웨이 3곳이 같은 계약을 따른다.
 
@@ -85,7 +86,7 @@ flowchart TB
 
 | 프로젝트 | 베이스 · 크기 | 학습 방식 | 확률 판독 | 대표 성능 (기준) | 캘리브레이션 | 지연 · 하드웨어 | 라이선스 · API |
 |---|---|---|---|---|---|---|---|
-| **[Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)** (TypeSafe) | 비공개 — "neither small nor an LLM" | **RLCD** (비공개) | 비공개 (prefill-only 추정) | JevBench **63.29 (4위/91)** · MMLU-Pro 84.6% | in-domain ECE 0.024~0.032 / **OOD 0.107** | 70~500ms · API 전용 | closed · **원본 계약** |
+| **[Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)** (TypeSafe) | 비공개 — "neither small nor an LLM" | **RLCD** (비공개) | 비공개 (prefill-only 추정) | JevBench **63.29 (4위/91)** · MMLU-Pro 84.6% | in-domain ECE 0.024~0.032 / **OOD 0.107** | 서버 57~218ms · 종단 P50 0.14~1.5s · 40 req/s | closed · **원본 계약** |
 | **[Imajev](https://github.com/mohit67890/imajev)** | Qwen3.5 2B·4B·9B | LoRA r64 + 256-code readout, 멀티모달 72k | option code + **학습된 unknown** | JevBench **67.37 (1위/91)** · Image JevBench 76.39 (1위/49) · ImajevBench 83.9% | DecisionBench ECE 0.069 (직전 0.024) | p50 238~350ms, fast path 11ms · H100 | Apache-2.0 · 호환 |
 | **[Jeeves](https://github.com/PostHog/jeeves)** (PostHog) | Qwen3.5-9B | **SFT + CISPO(RL)**, thinking | pointer head **+ reasoning chain** | test overall **0.889** (Jev 0.857) · JevBench hard **0.865** (Jev 0.730) | ECE **0.037** (Jev 0.049) | 0.3s(no-think) ~ 3.3s · CUDA Hopper(FP8) | MIT · 호환(`jeeves_sdk`) |
 | **[AutoJev-27B](https://github.com/denis-pplx/autojev)** | Qwen3.8-27B | full-weight SFT, 73k 예시 | option-letter logit | **84.60%** vs Jev 82.79% (자체 패널) | ECE **0.0428** · Brier 0.2203 | 미공개 · GPU ~49GiB | MIT · Apache-2.0 · 호환 |
