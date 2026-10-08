@@ -1,5 +1,7 @@
 # System One 오픈 구현체 — 아키텍처 계보와 비교
 
+> 같은 잣대(JevBench)로 한눈에 비교한 표는 [open-source-comparison.md](open-source-comparison.md)에 있다.
+
 > 조사 기준일 2026-09-30 · 상위 문서: [README](README.md) · 원본 분석: [typesafe-jev.md](typesafe-jev.md)
 
 Jev는 closed weight지만 **인터페이스(`/v1/systemone`)와 행동은 공개**돼 있다. 그 틈으로 2주 만에 오픈 구현체 15종 이상이 나왔고, 그중 일부는 Jev와 대등하거나 특정 축에서 앞선다. 이 문서는 그 구조를 분류하고, 직접 만드는 경로를 정리한다.
@@ -243,14 +245,14 @@ canvas in            one read-only pass         answer out
 
 state 약 2K 토큰까지는 동시성이 처리량을 늘리지만, 그 이상에서는 GPU가 prefill에 묶여(2K에서 약 40K tok/s, 64K에서 13K tok/s) **동시성은 큐잉만 늘린다**. vLLM 대기가 120초를 넘으면 `503` + `retry-after`. Mac(MLX)은 3질문 요청 0.2~0.4초, 동시 16에서 약 4 req/s로 로컬 전용이다. 같은 서버에서 Laya는 16질문 10ms, Verdict 7ms(짧은 state).
 
-**품질은 독립 보드에서 중위권이다.** JevBench 29위(36.85, sealed 29.1%). README도 *"답변 품질은 이 모드에서의 DiffusionGemma 품질이다, 직접 평가하라"* 고 명시하며 자체 품질 수치를 내지 않는다. 흥미로운 것은 `think: 512` 모드다 — sealed 정확도 **42.2%로 Jev(36.7%)를 앞서고** Intelligence 58.08(Jev 53.06)이지만, 비용 축 27.82 때문에 종합 70위로 밀린다. 그리고 thinking을 켜면 sealed ECE가 0.394로 **캘리브레이션이 크게 나빠진다** — Jeeves가 공개 문항에서 보고한 "thinking이 캘리브레이션도 개선한다"(ECE 0.037)와 상반되는 독립 관측이다.
+**품질은 독립 보드에서 중위권이다.** JevBench 29위(36.85, sealed 29.1%). README도 *"답변 품질은 이 모드에서의 DiffusionGemma 품질이다, 직접 평가하라"* 고 명시하며 자체 품질 수치를 내지 않는다. 흥미로운 것은 `think: 512` 모드다 — sealed 정확도 **42.2%로 Jev(36.7%)를 앞서고** Intelligence 58.08(Jev 53.06)이지만, 비용 축 27.82 때문에 종합 70위로 밀린다. 보정은 58.1·sealed ECE 0.394로 낮다. 다만 **같은 DiffusionGemma에 thinking을 붙인 djev는 보정 87.8·sealed ECE 0.204·sealed 60.1%로 Jev 계열 최고**다. thinking 자체가 보정을 해친다기보다 구현에 따라 갈린다고 보는 것이 맞다.
 
 **학습·파인튜닝은 제공하지 않는다.** 레포에 학습·LoRA·옵티마이저·캘리브레이션 피팅 코드가 전혀 없고, 의존성도 서빙용(fastapi·uvicorn·httpx·transformers)뿐이다.
 
 - DiffusionGemma의 확률은 **temperature 1의 raw logprob을 그대로** 쓴다. 별도 보정 단계가 없는데, JevBench Calibration 축이 54.99(Jev 76.34)로 낮은 것과 일관된다.
 - 라우팅되는 모델은 **원작자가 배포한 보정값을 재사용**한다 — Verdict는 `calibrator.json`의 옵션 개수별 temperature, JevK5는 `jevk5_config.json`의 temperature 1.532. README도 학습·파인튜닝은 각 원작자 레포를 보라고 안내한다.
 - 대신 **다른 곳에서 학습한 가중치를 서빙할 수는 있다.** `OPENJEV_LAYA_MODEL`, `OPENJEV_VERDICT_MODEL`, `OPENJEV_MODEL`(JevK5), `OPENJEV_CLM_HEAD`가 로컬 경로나 Hugging Face id를 받는다. 단 각 계열의 형식을 따라야 한다(Verdict는 `calibrator.json`, JevK5는 temperature가 든 `jevk5_config.json` 필요).
-- 같은 DiffusionGemma 기반인 djev(JevBench 10위, 52.23)도 "별도 학습 모델이 아니라 추론 방식"이다. **같은 가중치로 OpenJev(29위)와 15점 넘게 차이**가 나는 것은 학습이 아니라 캔버스 구성·판독 방식의 차이에서 온다. 조사한 범위에서는 이 판독 방식에 맞춰 DiffusionGemma를 파인튜닝한 공개 사례가 없다.
+- 같은 DiffusionGemma 기반인 djev(JevBench 10위, 52.23)도 "별도 학습 모델이 아니라 추론 방식"이다. OpenJev(29위)와 종합 15점 차이가 나지만, **지능(47.0 vs 45.4)과 보정(55.4 vs 55.0)은 거의 같고 차이는 속도(91.4 vs 83.2)·비용(57.6 vs 45.5) 축에서 난다.** 답의 품질이 아니라 서빙 구성의 차이다. 조사한 범위에서는 이 판독 방식에 맞춰 DiffusionGemma를 파인튜닝한 공개 사례가 없다.
 
 **포지션**: 단일 모델보다는 **"오픈 System One 모델들의 서빙 레이어"** 에 가깝다. 모델 선택을 요청의 `model` 필드 하나로 바꿀 수 있고, 동시성 한계를 투명하게 공개하며, 호스팅까지 제공한다. 자체 호스팅 시 운영 기준점으로 쓰기 좋다.
 

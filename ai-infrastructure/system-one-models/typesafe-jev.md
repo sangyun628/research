@@ -337,7 +337,7 @@ TypeSafe는 `jev-1.13` 기준 **공식 "jaggedness" 문서**로 9개 실패 모�
 | **BERT류 학습 분류기** | 더 싸고 감사 가능하나 라벨링·재학습 필요, 분포 밖에서 약함. Jev는 zero-shot으로 이 자리를 노림 |
 | **cross-encoder 리랭커** | 검색 랭킹에서는 강하나 범용 판단에서는 약함(SemIf 측정: 리랭커 0.560 vs 직접 logit 0.845) |
 | **LLM-as-judge** | 설명이 풍부하나 고비용·고지연·저일관성 |
-| **오픈 System One 구현체** | 주권·단가·파인튜닝에서 유리, 추론·고카디널리티·제로샷 범용성에서 열세 — [open-implementations.md](open-implementations.md) 참조 |
+| **오픈 System One 구현체** | 주권·단가·파인튜닝에서 유리, 추론·고카디널리티·제로샷 범용성에서 열세 — [open-source-comparison.md](open-source-comparison.md)(같은 잣대 비교) · [open-implementations.md](open-implementations.md) 참조 |
 
 ## 10. 종합 평가
 
