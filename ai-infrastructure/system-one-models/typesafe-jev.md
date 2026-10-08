@@ -222,7 +222,8 @@ elif action.choice == "approve_transfer":
 | **OOD ECE** | **0.107** (Choice에 temperature 3.29 필요) |
 | 반복 평가 일관성 | 500회 pass/fail 100% 일치, 점수 분산 LLM judge의 1/92~1/913 (LangSmith) |
 | 평가 단가 | $0.00035/건, 0.44s/call (LangSmith) · 문서 1,000건 $0.22 (lindfors.no) |
-| JevBench v1.4.2.2 | 95개 시스템 중 **4위** (63.29) — 등가중 조화평균 지표 |
+| JevBench v1.4.2.2 | 95개 시스템 중 **4위** (63.29) — 등가중 조화평균 지표. Intelligence 53.06 · Calibration 76.34 · Speed 83.27 · Cost 51.97 |
+| **JevBench sealed 308문항** | **36.7%** (우연 기준선 29.3%) · **ECE 0.220**. 같은 문항에서 GPT-6 Luna 95.5% / ECE 0.098, DeepSeek V4.1 Flash 94.8% / ECE 0.053. 유형별 약점: temporal_numeric 28.6%, long_policy 27.5%, ambiguous_abstain 29.7% — 공식 jaggedness와 일치 |
 
 ### 7-3. 지연(latency)과 처리량(throughput)
 
@@ -288,6 +289,8 @@ elif action.choice == "approve_transfer":
 - 동시성 거동, 콜드스타트, 피크 시간 테일 지연
 - `429`·`529` 발생 후 회복 거동
 - 롱컨텍스트에서의 지연·정확도 동시 변화
+
+Jev가 공개하지 않은 **동시성 거동의 참고치**로는 같은 범주의 오픈 서버 [OpenJev](open-implementations.md#3-8-openjev-razorback16--diffusion-canvas와-멀티모델-게이트웨이)가 공개한 벤치가 있다. state 2K 토큰을 넘으면 GPU가 prefill에 묶여 동시성을 올려도 처리량은 늘지 않고 큐잉만 늘어난다 — prefill-only 구조의 일반적 성질이므로 Jev 용량 계획에도 같은 형태를 가정하는 것이 안전하다.
 
 rate limit이 "예고 없이 변경될 수 있다"고 공식적으로 명시된 상태이므로, 용량 계획은 문서 수치를 상수로 두지 말고 **자체 환경에서 종단 P95를 직접 측정**해야 한다.
 
