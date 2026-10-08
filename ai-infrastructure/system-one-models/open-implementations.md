@@ -1,5 +1,7 @@
 # System One 오픈 구현체 — 아키텍처 계보와 비교
 
+> 같은 잣대(JevBench)로 한눈에 비교한 표는 [open-source-comparison.md](open-source-comparison.md)에 있다.
+
 > 조사 기준일 2026-09-30 · 상위 문서: [README](README.md) · 원본 분석: [typesafe-jev.md](typesafe-jev.md)
 
 Jev는 closed weight지만 **인터페이스(`/v1/systemone`)와 행동은 공개**돼 있다. 그 틈으로 2주 만에 오픈 구현체 15종 이상이 나왔고, 그중 일부는 Jev와 대등하거나 특정 축에서 앞선다. 이 문서는 그 구조를 분류하고, 직접 만드는 경로를 정리한다.
@@ -45,7 +47,7 @@ flowchart TB
 
 ## 2. 확률 판독 방식 — 네 갈래
 
-이 범주의 실질적 설계 선택은 "확률을 어디서 읽느냐"다.
+이 범주의 실질적 설계 선택은 "확률을 어디서 읽느냐"다. 초기 4갈래(A~D)에 이후 확산 모델(E)과 대조 학습 임베딩(F) 방식이 추가됐다.
 
 ```mermaid
 flowchart LR
@@ -61,6 +63,12 @@ flowchart LR
   subgraph D["D. frozen logit readout"]
     D1["학습 없음"] --> D2["선언된 옵션의 native logit만 읽음"]
   end
+  subgraph E["E. diffusion canvas readout"]
+    E1["답 슬롯만 mask한 캔버스"] --> E2["1회 read-only denoise, 슬롯 분포가 곧 답"]
+  end
+  subgraph F["F. contrastive embedding"]
+    F1["state와 옵션을 각각 임베딩"] --> F2["코사인 유사도의 softmax"]
+  end
 ```
 
 | 방식 | 대표 | 장점 | 단점 |
@@ -69,6 +77,8 @@ flowchart LR
 | **B. option-letter logit** | Jeff, AutoJev, Cygnet | 가장 단순, 베이스 지식 손상 최소 | 옵션 수가 letter 개수에 묶임 |
 | **C. encoder + head** | Laya, openJev-verdict | 초저지연(20~35ms), 소형 | 고카디널리티에서 급격히 악화 |
 | **D. frozen readout** | SemIf | 학습 0, 즉시 사용 | 품질 상한이 베이스 모델에 고정 |
+| **E. diffusion canvas** | OpenJev(razorback16), djev | 병렬 채움이 모델의 **본성** — attention mask 트릭 불필요. `steps`로 답끼리 서로 맞춰가게 할 수 있음 | 학습 없이 쓰면 품질이 베이스에 묶임, GPU 24GB+ |
+| **F. contrastive embedding** | CLM | 옵션 임베딩 캐시 가능, 매우 빠름 | 순서 척도(Score)에서 state를 무시하는 문제 보고 |
 
 C의 약점은 수치로 드러난다 — Laya는 typed-decisions 2,000건에서 0.766(Jev 0.727)이지만, **Banking77(77개 라벨)에서는 0.425 대 Jev 0.870**이다. 옵션마다 토큰 예산을 나눠 쓰는 구조라 라벨이 20개를 넘으면 무너진다.
 
@@ -138,12 +148,12 @@ AutoJev-27B 레시피의 **소형화 포크**다. 핵심 설계(1 forward pass, 
 - 성능: test overall **0.889**(Jev 0.857, Kev-9B 0.822), JevBench public **0.935**(Jev 0.866), **hard 0.865**(Jev 0.730), ECE **0.037**(Jev 0.049). 반대로 MMLU 0.793(Jev 0.900), MMLU-Pro 0.739(Jev 0.840) — 9B에 frontier 지식은 담기지 않는다.
 - 제약: **CUDA 전용, FP8 커널은 Hopper 필요**, 학습 8 GPU, p90 17초. 그리고 **language consistency reward를 넣지 않아 reasoning chain은 해석 가능하지 않다** — 설명용으로는 못 쓴다.
 
-### 3-4. Laya — 유일한 공개 RLCD 구현
+### 3-4. Laya — 강화학습 기반 RLCD의 공개 구현
 
 [github.com/NandhaKishorM/laya](https://github.com/NandhaKishorM/laya) · Apache-2.0
 
 - ModernBERT-large 421M(영어) / mmBERT-base 322M(100+ 언어), **non-autoregressive**, 단일 forward pass 약 33ms(T4).
-- 학습: **strictly proper scoring rule을 보상으로 쓰는 RL(GRPO 스타일 policy gradient)** — TypeSafe의 RLCD와 가장 가까운 공개 구현. 파인튜닝 노트북 제공, 2×T4에서 약 30k 문항 4~5시간.
+- 학습: **strictly proper scoring rule을 보상으로 쓰는 RL(GRPO 스타일 policy gradient)** — TypeSafe의 RLCD와 가장 가까운 공개 구현. 참고로 Verdict도 "RLCD"라는 이름을 쓰지만 실제 학습은 강화학습이 아니라 **지도학습 손실 `CE + 1.0 × Brier` + 사후 L-BFGS temperature scaling**이다. proper scoring rule을 *보상*으로 쓰는지 *손실*로 쓰는지가 다르다. 파인튜닝 노트북 제공, 2×T4에서 약 30k 문항 4~5시간.
 - 성능: typed-decisions 2,000건 **0.766 vs Jev 0.727**. 단 **Banking77 0.425 vs Jev 0.870** — 고카디널리티 붕괴.
 - 지연: 단일 32.8~39.5ms(T4), 10문항 배치 72.3ms(문항당 7.2ms), CPU 193~464ms. Apple Silicon MLX 포트(laya-mlx)가 중앙값 13.4ms를 보고.
 - **다국어가 필요하면 현재 유일한 실용 선택지**다(Jeff는 영어 전용, kev는 미검증).
@@ -189,7 +199,64 @@ Qwen3.5 기반 System One 스타일 모델 패밀리. JevBench **3위**(64.13)�
 
 주목할 점은 **decider 위에 다시 파인튜닝을 얹은 파생물이 리더보드 상위에 있다**는 것이다(Plumb-4B = JevK5 v0.2 + LoRA, 2위). 오픈 체크포인트가 다음 레이어의 베이스가 되는 순환이 이미 돌고 있다.
 
-### 3-8. 그 외
+### 3-8. OpenJev (razorback16) — diffusion canvas와 멀티모델 게이트웨이
+
+[github.com/razorback16/openjev](https://github.com/razorback16/openjev) · Apache-2.0 · 2026-09-18 생성
+
+> 같은 이름의 TheoLeeCJ/openjev(현 SemIf)와 **다른 프로젝트**다.
+
+**판독 방식이 새롭다.** [DiffusionGemma 26B-A4B](https://huggingface.co/nvidia/diffusiongemma-26B-A4B-it-NVFP4)(NVIDIA·Google, 이산 확산 언어모델, MoE 총 26B / 활성 4B, NVFP4)를 *쓰는* 게 아니라 *읽는* 데 쓴다. 확산 모델은 매 forward pass에서 캔버스 전체를 동시에 denoise하므로, 답 슬롯만 mask한 캔버스를 한 번 읽으면 모든 질문의 분포가 한꺼번에 나온다. System One의 "병렬 결정"이 attention mask 트릭이 아니라 **모델 구조 자체에 내장**된 셈이다.
+
+```text
+canvas in            one read-only pass         answer out
+  q1: [?]   ──►      P(yes) 0.001       ──►     noul   0.001
+  q2: [?]            P(A) 0.000                 choice "billing"
+                     P(B) 0.999                 confidence 0.997
+  q3: [?]            P(0) 0.000                 score  1.00
+                     P(1) 0.996
+```
+
+- 레이블은 각 1토큰(`yes`/`no`, `A`/`B`/`C`, `0`/`1`/`2`). 모델은 슬롯에 아무것도 쓰지 않는다.
+- **자기 일관성 재독(re-read) 내장**: 슬롯 엔트로피가 0.1을 넘으면 노이즈를 바꿔 3회 더 읽고 4회를 평균한다. 추가 읽기는 `usage`에 과금되지 않는다.
+- `confidence = 1 − H(p)/ln K` — 공식을 공개한 몇 안 되는 구현체.
+- 필요한 vLLM 기능(seeded canvas, read-only step 등)을 **업스트림 PR(vllm-project/vllm#57250, 2026-09-22 병합)** 으로 넣었다.
+
+**Jev에 없는 확장 옵션** (요청에 넣지 않으면 Jev와 동일하게 동작):
+
+| 필드 | 효과 |
+|---|---|
+| `images` | 최대 8장, 장당 약 280 입력 토큰 |
+| `steps` 1~8 | denoise 단계 수. 늘리면 답들이 서로를 보며 정착 |
+| `samples` 1~32 | 서로 다른 노이즈로 N회 읽어 평균 |
+| `think` 0~4096 | 생각을 먼저 쓰고 그 뒤에 답을 읽음 (Jeeves와 같은 방향) |
+| `sequential` | 질문 청크를 순서대로 읽어 **뒤 청크가 앞의 답을 보게** 함 — 질문 독립성을 의도적으로 깨는 옵션 |
+
+**멀티모델 게이트웨이이기도 하다.** 한 `/v1/systemone` 엔드포인트 뒤에 5개 모델을 둔다: `openjev-latest`(DiffusionGemma), `laya-1.0`, `verdict-1.4`, `clm-v0.1`, `jevk5-0.2`. `jev-latest` 별칭을 받아들이므로 TypeSafe SDK에서 `TYPESAFE_BASE_URL`만 바꾸면 된다. 운영자가 만든 [Codiv](https://codiv.ai)에서 **무료 호스팅**(100M 입력 토큰)한다 — Jev API의 첫 호스팅 대안이다. 같은 모델로 `/v1/chat/completions` 텍스트 생성도 제공한다.
+
+**생태계에서 가장 자세한 동시성·처리량 벤치** (RTX PRO 6000 Blackwell, 프로덕션 설정, 매 요청 state 앞에 nonce를 넣어 prefix 재사용을 차단한 최악 조건, 3질문):
+
+| state 토큰 | 1개씩 p50 | 동시 16 / 32 / 64에서 req/s | 동시 64에서 p50 / p95 |
+|---:|---:|---:|---:|
+| 49 | 30ms | 81 / 109 / 130 | 331 / 669ms |
+| 2,047 | 83ms | 17.7 / 18.5 / 18.6 | 2.9 / 5.4s |
+| 8,191 | 307ms | 3.7 / 3.8 / 3.8 | 15 / 23s |
+| 32,767 | 1.7s | 0.6 / 0.6 / 0.6 | 62 / 102s |
+| 63,999 | 4.8s | 0.2 / 0.2 / 0.2 | 73 / 126s |
+
+state 약 2K 토큰까지는 동시성이 처리량을 늘리지만, 그 이상에서는 GPU가 prefill에 묶여(2K에서 약 40K tok/s, 64K에서 13K tok/s) **동시성은 큐잉만 늘린다**. vLLM 대기가 120초를 넘으면 `503` + `retry-after`. Mac(MLX)은 3질문 요청 0.2~0.4초, 동시 16에서 약 4 req/s로 로컬 전용이다. 같은 서버에서 Laya는 16질문 10ms, Verdict 7ms(짧은 state).
+
+**품질은 독립 보드에서 중위권이다.** JevBench 29위(36.85, sealed 29.1%). README도 *"답변 품질은 이 모드에서의 DiffusionGemma 품질이다, 직접 평가하라"* 고 명시하며 자체 품질 수치를 내지 않는다. 흥미로운 것은 `think: 512` 모드다 — sealed 정확도 **42.2%로 Jev(36.7%)를 앞서고** Intelligence 58.08(Jev 53.06)이지만, 비용 축 27.82 때문에 종합 70위로 밀린다. 보정은 58.1·sealed ECE 0.394로 낮다. 다만 **같은 DiffusionGemma에 thinking을 붙인 djev는 보정 87.8·sealed ECE 0.204·sealed 60.1%로 Jev 계열 최고**다. thinking 자체가 보정을 해친다기보다 구현에 따라 갈린다고 보는 것이 맞다.
+
+**학습·파인튜닝은 제공하지 않는다.** 레포에 학습·LoRA·옵티마이저·캘리브레이션 피팅 코드가 전혀 없고, 의존성도 서빙용(fastapi·uvicorn·httpx·transformers)뿐이다.
+
+- DiffusionGemma의 확률은 **temperature 1의 raw logprob을 그대로** 쓴다. 별도 보정 단계가 없는데, JevBench Calibration 축이 54.99(Jev 76.34)로 낮은 것과 일관된다.
+- 라우팅되는 모델은 **원작자가 배포한 보정값을 재사용**한다 — Verdict는 `calibrator.json`의 옵션 개수별 temperature, JevK5는 `jevk5_config.json`의 temperature 1.532. README도 학습·파인튜닝은 각 원작자 레포를 보라고 안내한다.
+- 대신 **다른 곳에서 학습한 가중치를 서빙할 수는 있다.** `OPENJEV_LAYA_MODEL`, `OPENJEV_VERDICT_MODEL`, `OPENJEV_MODEL`(JevK5), `OPENJEV_CLM_HEAD`가 로컬 경로나 Hugging Face id를 받는다. 단 각 계열의 형식을 따라야 한다(Verdict는 `calibrator.json`, JevK5는 temperature가 든 `jevk5_config.json` 필요).
+- 같은 DiffusionGemma 기반인 djev(JevBench 10위, 52.23)도 "별도 학습 모델이 아니라 추론 방식"이다. OpenJev(29위)와 종합 15점 차이가 나지만, **지능(47.0 vs 45.4)과 보정(55.4 vs 55.0)은 거의 같고 차이는 속도(91.4 vs 83.2)·비용(57.6 vs 45.5) 축에서 난다.** 답의 품질이 아니라 서빙 구성의 차이다. 조사한 범위에서는 이 판독 방식에 맞춰 DiffusionGemma를 파인튜닝한 공개 사례가 없다.
+
+**포지션**: 단일 모델보다는 **"오픈 System One 모델들의 서빙 레이어"** 에 가깝다. 모델 선택을 요청의 `model` 필드 하나로 바꿀 수 있고, 동시성 한계를 투명하게 공개하며, 호스팅까지 제공한다. 자체 호스팅 시 운영 기준점으로 쓰기 좋다.
+
+### 3-9. 그 외
 
 | 프로젝트 | 요약 |
 |---|---|

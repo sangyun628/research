@@ -11,3 +11,5 @@
 | [속도·인프라 비용](performance-and-cost.md) | Jevlike 로컬 측정, OpenJev 공개 측정, 비용 계산의 가정 |
 
 Jevlike 구현과 로컬 실행은 [Jevlike 문서 모음](../jevlike/README.md)을 참고한다.
+
+Jev와 오픈 구현체 20여 종을 독립 벤치마크(JevBench) 같은 잣대로 비교한 표는 [System One 오픈소스 한눈에 비교](../system-one-models/open-source-comparison.md)를 참고한다. 그 문서의 *OpenJev*는 razorback16/openjev이고, 이 폴더의 [Jevlike vs OpenJev](jevlike-vs-openjev.md)에서 말하는 OpenJev는 TheoLeeCJ/openjev(현 SemIf)다.
