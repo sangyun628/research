@@ -48,10 +48,10 @@
 
 ## 2. Tiny 학습
 
-이 컴퓨터에는 `.repos/jevlike/.venv`와 Jevlike가 설치되어 있다. 아래는 **research 루트에서 실행하는 명령**이다. 먼저 위 데이터 파일들을 준비해야 한다.
+[로컬 데모의 새 환경 준비](local-demo.md#새-환경에서-기본-데모-준비)에 있는 클론·가상환경·패키지 설치 명령으로 `.repos/jevlike/.venv`와 Jevlike를 준비한다. 금융 의도 학습에는 데모용 synthetic 데이터 생성·학습 단계가 필요하지 않다. 아래는 **research 루트에서 실행하는 명령**이며, 먼저 위 금융 데이터 파일들을 준비해야 한다.
 
 ```bash
-cd /Users/cleave-sangyun/opensource/research
+# research 저장소 루트에서 실행
 
 OMP_NUM_THREADS=2 .repos/jevlike/.venv/bin/python \
   ai-infrastructure/jevlike/train_local.py \

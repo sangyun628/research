@@ -4,10 +4,10 @@
 
 ## 실행
 
-이 컴퓨터에는 Jevlike 클론, Python 가상환경, 학습된 기본 체크포인트가 준비되어 있다.
+Jevlike 클론, Python 가상환경, 학습된 기본 체크포인트가 필요하다. 처음 실행한다면 [새 환경 준비](#새-환경에서-기본-데모-준비)를 마친 뒤 **research 저장소 루트**에서 실행한다.
 
 ```bash
-cd /Users/cleave-sangyun/opensource/research
+# research 저장소 루트에서 실행
 sh ai-infrastructure/jevlike/start-demo.sh
 ```
 

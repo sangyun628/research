@@ -1,8 +1,8 @@
 # Research Index
 
-오픈소스 및 기술 분석 문서 인덱스. 폴더 구조·정리 규칙은 [CLAUDE.md](CLAUDE.md#폴더-구조-및-정리-규칙) 참조.
+오픈소스 및 기술 분석 문서 인덱스. 폴더 구조·정리 규칙은 [AGENTS.md](AGENTS.md#폴더-구조-및-정리-규칙) 참조.
 
-> **구조 원칙**: `category/topic/files` (3-depth). 단일 문서는 카테고리 바로 아래, 다문서 프로젝트는 `topic/` 폴더로 묶는다.
+> **구조 원칙**: 모든 분석 문서는 `category/topic/files` (최대 3-depth)에 둔다. 문서가 1~2개인 토픽도 폴더로 묶고, 3개 이상이면 토픽의 `README.md`를 읽기 시작점으로 제공한다.
 
 ---
 
@@ -12,33 +12,33 @@
 
 | 프로젝트 | 문서 | 설명 |
 |-----------|------|------|
-| Agno | [분석 보고서](ai-agents/agno/agno-analysis-report.md) · [DB 커스터마이징](ai-agents/agno/agno-database-customization-guide.md) · [스토리지·도구](ai-agents/agno/agno-storage-and-tools-guide.md) | Python 에이전트 프레임워크 |
+| Agno | [문서 모음](ai-agents/agno/README.md) | Python 에이전트 프레임워크 · DB 커스터마이징·스토리지·도구 |
 | AG-UI | [심층 분석](ai-agents/ag-ui/AG-UI_심층분석.md) | 에이전트 UI 프로토콜 |
 | AX (Google) | [분석](ai-agents/ax/analysis.md) | 분산 에이전트 런타임 (이벤트로그·재개·K8s Agent Substrate) |
 | Agent Loops | [GoClaw 분석](ai-agents/agent-loops/goclaw-analysis.md) · [OpenCode vs ClaudeCode vs OpenHarness](ai-agents/agent-loops/opencode-vs-claudecode-vs-openharness.md) | 에이전트 루프 비교 |
 | Agent Evaluation 비교 | [스터디 인덱스](ai-agents/agent-evaluation-comparison/README.md) · [도구·경로 평가](ai-agents/agent-evaluation-comparison/03-tool-and-trajectory.md) · [오픈소스 코드 분석](ai-agents/agent-evaluation-comparison/04-evaluator-libraries.md) · [벤치마크](ai-agents/agent-evaluation-comparison/06-benchmarks.md) | 응답 품질·도구 선택·행동·환경 결과 평가 — 8개 저장소 코드 분석, judge·하네스·벤치마크 비교 |
 | agentmemory | [분석](ai-agents/agentmemory/README.md) | iii-engine 기반 영속 메모리 (rohitg00) |
-| DeerFlow | [분석](ai-agents/deer-flow/deer-flow-analysis.md) · [아키텍처](ai-agents/deer-flow/deer-flow-agent-architecture.md) · [메모리](ai-agents/deer-flow/deer-flow-conversation-memory.md) | 대화형 에이전트 워크플로우 |
+| DeerFlow | [문서 모음](ai-agents/deer-flow/README.md) | 대화형 에이전트 워크플로우 · 아키텍처·대화 메모리 |
 | GenericAgent | [심층 분석](ai-agents/generic-agent/GenericAgent_심층분석.md) | 자기진화 LLM 에이전트 |
 | Go Micro (v6) | [코드 레벨 분석](ai-agents/go-micro/go-micro-analysis.md) | Go 마이크로서비스 프레임워크의 "에이전트 하네스" 피벗 — 서비스=에이전트=플로우 통합 런타임 (AX와 비교) |
 | Hermes Agent | [심층 분석](ai-agents/hermes-agent/Hermes-Agent_심층분석.md) | NousResearch 에이전트 |
 | lat.md | [분석](ai-agents/lat-md/README.md) | 마크다운 코드베이스 지식 그래프 (Yury Selivanov) |
-| Memory 비교 | [종합 비교](ai-agents/memory-comparison/에이전트_메모리_시스템_비교분석.md) · [이론 기원](ai-agents/memory-comparison/memory_theory_origins.md) · [Hindsight vs Memobase](ai-agents/memory-comparison/hindsight-vs-memobase.md) | 에이전트 메모리 시스템 횡단 분석 |
+| Memory 비교 | [비교·개별 분석 모음](ai-agents/memory-comparison/README.md) | 에이전트 메모리 시스템 횡단 비교·이론적 기원 |
 | Memora | [코드 레벨 분석](ai-agents/memora/memora-code-analysis.md) · [논문 기반 기억 흐름](ai-agents/memora/memora-paper-memory-flow.md) | Microsoft harmonic memory representation 기반 에이전트 장기 메모리 |
 | MemPalace | [코드 레벨 분석](ai-agents/mempalace/README.md) | 로컬 우선 원문 보존형 에이전트 메모리 시스템 |
-| └ 개별 분석 | [Agno](ai-agents/memory-comparison/Agno_analysis.md) · [Agno 문화](ai-agents/memory-comparison/Agno_culture_deep_dive.md) · [Cognee](ai-agents/memory-comparison/Cognee_analysis.md) · [Hindsight](ai-agents/memory-comparison/Hindsight_analysis.md) · [mem0](ai-agents/memory-comparison/mem0_analysis.md) · [Memobase](ai-agents/memory-comparison/Memobase_analysis.md) · [memU](ai-agents/memory-comparison/memU_analysis.md) · [Memori](ai-agents/memory-comparison/Memori_analysis.md) · [OpenMemory](ai-agents/memory-comparison/OpenMemory_analysis.md) · [SecondMe](ai-agents/memory-comparison/SecondMe_analysis.md) | 메모리 시스템 비교 코퍼스 |
 | Mantis (Google) | [사용법·아키텍처·활용 분석](ai-agents/mantis/mantis-analysis.md) | Agent Skills 기반 자율 보안 리뷰 하네스 — 위협 모델링·취약점 재현·패치·재공격 파이프라인 |
 | Mastra | [분석](ai-agents/mastra/analysis.md) | TypeScript 풀스택 에이전트 프레임워크 (Apache-2.0 + ee) |
 | Mirage | [분석](ai-agents/mirage/README.md) | Strukto.AI 통합 가상 파일시스템 |
 | Nanobot | [분석](ai-agents/nanobot/nanobot-analysis.md) | 모듈형 에이전트 프레임워크 |
-| Open Agents | (디렉터리) | Open Agents 모음 |
-| Open Mythos | (디렉터리) | Open Mythos |
+| Omnigent | [코드 레벨 분석](ai-agents/omnigent/omnigent-analysis.md) | 에이전트 아키텍처와 실행 흐름 |
+| Open Agents | [코드 레벨 분석](ai-agents/open-agents/README.md) | Vercel 백그라운드 코딩 에이전트와 샌드박스 |
+| Open Mythos | [코드 레벨 분석](ai-agents/open-mythos/README.md) | 신경망 수준의 반복 추론 구조 |
 | OpenChronicle | [심층 분석](ai-agents/openchronicle/OpenChronicle_심층분석.md) | 로컬 화면 컨텍스트 메모리 |
 | OpenClaw | [분석](ai-agents/openclaw/openclaw-analysis.md) | 자율 AI 에이전트 플랫폼 |
 | OpenHarness | [분석](ai-agents/openharness/README.md) · [코드 분석](ai-agents/openharness/OPENHARNESS_ANALYSIS.md) | Claude Code 에이전트 하네스 OSS 구현 |
 | OpenSpace | [분석](ai-agents/openspace/README.md) | 자기 진화형 스킬 엔진 |
 | OpenViking | [분석](ai-agents/openviking/README.md) | ByteDance 에이전트 컨텍스트 DB |
-| pi autoresearch | (디렉터리) | pi 자율 리서치 |
+| pi autoresearch | [코드 레벨 분석](ai-agents/pi-autoresearch/README.md) | pi 기반 자율 실험 루프 |
 | Supermemory | [분석](ai-agents/supermemory/README.md) | 범용 AI 메모리 레이어 |
 | Tool Search 비교 | [기술 지형도](ai-agents/tool-search-comparison/tool-search-landscape.md) · [프레임워크 코드 분석](ai-agents/tool-search-comparison/framework-code-analysis.md) | 대규모 도구 카탈로그의 지연 로딩·검색·schema constraint 구현 비교 |
 | TradingAgents | [분석](ai-agents/tradingagents/README.md) · [에이전트·도구·스킬](ai-agents/tradingagents/agent-tools-skills.md) | 멀티 에이전트 트레이딩 |
@@ -67,19 +67,19 @@ RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어.
 
 | 프로젝트 | 문서 | 설명 |
 |-----------|------|------|
-| Agentic RAG | [리서치](ai-infrastructure/agentic-rag/agentic-rag-research.md) · [LlamaIndex 가이드](ai-infrastructure/agentic-rag/llamaindex-developer-guide.md) · [PageIndex](ai-infrastructure/agentic-rag/pageindex.md) | Agentic RAG 연구 |
+| Agentic RAG | [문서 모음](ai-infrastructure/agentic-rag/README.md) | Agentic RAG 연구 · LlamaIndex·PageIndex |
 | Airweave | [분석](ai-infrastructure/airweave/airweave-analysis.md) | AI 컨텍스트 검색 인프라 |
 | Chunking | [OSS 가이드](ai-infrastructure/chunking/chunking-oss-guide.md) | 청킹 특화 OSS (Chonkie 등) · Bedrock KB 전략 매핑 |
 | DB-GPT | [분석](ai-infrastructure/db-gpt/analysis.md) | DB-GPT (텍스트→SQL) |
-| Decision Models 비교 | [README](ai-infrastructure/decision-model-comparison/README.md) · [Kev vs Laya](ai-infrastructure/decision-model-comparison/kev-vs-laya.md) · [Laya 공식 사이트](ai-infrastructure/decision-model-comparison/laya-official-site-analysis.md) · [Jevlike vs OpenJev](ai-infrastructure/decision-model-comparison/jevlike-vs-openjev.md) · [Jevlike vs mmBERT](ai-infrastructure/decision-model-comparison/jevlike-vs-mmbert.md) · [금융 라우팅](ai-infrastructure/decision-model-comparison/financial-playbook-routing.md) · [속도·인프라 비용](ai-infrastructure/decision-model-comparison/performance-and-cost.md) | Qwen LoRA·mmBERT 의사결정 모델·LLM 토큰 점수 비교, CPU 플레이북 라우팅 설계 |
-| Docling | [LightRAG 연동 비교](ai-infrastructure/docling/lightrag-docling-comparison.md) · [유즈케이스](ai-infrastructure/docling/use-cases.md) · [LlamaIndex 비교](ai-infrastructure/docling/docling-vs-llamaindex.md) | 문서 파싱·변환 엔진과 RAG 연동 |
+| Decision Models 비교 | [비교 문서 모음](ai-infrastructure/decision-model-comparison/README.md) | Qwen LoRA·mmBERT 의사결정 모델·LLM 토큰 점수 비교, CPU 플레이북 라우팅 설계 |
+| Docling | [문서 모음](ai-infrastructure/docling/README.md) | 문서 파싱·변환 · LightRAG·LlamaIndex 비교 및 연동 |
 | Flint (MS) | [코드 레벨 분석](ai-infrastructure/flint-chart/flint-chart-analysis.md) | AI 에이전트용 시각화 중간 언어(IL)·시맨틱 차트 컴파일러 + MCP 서버 (VL·ECharts·Chart.js) |
 | Graph RAG · 온톨로지 | [기술 레퍼런스](ai-infrastructure/graph-rag-ontology/README.md) · [Agentic Ontology](ai-infrastructure/graph-rag-ontology/agentic-ontology.md) | Graph 기반 RAG·온톨로지 심화 |
 | Graphiti (Zep) | [README](ai-infrastructure/graphiti/README.md) · [논문·bi-temporal](ai-infrastructure/graphiti/01-paper-and-bitemporal.md) · [아키텍처·모델](ai-infrastructure/graphiti/02-architecture-data-model.md) · [수집](ai-infrastructure/graphiti/03-ingestion-pipeline.md) · [검색](ai-infrastructure/graphiti/04-search-system.md) · [프롬프트](ai-infrastructure/graphiti/05-prompts-reference.md) | Zep Graphiti 코드 레벨 분석 + 논문 (bi-temporal KG·모순 무효화·LightRAG 시간성 약점 보완) |
 | GraphRAG 비교 | [README](ai-infrastructure/graphrag-comparison/README.md) · [LightRAG vs GraphRAG-SDK](ai-infrastructure/graphrag-comparison/lightrag-vs-graphrag-sdk.md) · [금융 서비스 적합도](ai-infrastructure/graphrag-comparison/finance-service-fit.md) · [하이브리드 OSS landscape](ai-infrastructure/graphrag-comparison/hybrid-graph-vector-rag-oss-landscape.md) | 청킹·임베딩·그래프+벡터 하이브리드 OSS 비교 |
 | GraphRAG-SDK | [README](ai-infrastructure/falkordb-graphrag-sdk/README.md) · [아키텍처·코어](ai-infrastructure/falkordb-graphrag-sdk/01-architecture-core.md) · [로딩·청킹](ai-infrastructure/falkordb-graphrag-sdk/02-loading-chunking.md) · [추출·그래프 구축](ai-infrastructure/falkordb-graphrag-sdk/03-extraction-graph-construction.md) · [검색](ai-infrastructure/falkordb-graphrag-sdk/04-retrieval-pipeline.md) · [온톨로지](ai-infrastructure/falkordb-graphrag-sdk/05-ontology-discovery-evolution.md) · [프롬프트](ai-infrastructure/falkordb-graphrag-sdk/06-prompts-reference.md) | FalkorDB GraphRAG-SDK v1.3 코드 레벨 분석 (수집→검색 파이프라인·청킹·전체 프롬프트) |
 | Knowledge Catalog · OKF | [Open Knowledge Format 분석](ai-infrastructure/knowledge-catalog/okf-analysis.md) | Google Cloud Knowledge Catalog와 OKF v0.1 포맷·reference agent·metadata-as-code 도구 분석 |
-| Jevlike | [README](ai-infrastructure/jevlike/README.md) · [로컬 데모](ai-infrastructure/jevlike/local-demo.md) · [소스코드 분석](ai-infrastructure/jevlike/jevlike-analysis.md) · [자체 학습·파인튜닝](ai-infrastructure/jevlike/training-and-finetuning.md) | 가변 후보 선택 모델 — Tiny 자체 학습·동결 HF head·PPO 예제, 브라우저 데모 및 확장 가능성 |
+| Jevlike | [문서 모음](ai-infrastructure/jevlike/README.md) · [로컬 데모](ai-infrastructure/jevlike/local-demo.md) | 가변 후보 선택 모델 · 소스 분석·자체 학습·금융 의도 분류 |
 | LlamaIndex | [유즈케이스](ai-infrastructure/llamaindex/use-cases.md) | RAG·agent 애플리케이션 프레임워크 |
 | RAG · GraphRAG 확장 | [2026 landscape](ai-infrastructure/rag-graphrag-expansion/2026-landscape.md) | 최신 RAG·GraphRAG 기술과 OSS 확장 조사 |
 | RAPTOR | [단점과 적용 리스크](ai-infrastructure/raptor/limitations.md) | Recursive abstractive tree retrieval |
@@ -102,12 +102,11 @@ RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어.
 | 프로젝트 | 문서 | 설명 |
 |-----------|------|------|
 | ArangoDB | [코드 레벨 분석](databases/arangodb/arangodb-code-analysis.md) | C++ 기반 multi-model graph DB |
-| Graph DB 모음 | [CozoDB](databases/graphdb/CozoDB_Analysis.md) · [Kuzu](databases/graphdb/Kuzu_Analysis.md) · [FalkorDB](databases/graphdb/FalkorDB_Analysis.md) · [FalkorDBLite](databases/graphdb/FalkorDBLite_Analysis.md) · [Dgraph](databases/graphdb/Dgraph_Analysis.md) · [JanusGraph](databases/graphdb/JanusGraph_Analysis.md) · [HugeGraph](databases/graphdb/HugeGraph_Analysis.md) · [Memgraph](databases/graphdb/Memgraph_Analysis.md) · [Memgraph 2026 라이선스](databases/graphdb/memgraph-2026-license-analysis.md) | 그래프 DB 분석 |
-| Graph DB 비교 | [오픈소스 후보 2026](databases/graphdb/open-source-graphdb-landscape-2026.md) · [임베드 3종 비교](databases/graphdb/CozoDB_vs_Kuzu_vs_FalkorDBLite.md) · [전체 비교](databases/graphdb/OpenSource_GraphDB_Comparison.md) · [K8s 오픈소스](databases/graphdb/K8s_OpenSource_Graph_Technologies.md) · [FalkorDB vs TigerGraph 서비스 채택](databases/graphdb/FalkorDB_vs_TigerGraph_Service_Use.md) | 그래프 DB 비교 |
-| kg-gen | [분석](databases/graphdb/kg-gen-analysis-report.md) | 지식 그래프 생성 |
+| Graph DB 모음 | [비교·개별 분석 모음](databases/graphdb/README.md) | 그래프 DB 구조·선택 기준·라이선스 · kg-gen |
 | StarRocks | [Debug Skills 분석](databases/starrocks-debug-skills/starrocks-debug-skills-analysis.md) | StarRocks 디버깅 스킬 모음 |
 | SurrealDB | [멀티모델 내부구조](databases/surrealdb/multi-model-internals.md) | Rust 기반 멀티 모델 DB |
 | Vector DB 비교 | [Qdrant · ChromaDB · Milvus · Pinecone · Weaviate](databases/vector-db-comparison/qdrant-chroma-milvus-pinecone-weaviate.md) | 주요 벡터 DB 특징·장단점 비교 |
+| Vector DB · Agentic RAG 비교 | [구조·활용 비교](databases/vector-db-rag-comparison/vector-db-agentic-rag-comparison.md) | OpenSearch·pgvector·Weaviate 중심의 RAG 저장·검색 선택 |
 | 웹 SQL 도구 | [웹 기반 SQL 실행·시각화 OSS 조사](databases/web-sql-tools/README.md) | CloudBeaver·Metabase·marimo 등 21종 — DB클라이언트·BI·노트북 3계열 비교 |
 | Zvec | [분석](databases/zvec/zvec-analysis.md) · [vs LanceDB](databases/zvec/zvec-vs-lancedb-comparison.md) | Alibaba 벡터 DB |
 
@@ -132,24 +131,24 @@ K8s 운영·관측·진단.
 
 | 프로젝트 | 문서 | 설명 |
 |-----------|------|------|
-| HolmesGPT | [분석](kubernetes/holmesgpt-analysis.md) · [코드 분석](kubernetes/holmesgpt-code-analysis.md) · [Runbook·Toolset](kubernetes/holmesgpt-runbook-toolset-analysis.md) | AI 기반 K8s 트러블슈팅 |
-| K8sGPT | [분석](kubernetes/k8sgpt-analysis.md) | K8s 클러스터 AI 진단 |
-| Kagent | [분석](kubernetes/kagent-analysis.md) | K8s 에이전트 |
-| Prometheus vs VictoriaMetrics | [심층 비교](kubernetes/prometheus-vs-victoriametrics.md) | 운영자 관점 모니터링 비교 |
+| HolmesGPT | [문서 모음](kubernetes/holmesgpt/README.md) | AI 기반 K8s 트러블슈팅 · 코드·Runbook·Toolset |
+| K8sGPT | [분석](kubernetes/k8sgpt/k8sgpt-analysis.md) | K8s 클러스터 AI 진단 |
+| Kagent | [분석](kubernetes/kagent/kagent-analysis.md) | K8s 에이전트 |
+| Prometheus vs VictoriaMetrics | [심층 비교](kubernetes/metrics-comparison/prometheus-vs-victoriametrics.md) | 운영자 관점 모니터링 비교 |
 
 ---
 
 ## Algorithms · Libraries · Domain
 
-소규모/단일 주제.
+알고리즘·라이브러리·금융 도메인별 분석.
 
 | 분류 | 문서 | 설명 |
 |---|------|------|
-| Algorithms | [STATIC 분석](algorithms/STATIC_Analysis.md) | HW 가속 제약 디코딩 알고리즘 |
+| Algorithms | [STATIC 분석](algorithms/static/STATIC_Analysis.md) | HW 가속 제약 디코딩 알고리즘 |
 | Algorithms | [AWS Event Ruler 코드 분석](algorithms/event-ruler/event-ruler-code-analysis.md) · [실시간 룰 라우팅 기술 지도](algorithms/event-ruler/realtime-rule-filtering-routing-landscape.md) | JSON 룰 자동자와 관련 필터링·라우팅 알고리즘 |
 | Algorithms | [Quamina 코드 분석](algorithms/quamina/quamina-code-analysis.md) | Go 기반 JSON multi-pattern matcher — 공유 field·value 자동자와 NFA·DFA 선택 |
 | Libraries · oban-py | [분석](libraries/oban-py/oban-py-analysis.md) | PostgreSQL 기반 백그라운드 작업 프레임워크 |
-| Finance · Fincept Terminal | [분석](finance/fincept-terminal-analysis.md) | 오픈소스 금융 터미널 |
+| Finance · Fincept Terminal | [분석](finance/fincept-terminal/fincept-terminal-analysis.md) | 오픈소스 금융 터미널 |
 
 ---
 
@@ -157,7 +156,7 @@ K8s 운영·관측·진단.
 
 | 문서 | 설명 |
 |------|------|
-| [AI 기술 트렌드 2025-2026](trends/ai-technology-trends-2025-2026.md) | RAG 진화, Agentic AI, MCP 표준화 등 |
+| [AI 기술 트렌드 2025-2026](trends/ai-technology/ai-technology-trends-2025-2026.md) | RAG 진화, Agentic AI, MCP 표준화 등 |
 
 ---
 
@@ -170,10 +169,14 @@ ai-infrastructure/     # RAG·임베딩·MCP·텍스트→SQL
 databases/             # 그래프·벡터·멀티모델 DB
 data-platforms/        # ETL·분산 데이터 통합
 kubernetes/            # K8s 운영·진단·관측 비교
-algorithms/            # 알고리즘 단편
-libraries/             # 라이브러리 단편
+algorithms/            # 알고리즘 분석
+libraries/             # 라이브러리 분석
 finance/               # 도메인-금융
 trends/                # 트렌드 정리
 scripts/               # 검증·자동화 스크립트
 .repos/                # 분석용 외부 repo 클론 (gitignored, hidden)
 ```
+
+각 카테고리 바로 아래에 토픽을 두고 중간 하위 카테고리는 만들지 않는다. 예를 들어 HolmesGPT 문서는 `kubernetes/holmesgpt/`, 의사결정 모델 비교는 `ai-infrastructure/decision-model-comparison/`에서 시작한다.
+
+분석용 소스 클론·가중치·가상환경은 Git에서 제외한 `.repos/`에 보관한다. 기존 `_repos/` 경로도 제외되지만 새 클론은 `.repos/`를 사용한다.
