@@ -16,6 +16,7 @@
 | AG-UI | [심층 분석](ai-agents/ag-ui/AG-UI_심층분석.md) | 에이전트 UI 프로토콜 |
 | AX (Google) | [분석](ai-agents/ax/analysis.md) | 분산 에이전트 런타임 (이벤트로그·재개·K8s Agent Substrate) |
 | Agent Loops | [GoClaw 분석](ai-agents/agent-loops/goclaw-analysis.md) · [OpenCode vs ClaudeCode vs OpenHarness](ai-agents/agent-loops/opencode-vs-claudecode-vs-openharness.md) | 에이전트 루프 비교 |
+| Agent Evaluation 비교 | [스터디 인덱스](ai-agents/agent-evaluation-comparison/README.md) · [도구·경로 평가](ai-agents/agent-evaluation-comparison/03-tool-and-trajectory.md) · [오픈소스 코드 분석](ai-agents/agent-evaluation-comparison/04-evaluator-libraries.md) · [벤치마크](ai-agents/agent-evaluation-comparison/06-benchmarks.md) | 응답 품질·도구 선택·행동·환경 결과 평가 — 8개 저장소 코드 분석, judge·하네스·벤치마크 비교 |
 | agentmemory | [분석](ai-agents/agentmemory/README.md) | iii-engine 기반 영속 메모리 (rohitg00) |
 | DeerFlow | [분석](ai-agents/deer-flow/deer-flow-analysis.md) · [아키텍처](ai-agents/deer-flow/deer-flow-agent-architecture.md) · [메모리](ai-agents/deer-flow/deer-flow-conversation-memory.md) | 대화형 에이전트 워크플로우 |
 | GenericAgent | [심층 분석](ai-agents/generic-agent/GenericAgent_심층분석.md) | 자기진화 LLM 에이전트 |
