@@ -26,7 +26,6 @@
 | Memory 비교 | [비교·개별 분석 모음](ai-agents/memory-comparison/README.md) | 에이전트 메모리 시스템 횡단 비교·이론적 기원 |
 | Memora | [코드 레벨 분석](ai-agents/memora/memora-code-analysis.md) · [논문 기반 기억 흐름](ai-agents/memora/memora-paper-memory-flow.md) | Microsoft harmonic memory representation 기반 에이전트 장기 메모리 |
 | MemPalace | [코드 레벨 분석](ai-agents/mempalace/README.md) | 로컬 우선 원문 보존형 에이전트 메모리 시스템 |
-| Mantis (Google) | [사용법·아키텍처·활용 분석](ai-agents/mantis/mantis-analysis.md) | Agent Skills 기반 자율 보안 리뷰 하네스 — 위협 모델링·취약점 재현·패치·재공격 파이프라인 |
 | Mastra | [분석](ai-agents/mastra/analysis.md) | TypeScript 풀스택 에이전트 프레임워크 (Apache-2.0 + ee) |
 | Mirage | [분석](ai-agents/mirage/README.md) | Strukto.AI 통합 가상 파일시스템 |
 | Nanobot | [분석](ai-agents/nanobot/nanobot-analysis.md) | 모듈형 에이전트 프레임워크 |
@@ -139,6 +138,17 @@ K8s 운영·관측·진단.
 
 ---
 
+## Security
+
+공급망 보안·취약점 리뷰 등 보안 도구.
+
+| 프로젝트 | 문서 | 설명 |
+|-----------|------|------|
+| Bumblebee (Perplexity) | [코드 레벨 분석·활용 가이드](security/bumblebee/bumblebee-analysis.md) | 개발자 엔드포인트 공급망 노출 스캐너 — 패키지 매니저를 실행하지 않고 lockfile·설치 메타데이터·IDE·브라우저 확장·MCP·Agent Skills를 읽어 NDJSON 인벤토리 생성, 침해 패키지 카탈로그와 정확 일치 매칭 (실측 포함) |
+| Mantis (Google) | [사용법·아키텍처·활용 분석](security/mantis/mantis-analysis.md) | Agent Skills 기반 자율 보안 리뷰 하네스 — 위협 모델링·취약점 재현·패치·재공격 파이프라인 |
+
+---
+
 ## Algorithms · Libraries · Domain
 
 알고리즘·라이브러리·금융 도메인별 분석.
@@ -170,6 +180,7 @@ ai-infrastructure/     # RAG·임베딩·MCP·텍스트→SQL
 databases/             # 그래프·벡터·멀티모델 DB
 data-platforms/        # ETL·분산 데이터 통합
 kubernetes/            # K8s 운영·진단·관측 비교
+security/              # 보안 도구(공급망 노출 스캔·보안 리뷰 하네스)
 algorithms/            # 알고리즘 분석
 libraries/             # 라이브러리 분석
 finance/               # 도메인-금융
