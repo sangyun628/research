@@ -68,6 +68,7 @@ RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어.
 |-----------|------|------|
 | Agentic RAG | [문서 모음](ai-infrastructure/agentic-rag/README.md) | Agentic RAG 연구 · LlamaIndex·PageIndex |
 | Airweave | [분석](ai-infrastructure/airweave/airweave-analysis.md) | AI 컨텍스트 검색 인프라 |
+| AVA (AntV) | [코드 레벨 분석](ai-infrastructure/antv-ava/antv-ava-analysis.md) · [에이전트 활용 방식](ai-infrastructure/antv-ava/agent-integration.md) | "PandasAI for JS" — NL→SQL·pandas·JS 생성·검증·실행(DuckDB 연합·7 dialect) + GPT-Vis 차트. Agent Skill+CLI(에이전트가 SQL 작성, 키 불필요) · SDK 도구 래핑 · 내장 EXPLORE/SQL/CONFIRM 루프 비교, Semantic +54.8pp 벤치마크 |
 | Auto-Ontology (NVIDIA) | [문서 모음](ai-infrastructure/auto-ontology/README.md) · [코드 레벨 분석](ai-infrastructure/auto-ontology/auto-ontology-analysis.md) · [활용 가이드](ai-infrastructure/auto-ontology/use-cases.md) · [vs Sutura](ai-infrastructure/auto-ontology/auto-ontology-vs-sutura.md) | DB 메타데이터·샘플·쿼리 로그를 LLM으로 컴파일하는 에이전트용 컨텍스트 레이어 (구 illumex GSF) — Term·SqlAttribute·SEMANTIC_FK, LangGraph text-to-SQL, 답변 가능성 검사, 읽기 전용 MCP, Ossie 연동. Telekom Sutura(LLM 없는 인증 지표 런타임)와 비교 |
 | Chunking | [OSS 가이드](ai-infrastructure/chunking/chunking-oss-guide.md) | 청킹 특화 OSS (Chonkie 등) · Bedrock KB 전략 매핑 |
 | DB-GPT | [분석](ai-infrastructure/db-gpt/analysis.md) | DB-GPT (텍스트→SQL) |
