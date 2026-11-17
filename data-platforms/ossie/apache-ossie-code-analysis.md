@@ -661,6 +661,8 @@ sequenceDiagram
 
 각 컨버터마다 별도 GitHub Actions 워크플로(`converter-*-ci.yml` 11개)가 있고, Python 쪽은 `uv` + `pyproject.toml` 개별 패키지, Java 쪽은 Maven이다. **모노레포 안의 독립 패키지 11개** 구조.
 
+> **후속 변경 (2026-11 확인)**: 위 표의 NVIDIA GSF는 2026-10-02 [ossie#499](https://github.com/apache/ossie/pull/499)에서 **NVIDIA Auto-Ontology**로 개명됐다(illumex GSF 후신, Neo4j→Postgres). 이어서 2026-10-21에는 모든 컨버터가 [apache/ossie-converters](https://github.com/apache/ossie-converters)로 분리 이전됐다. 상세는 [Auto-Ontology 코드 레벨 분석](../../ai-infrastructure/auto-ontology/auto-ontology-analysis.md) 참조.
+
 ### 8.2 케이스 스터디 ① — dbt MetricFlow: 구조 → 문자열 → 구조
 
 가장 중요한 컨버터다. dbt MetricFlow(MSI)는 Ossie와 **정면 충돌하는 메트릭 모델**을 가진다.

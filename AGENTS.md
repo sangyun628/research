@@ -26,13 +26,14 @@ research/
 │       └── *.md       # depth 3 — 실제 컨텐츠 (최대 깊이)
 ```
 
-- **카테고리 (depth 1)** 는 다음 12개 안에서 고른다. 새 카테고리 신설은 *3개 이상의 토픽*이 모일 때만:
+- **카테고리 (depth 1)** 는 다음 13개 안에서 고른다. 새 카테고리 신설은 *3개 이상의 토픽*이 모일 때만:
   - `ai-agents/` — 에이전트 프레임워크·메모리·구체 구현
   - `ai-coding-tools/` — 코딩 에이전트·IDE (Codex, OpenCode, Warp …)
   - `ai-infrastructure/` — RAG·임베딩·MCP·텍스트→SQL 등 AI 인프라 레이어
   - `databases/` — 그래프·벡터·멀티모델 DB
   - `data-platforms/` — ETL·분산 데이터 통합
   - `kubernetes/` — K8s 운영·진단·관측
+  - `security/` — 공급망 보안·취약점 리뷰 등 보안 도구 (Bumblebee, Mantis …)
   - `algorithms/` · `libraries/` · `finance/` · `trends/` · `scripts/` · `.repos/`
 
 - **토픽 (depth 2)** 명명:
@@ -74,6 +75,7 @@ research/
 | Graph RAG / 온톨로지 | `ai-infrastructure/graph-rag-ontology/` |
 | 그래프 DB 비교 | `databases/graphdb/` |
 | 관측·모니터링 | `kubernetes/` (Prometheus·VM 등 포함) |
+| 보안 도구 | `security/<project>/` (bumblebee, mantis) |
 
 ### Mermaid 다이어그램 작성·검증
 
