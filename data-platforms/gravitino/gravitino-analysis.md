@@ -3,6 +3,7 @@
 > 분석 기준: `apache/gravitino` main 브랜치 (2026-08-18 커밋 `7b6cf6b`, `version = 2.0.0-SNAPSHOT`)
 > 최신 정식 릴리스: **v1.3.0** (v1.2.0은 2026-03-13, v1.1.0은 2025-12-16 릴리스)
 > 라이선스: Apache-2.0 / ASF Top-Level Project (2025-06-03 졸업)
+> **2026-11 업데이트**: 커밋 `b43a791c` 기준 재확인 결과(권한 45종, 실험적 read-restrictions, IRC 연합 서비스 계정 모드 등)는 [레이크하우스 카탈로그 5종 비교](../lakehouse-catalog-comparison/lakehouse-catalog-comparison.md)에 반영. 본문은 2026-08 시점 분석이다.
 
 ---
 
@@ -394,7 +395,8 @@ graph LR
 - **DENY가 항상 이긴다** — 같은 롤이든 다른 롤이든, 계층 위든 아래든 무관
 - **Ownership은 별도 축** — 객체 생성자가 소유자가 되며, ALTER/DROP/이양 권한은 privilege가 아니라 ownership에서 나온다
 - **traversal 권한 필수** — `SELECT_TABLE`만 있고 `USE_CATALOG`/`USE_SCHEMA`가 없으면 아무것도 못 한다
-- **컬럼 레벨 권한 없음** — 모델에 컬럼이 securable object로 존재하지 않는다 (Unity Catalog 대비 명확한 갭)
+- **컬럼 레벨 권한 없음** — 모델에 컬럼이 securable object로 존재하지 않는다
+  - *2026-11 정정*: 권한(grant) 모델에는 여전히 컬럼이 없지만, **태그 기반 row-filter·column-mask 정책을 Iceberg REST `read-restrictions`로 내보내는 실험 구현**이 추가되었다(`docs/policies.md`, 실험 IRC 클래스패스 전용·기본 비활성). 또한 "Unity Catalog 대비 갭"은 Databricks *관리형* 기준이며, Unity Catalog **OSS**에는 행·컬럼 보안이 없다. [카탈로그 5종 비교 §5.3](../lakehouse-catalog-comparison/lakehouse-catalog-comparison.md#53-행--컬럼-보안과-iceberg-read-restrictions-표준) 참조
 - 403 대신 **404를 반환**하는 읽기 경로가 있다 — 존재 여부 추론 방지
 
 **Active Role 축소(narrowing)**: 요청 헤더로 이번 요청에 사용할 롤 부분집합을 지정해 최소권한 원칙을 적용할 수 있다.
@@ -813,7 +815,7 @@ Gravitino  →  Hive · Iceberg · Fileset · Model
 
 ### 12.2 약점 / 리스크
 
-1. **컬럼 레벨 보안 부재** — 권한 모델에 컬럼이 securable object로 존재하지 않는다. 마스킹·행 필터가 필요한 규제 산업에서는 Unity Catalog나 Ranger 직접 사용이 불가피하다.
+1. **컬럼 레벨 보안 부재** — 권한 모델에 컬럼이 securable object로 존재하지 않는다. 마스킹·행 필터가 필요한 규제 산업에서는 Unity Catalog(관리형)나 Ranger 직접 사용이 불가피하다. *(2026-11 정정: 실험적 `read-restrictions` 구현이 추가되어 "부재"에서 "실험 단계"로 바뀌었다. 단 집행은 이를 지원하는 엔진이 해야 한다.)*
 2. **집행의 반쪽** — Gravitino를 우회하는 접근은 Ranger 푸시다운이 설정된 카탈로그에서만 막힌다. JDBC 계열 카탈로그는 사실상 discovery-only에 가깝다.
 3. **연합의 지연** — 추가 네트워크 홉이 붙고, 캐시 일관성은 폴링 간격에 종속된다. 초저지연 메타데이터 연산 경로에는 부적합.
 4. **공개 벤치마크 부재** — 성능 주장이 릴리스 노트의 서술 수준에 머문다. 대규모 도입 전 자체 부하 테스트가 필수다.

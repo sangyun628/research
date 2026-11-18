@@ -1,7 +1,7 @@
 # 전사 데이터 통합 스택 지형도 — "접근 포인트를 하나로" 를 실제로 푸는 도구들
 
 > 조사 시점: 2026-08
-> 관련 문서: [Gravitino 심층 분석](../gravitino/gravitino-analysis.md) · [Gravitino vs DataHub vs OpenMetadata](../gravitino/gravitino-vs-datahub-openmetadata.md) · [Apache Ossie 적용 참고서](../ossie/OSI_적용_참고서.md) · [SeaTunnel 심층 분석](../seatunnel/SeaTunnel_심층분석.md)
+> 관련 문서: [레이크하우스 카탈로그 5종 코드 레벨 비교](../lakehouse-catalog-comparison/lakehouse-catalog-comparison.md) · [Gravitino 심층 분석](../gravitino/gravitino-analysis.md) · [Gravitino vs DataHub vs OpenMetadata](../gravitino/gravitino-vs-datahub-openmetadata.md) · [Apache Ossie 적용 참고서](../ossie/OSI_적용_참고서.md) · [SeaTunnel 심층 분석](../seatunnel/SeaTunnel_심층분석.md)
 
 ---
 
@@ -133,8 +133,12 @@ graph TB
 | Iceberg REST 스펙 | Gravitino | Lakekeeper |
 |---|---|---|
 | 멀티테이블 트랜잭션 | **미구현** (공식 문서 명시) | **구현** |
-| View registration | **미구현** (공식 문서 명시) | — |
+| View registration | 문서상 **미구현** (2026-11 코드엔 핸들러 존재) | 미구현 |
 | 서버사이드 디컨플릭팅 | — | 구현 |
+| 서버사이드 스캔 플래닝 | **구현** (다섯 카탈로그 중 유일) | 미구현 |
+| 원격 서명 (`/sign`) | 미구현 | **구현** (S3) |
+
+> 2026-11 코드 레벨 재확인 결과는 [카탈로그 5종 비교 §4](../lakehouse-catalog-comparison/lakehouse-catalog-comparison.md#4-iceberg-rest-스펙-커버리지)의 전체 매트릭스를 볼 것. 교집합 안에서도 우열이 항목별로 갈린다.
 
 각자의 자기 소개를 보면 의도가 분명하다.
 
@@ -154,16 +158,16 @@ graph TB
 
 | | **Gravitino** | **Polaris** | **Lakekeeper** | **Unity Catalog OSS** | **Nessie** | **HMS / Glue** |
 |---|---|---|---|---|---|---|
-| 주체 | Datastrato → ASF TLP | Snowflake+Dremio → **ASF TLP (2026-02)** | Vakamo | Databricks | Dremio → ASF | Apache / AWS |
+| 주체 | Datastrato → ASF TLP | Snowflake+Dremio → **ASF TLP (2026-02)** | Vakamo (오픈코어) | Databricks (LF AI & Data sandbox) | Dremio (**비-ASF**, Polaris 흡수 예정) | Apache / AWS |
 | 언어·런타임 | Java 17 (JVM) | Java (JVM) | **Rust 단일 바이너리** | Java | Java | Java / 관리형 |
 | 포맷 범위 | **Iceberg·Hive·Paimon·Hudi·Delta·JDBC·Kafka·파일·모델** | Iceberg 전용 | Iceberg 전용 | Delta·Iceberg·Hudi | Iceberg 전용 | Hive 계열 |
-| 연합(federation) | **✓ 원격 IRC 프록시** | ✗ | ✗ | ✗ | ✗ | ✗ |
+| 연합(federation) | **✓ 원격 IRC 프록시 + 카탈로그 연합이 본업** | ✓ IRC·Hive·Hadoop·BigQuery (기본 off) | ✗ | ✗ | ✗ | ✗ |
 | 비테이블 자산 | **Fileset·Topic·Model·Function** | ✗ | ✗ | Volume·Model·Function | ✗ | ✗ |
-| 인가 모델 | 자체 RBAC(34 privilege) | 세분화 RBAC | **OpenFGA (CNCF)** | 세분화 | 제한적 | 없음(Ranger 의존) |
-| **엔진까지 집행 전파** | Ranger 푸시다운 | ✗ | **OPA 브리지 → Trino** | ✗ | ✗ | — |
-| 크리덴셜 벤딩 | S3·GCS·ADLS·OSS·JDBC | ✓ | ✓ + remote signing | ✓ | 부분 | ✗ |
-| 특수 기능 | TMS(자동 compaction)·스캔플래닝·MCP | — | 멀티테이블 커밋 | AI 자산 | **Git식 브랜치/머지** | 레거시 호환 |
-| **IRC 스펙 완성도** | 멀티테이블 트랜잭션·view registration **미구현** | 원조 구현 | **멀티테이블 커밋 지원** | — | — | — |
+| 인가 모델 | 자체 RBAC(45 privilege, 2026-11) | 2단 RBAC(111 privilege) + OPA·Ranger 인가자 | **OpenFGA (CNCF)** | Casbin RBAC (그룹 없음, 기본 off) | CEL 규칙 (기본 off) | 없음(Ranger 의존) |
+| **엔진까지 집행 전파** | Ranger 푸시다운 | ✗ (OPA·Ranger는 카탈로그 측 판단) | **OPA 브리지 → Trino** (오브젝트 수준) | ✗ | ✗ | — |
+| 크리덴셜 벤딩 | S3·GCS·ADLS·OSS·JDBC | ✓ (원격 서명 ✗) | ✓ + remote signing | ✓ | ✓ + S3 remote signing | ✗ |
+| 특수 기능 | TMS(자동 compaction)·스캔플래닝·MCP·read-restrictions(실험) | 정책 저장소·이벤트 149종·Ossie 시맨틱 모델(beta) | 멀티테이블 커밋·커밋 거부 훅 | **관리형 Delta 커밋**·AI 자산 | **Git식 브랜치/머지** | 레거시 호환 |
+| **IRC 스펙 완성도** | 멀티테이블 트랜잭션 **미구현**, 스캔 플래닝 **유일 구현** | 멀티테이블 커밋 ✓, 원격 서명·스캔 플래닝 ✗ | **멀티테이블 커밋 + 원격 서명 ✓**, 스캔 플래닝 ✗ | 트랜잭션·뷰 ✗ (0.7에서 쓰기 지원) | 멀티테이블 커밋 ✓ (IRC 자체는 experimental) | — |
 | 필수 인프라 | 서버 + RDB | 서버 + RDB | **바이너리 + PostgreSQL** | 서버 + RDB | 서버 + 백엔드 | HMS + RDB |
 
 > 표를 세로로만 읽지 말 것. **포맷 범위 행과 IRC 스펙 완성도 행이 역방향**이다 — Gravitino는 넓게 커버하는 대신 Iceberg 한 면의 깊이에서 뒤진다. §2.0의 벤 다이어그램이 이 표의 전제다.
@@ -178,10 +182,11 @@ graph TB
 
 > 주목할 점: Lakekeeper는 **OpenFGA**(CNCF, Google Zanzibar 계열)로 권한을 모델링하고, **OPA 브리지**로 그 권한을 Trino에 그대로 노출한다. Trino는 자체 OPA access control 플러그인으로 이를 집행한다.
 > **이게 Gravitino의 "집행의 반쪽" 문제를 다른 방식으로 푼 것**이다 — Gravitino는 Ranger에 정책을 *복사*하는 데 반해, Lakekeeper는 엔진이 *같은 권한 소스를 직접 조회*하게 한다. 정책 드리프트가 구조적으로 없다.
+> 단 (2026-11 코드 확인) OPA 브리지는 **오브젝트 수준까지만** 판단한다 — 행 필터·컬럼 마스크는 내보내지 않는다. 또한 Cedar 인가와 테이블 유지보수(compaction·스냅샷 만료·orphan 정리)는 유료 **Lakekeeper Plus 전용**이다.
 
-**Unity Catalog OSS** — Databricks 생태계에 이미 있을 때. 컬럼 마스킹·행 필터가 필요하면 사실상 여기밖에 없다.
+**Unity Catalog OSS** — Databricks 생태계에 이미 있거나, **Delta를 카탈로그가 관리형으로 커밋**해야 할 때(catalog-managed commit은 다섯 중 UC만). ~~컬럼 마스킹·행 필터가 필요하면 사실상 여기밖에 없다~~ → **정정(2026-11)**: 마스킹·행 필터는 Databricks *관리형* Unity의 기능이며 OSS 코드에는 없다(로드맵 `❓`). OSS 기본값은 인가 꺼짐이고 그룹 개념도 없다.
 
-**Nessie** — 데이터에 Git식 브랜치/머지/롤백이 필요할 때. "프로덕션 테이블에 실험 브랜치를 따고 검증 후 머지" 라는 워크플로가 목표라면 대체재가 없다.
+**Nessie** — 데이터에 Git식 브랜치/머지/롤백이 필요할 때. "프로덕션 테이블에 실험 브랜치를 따고 검증 후 머지" 라는 워크플로가 목표라면 대체재가 없다. 단 **ASF 프로젝트가 아니고**(Dremio 주도, Dremio는 2026년 SAP에 인수), 2024년부터 Polaris로 기능을 흡수하는 계획이 공표되어 있다. Iceberg REST 지원도 스스로 "experimental"이라고 표기한다.
 
 **HMS / AWS Glue** — 이미 있으면 **버리지 말고 뒤에 두라.** Gravitino·Polaris·Trino 전부 HMS를 백엔드로 쓸 수 있다.
 
@@ -430,8 +435,8 @@ graph TB
 - 포맷 여럿 + 파일/모델까지 → **Gravitino**
 - Iceberg만 + 벤더 중립 → **Polaris**
 - Iceberg만 + 경량 K8s + 정책 드리프트 싫음 → **Lakekeeper**
-- 데이터 브랜치/머지 → **Nessie**
-- Databricks + 컬럼 마스킹 → **Unity Catalog**
+- 데이터 브랜치/머지 → **Nessie** (Polaris 이전 계획을 전제로)
+- Databricks + 컬럼 마스킹 → **Unity Catalog (관리형)** — OSS에는 마스킹이 없다
 - 이미 있는 HMS/Glue → **버리지 말고 백엔드로**
 
 **집행 (⓪)**
