@@ -3,12 +3,16 @@
 > LLM 애플리케이션을 운영하기 위한 **관측(Observability)·평가(Evaluation)·프롬프트 관리·게이트웨이** 레이어의 오픈소스 도구를 엔지니어 관점에서 정리한다. Langfuse를 기준점(reference)으로 두고, 경쟁/대체 도구와 표준 레이어, 인접 스택까지 횡단 비교한다.
 >
 > 조사 시점: **2026-06**. 이 분야는 2026 상반기에 인수·통합이 집중적으로 일어나 지형이 크게 흔들렸으므로, 각 도구의 *현재 상태(active / maintenance / sunset)* 를 명시한다.
+>
+> **2026-11 업데이트**: 9종(Langfuse·Helicone·Opik·Laminar·W&B Weave·PostHog·OpenLIT·LangWatch·HoneyHive) 비교는 [llmops-tools-comparison.md](llmops-tools-comparison.md)에 최신화했다. 시각화 버전은 [llmops-tools-comparison.html](llmops-tools-comparison.html)이다. 2026-06 이후 바뀐 상태가 이 문서보다 우선한다. 예: Helicone은 Experiential Labs로 소유 이전, Weave는 서버 비공개 전환, Laminar·OpenLIT은 open-core로 전환, LangWatch는 OpenSearch 제거, HoneyHive는 Elastic 인수 계약.
 
 ## 이 디렉터리 구성
 
 | 문서 | 내용 |
 |------|------|
 | **README.md** (이 문서) | 전체 지형도 · 스택 분류 · 종합 비교표 · 2026 인수 지형 · 선택 가이드 |
+| [llmops-tools-comparison.md](llmops-tools-comparison.md) | **9종 비교 (2026-11)** — Langfuse · Helicone · Opik · Laminar · W&B Weave · PostHog · OpenLIT · LangWatch · HoneyHive. 기능 점수 매트릭스, **인프라 구성**(컨테이너·데이터스토어·수집 파이프라인·ClickHouse 스키마), 도구별 아키텍처, 선택 가이드 |
+| [llmops-tools-comparison.html](llmops-tools-comparison.html) | 위 비교의 **시각화 버전** — 기능 히트맵, 셀프호스트 무게 차트, 데이터스토어 매트릭스, 아키텍처 탭, 실제 UI 스크린샷 (단일 HTML) |
 | [langfuse.md](langfuse.md) | **Langfuse 심층 분석** — v3/v4 아키텍처, ClickHouse 기반 데이터스택, 데이터 모델, 라이선스, 셀프호스팅, OTel |
 | [platforms.md](platforms.md) | 오픈소스 옵저버빌리티 **플랫폼별 심층** — Arize Phoenix · Opik · Helicone · Laminar · LangWatch · OpenLIT · (deprecated: Lunary · Literal AI) |
 | [standards-and-ecosystem.md](standards-and-ecosystem.md) | **표준 레이어**(OTel GenAI semconv · OpenInference · OpenLLMetry) + **인접 스택**(게이트웨이 LiteLLM/Portkey · 평가 Ragas/DeepEval/promptfoo · 프롬프트 관리 · 상용 레퍼런스 LangSmith/Datadog/Weave/Braintrust) |
